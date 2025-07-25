@@ -1,0 +1,56 @@
+<!-- logo-animation.html -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const brandLink = document.querySelector(".navbar-brand");
+    const logoImg = brandLink.querySelector("img.navbar-logo");
+    const video = document.createElement("video");
+    video.classList.add("navbar-logo", "video-logo");
+    video.autoplay = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.loop = false;
+    video.playbackRate = 1.0;
+
+    const source = document.createElement("source");
+    // Github Pages sites are served from a path like `https://arcadia-science.github.io/<repo>/`
+    // so we need to add the repo name to the path when we're on Github Pages.
+    const siteRoot = (window.location.hostname.endsWith('github.io')) ? `/${window.location.pathname.split('/')[1]}` : '';
+    source.src = `${siteRoot}/assets/logo_movie.mp4`;
+    source.type = "video/mp4";
+    video.appendChild(source);
+
+    // Function to handle video playback
+    function handleVideoPlayback() {
+      if (video.ended || video.paused) {
+        video.currentTime = 0;
+        video.playbackRate = 3.0;
+        video.play().catch(e => console.log("Playback failed:", e));
+      }
+    }
+
+    // Add hover event listener
+    brandLink.addEventListener("mouseenter", handleVideoPlayback);
+
+    // Handle visibility changes
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") {
+        handleVideoPlayback();
+      }
+    });
+
+    // Handle page show (useful for mobile back button / screen unlock)
+    window.addEventListener("pageshow", function (event) {
+      if (event.persisted) {
+        handleVideoPlayback();
+      }
+    });
+
+    video.addEventListener("error", function () {
+      console.error("Video playback error");
+      logoImg.style.visibility = "visible";
+      video.remove();
+    });
+
+    brandLink.appendChild(video);
+  });
+</script>

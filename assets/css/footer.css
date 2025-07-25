@@ -1,0 +1,7 @@
+/* Footer styling */
+.footer {
+    background-color: var(--arcadia-charcoal) !important;
+    padding: 2rem;
+    margin-top: 4rem;
+    width: 100%;
+}
