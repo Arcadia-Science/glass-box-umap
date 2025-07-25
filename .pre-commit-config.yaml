@@ -1,0 +1,27 @@
+exclude: (_extensions/|_freeze/|input/|output/)
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: debug-statements
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+      - id: end-of-file-fixer
+  - repo: local
+    hooks:
+      - id: format
+        name: Format
+        entry: make format
+        language: system
+        pass_filenames: false
+      - id: lint
+        name: Lint
+        entry: make lint
+        language: system
+        pass_filenames: false

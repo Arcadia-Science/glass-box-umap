@@ -1,0 +1,50 @@
+# This workflow is derived from an example workflow in the Quarto docs here:
+# https://quarto.org/docs/publishing/github-pages.html#github-action.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: publish
+
+name: Quarto Publish
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # Ensure that the `publish` branch is checked out.
+          ref: publish
+
+      # This is needed to create the `gh-pages` branch.
+      - name: Set up Git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      # The `quarto-actions/publish` action does not create the `gh-pages` branch,
+      # so we need to create it manually here (if it does not exist).
+      - name: Create the `gh-pages` branch if it does not exist
+        run: |
+          git fetch origin
+          if ! git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+            git checkout --orphan gh-pages
+            git rm -rf --quiet .
+            git commit --allow-empty -m "Initializing gh-pages branch"
+            git push origin gh-pages
+            git checkout publish
+          fi
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Render and Publish
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
