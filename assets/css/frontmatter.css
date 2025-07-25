@@ -1,0 +1,161 @@
+.title-block-header {
+    background-color: var(--arcadia-white) !important;
+}
+
+.quarto-title-banner {
+    background-color: var(--arcadia-pewter) !important;
+    margin: 0;
+    padding-top: 3em;
+    padding-bottom: 3em;
+}
+
+.quarto-title-banner h1 {
+    color: var(--arcadia-white) !important;
+    font-family: var(--nb-banner-title-font-family) !important;
+    font-weight: 100 !important; 
+    font-size: 2.5rem;
+}
+
+.quarto-title-meta {
+    background-color: var(--bs-code-bg-color);
+    padding: 1em 2em 0em 2em;
+    margin-top: 2rem;
+    border-radius: 8px 8px 0px 0px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: none;
+}
+
+#quarto-header {
+    z-index: 1030;
+    border-bottom: 1px solid #262626;
+}
+
+#title-version-control {
+  display: inline-flex;
+  align-items: baseline;
+  margin-left: 0.5rem;
+}
+
+.title-version-menu {
+  display: inline-block;
+}
+
+.title-version-menu .nav-link {
+  color: white;
+  display: inline-flex;
+  align-items: center;
+}
+
+.title-version-menu .nav-link:hover {
+  transform: scale(1.05);
+}
+
+.title-version-menu .dropdown-toggle::after {
+  color: white;
+  margin-left: 0.25rem;
+  vertical-align: baseline;
+}
+
+.title-version-menu iconify-icon {
+  font-size: 0.7em;
+}
+
+.title-version-menu .dropdown-menu {
+  min-width: 8rem;
+}
+
+/* =================== */
+/* === Summary Box === */
+/* =================== */
+
+.authors-toggle {
+  padding-left: 0;
+  background: none;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: inherit;
+  font-size: inherit;
+}
+
+.tippy-box {
+  background-color: var(--arcadia-crow);
+  color: white;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.authors-toggle:hover {
+  opacity: 0.8;
+}
+
+.authors-toggle-icon {
+  font-size: 0.8em;
+  transition: transform 0.3s ease;
+}
+
+.quarto-title-author-orcid {
+  padding-left: 0.3rem;
+}
+
+.authors-toggle[aria-expanded="true"] .authors-toggle-icon {
+  transform: rotateX(180deg);
+}
+
+.authors-content {
+  display: none;
+  padding-left: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.authors-content.is-visible {
+  display: block;
+}
+
+.author-name {
+  cursor: help;
+  border-bottom: 1px dotted #666;
+  display: inline-block;
+}
+.authors-toggle-text, .authors-toggle-icon {
+    font-family: var(--nb-main-text-font-family) !important;
+    text-transform: uppercase;
+    margin-top: 1em;
+    font-size: .8em;
+    opacity: .8;
+    font-weight: 400;
+    text-align: left;
+}
+
+.author-order-indicator {
+  display: block;
+  font-style: italic;
+  font-size: 0.8em;
+  color: #666;
+  margin-bottom: 0.2rem;
+}
+
+.abstract {
+    background-color: var(--bs-code-bg-color);
+    padding: 1rem 2rem 1.5rem 2rem;
+    border-radius: 0px 0px 8px 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: none;
+}
+
+.abstract .block-title {
+  margin-bottom: 0.2rem;
+  margin-top: 0 !important;
+}
+
+.abstract p {
+  line-height: 1.6;
+  margin: 0;
+}
+
+
