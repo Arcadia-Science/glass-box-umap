@@ -1,0 +1,216 @@
+<!-- TODO: This solution currently generates the bibtex on the fly using a regex pattern. Ideally, the bibtex is a static file in the repository, similar to CITATION.cff. -->
+<template id="citation-box-template">
+  <div id="citation-popup" class="citation-popup">
+    <div class="citation-popup-content">
+      <div class="citation-header">
+        <h4>Cite this pub</h4>
+        <button id="close-citation-box" class="close-button" aria-label="Close citation box">×</button>
+      </div>
+      <div class="citation-tabs">
+        <button class="citation-tab-button active" data-format="styled">Arcadia</button>
+        <button class="citation-tab-button" data-format="bibtex">BibTeX</button>
+      </div>
+      <div class="citation-body">
+        <div id="styled-citation" class="citation-content active">
+          <p class="loading-text">Loading citation...</p>
+        </div>
+        <div id="bibtex-citation" class="citation-content">
+          <pre class="loading-text">Loading citation...</pre>
+        </div>
+      </div>
+      <div class="citation-footer">
+        <button id="copy-citation-button" class="copy-button">
+          <i class="bi bi-clipboard"></i> Copy to clipboard
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+<script>
+  // Initialize citation functionality after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCitationBox);
+  } else {
+    initCitationBox();
+  }
+
+  function initCitationBox() {
+    require.config({
+      paths: {
+        'js-yaml': 'https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min'
+      }
+    });
+
+    require(['js-yaml'], function (jsyaml) {
+
+      // Add citation box template to the document
+      const template = document.getElementById('citation-box-template');
+      const citationBoxContent = document.importNode(template.content, true);
+      document.body.appendChild(citationBoxContent);
+
+      // Find citation button
+      const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+      let citeButton = null;
+      for (const link of navLinks) {
+        if (link.textContent && link.textContent.trim() === 'Cite this pub') {
+          citeButton = link;
+          break;
+        }
+      }
+
+      // Reference elements (assuming they exist in the template)
+      const citationPopup = document.getElementById('citation-popup');
+      const closeButton = document.getElementById('close-citation-box');
+      const copyButton = document.getElementById('copy-citation-button');
+      const tabButtons = document.querySelectorAll('.citation-tab-button');
+      const styledEl = document.getElementById('styled-citation');
+      const bibtexEl = document.getElementById('bibtex-citation');
+
+      let pubData = {};
+      let isDataLoaded = false;
+
+      // --- Function to load the citation data ---
+      async function loadCitationData() {
+        // Set loading text (will be replaced on success)
+        styledEl.innerHTML = `<p class="loading-text">Loading citation...</p>`;
+        bibtexEl.innerHTML = `<pre class="loading-text">Loading citation...</pre>`;
+
+        // Fetch and parse CFF
+        const siteRoot = (window.location.hostname.endsWith('github.io')) ? `/${window.location.pathname.split('/')[1]}` : '';
+        const citationCffPath = `${siteRoot}/CITATION.cff`;
+        const response = await fetch(citationCffPath);
+        const text = await response.text();
+        const cffData = jsyaml.load(text);
+
+        const preferredCitation = cffData['preferred-citation'];
+        const title = preferredCitation.title;
+        const year = preferredCitation.year;
+        const doi = preferredCitation.doi;
+        const authors = preferredCitation.authors;
+
+        pubData = {
+          title: String(title).trim(),
+          year: String(year).trim(),
+          doi: String(doi).trim(),
+          authors: []
+        };
+
+        for (const author of authors) {
+          pubData.authors.push({
+            family: String(author['family-names']).trim(),
+            given: String(author['given-names']).trim()
+          });
+        }
+
+        updateCitations();
+        isDataLoaded = true;
+      }
+
+      function updateCitations() {
+        const url = pubData.doi ? `https://doi.org/${pubData.doi}` : window.location.href;
+
+        // Text citation
+        const styledAuthors = pubData.authors.map(author => {
+          const initials = author.given.split(/\s+/).map(name => name.charAt(0)).join('');
+          return `${author.family} ${initials}`;
+        }).join(', ');
+        styledEl.innerHTML = `<p>${styledAuthors}. (${pubData.year}). ${pubData.title}. ${url}</p>`;
+
+        // BibTeX citation
+        const firstAuthor = pubData.authors[0]; // Assume at least one author
+        const bibtexKey = `${firstAuthor.family.replace(/[^a-zA-Z0-9]/g, '')}${pubData.year}${pubData.title.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '')}`;
+        const escapedTitle = pubData.title.replace(/([{}])/g, '\\$1');
+        const titleWithCaps = escapedTitle.replace(/\b([A-Z][a-zA-Z0-9'-]*)\b/g, '{$1}');
+        const bibtexAuthors = pubData.authors.map(author => `${author.family}, ${author.given}`).join(' and ');
+
+        const bibtexContentFinal = `@article{${bibtexKey},
+    author = {${bibtexAuthors}},
+    title = {${titleWithCaps}},
+    journal = {Arcadia Science},
+    year = {${pubData.year}},${pubData.doi ? `\n    doi = {${pubData.doi}},` : ''}
+    url = {${url}}
+}`;
+        bibtexEl.innerHTML = `<pre>${bibtexContentFinal}</pre>`;
+      }
+
+      // --- Function to toggle the citation box ---
+      function toggleCitationBox() {
+        const isVisible = citationPopup.classList.contains('visible');
+        if (!isVisible) {
+          citationPopup.classList.add('visible');
+          // Load data only once on first open
+          if (!isDataLoaded) {
+            loadCitationData(); // Assuming this will succeed
+          }
+        } else {
+          citationPopup.classList.remove('visible');
+        }
+      }
+
+      // --- Event listeners ---
+      citeButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        toggleCitationBox();
+      });
+
+      closeButton.addEventListener('click', function () {
+        citationPopup.classList.remove('visible');
+      });
+
+      // Tab switching
+      tabButtons.forEach(button => {
+        button.addEventListener('click', function () {
+          tabButtons.forEach(btn => btn.classList.remove('active'));
+          this.classList.add('active');
+          document.querySelectorAll('.citation-content').forEach(content => {
+            content.classList.remove('active');
+          });
+          const format = this.getAttribute('data-format');
+          document.getElementById(`${format}-citation`).classList.add('active');
+        });
+      });
+
+      // Copy to clipboard functionality
+      copyButton.addEventListener('click', function () {
+        const activeTab = document.querySelector('.citation-tab-button.active');
+        const activeFormat = activeTab.getAttribute('data-format');
+        const contentEl = document.getElementById(`${activeFormat}-citation`);
+
+        let textToCopy = '';
+        if (activeFormat === 'bibtex') {
+          textToCopy = contentEl.querySelector('pre').textContent.trim();
+        } else {
+          textToCopy = contentEl.querySelector('p').textContent.trim();
+        }
+
+        navigator.clipboard.writeText(textToCopy)
+          .then(() => {
+            copyButton.innerHTML = '<i class="bi bi-check-lg"></i> Copied!';
+            setTimeout(() => {
+              copyButton.innerHTML = '<i class="bi bi-clipboard"></i> Copy to clipboard';
+            }, 2000);
+          })
+          .catch(err => {
+            console.error('Failed to copy text to clipboard: ', err);
+            copyButton.innerHTML = '<i class="bi bi-x-lg"></i> Failed';
+            setTimeout(() => {
+              copyButton.innerHTML = '<i class="bi bi-clipboard"></i> Copy to clipboard';
+            }, 2000);
+          });
+      });
+
+      // Close on escape key
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+          if (citationPopup && citationPopup.classList.contains('visible')) {
+            citationPopup.classList.remove('visible');
+          }
+        }
+      });
+
+    });
+  }
+
+</script>
