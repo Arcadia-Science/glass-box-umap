@@ -15,17 +15,20 @@
 # - validation
 # - visualization
 authors:
-  - name: First M. Last
-    orcid: 0000-0000-0000-0000
+  - name: James R. Golden
+    orcid: 0000-0002-9411-9680
     roles:
       - conceptualization
       - formal analysis
       - investigation
       - methodology
       - software
-  - name: Contributor Name
+      - writing
+  - name: Ryan York
     orcid: 0000-0000-0000-0000
     roles:
-      - data curation
-      - validation
-  - name: Another Author
+      - supervision
+  - name: Evan Kiefl
+    orcid: 0000-0000-0000-0000
+    roles:
+      - software
