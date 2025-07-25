@@ -1,0 +1,147 @@
+<template id="authors-template">
+  <div class="authors-section">
+    <button class="authors-toggle">
+      <span class="authors-toggle-text">Show authors</span>
+      <i class="bi bi-chevron-down authors-toggle-icon"></i>
+    </button>
+    <div class="authors-content quarto-title-meta-contents">
+      <span class="author-order-indicator">(sorted A-Z)</span>
+    </div>
+  </div>
+</template>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+<script>
+  initAuthorReveal();
+
+  function initAuthorReveal() {
+    require.config({
+      paths: {
+        'js-yaml': 'https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min'
+      }
+    });
+
+    require(['js-yaml'], function (jsyaml) {
+      // Function to get last name from full name
+      function getLastName(fullName) {
+        const nameParts = fullName.trim().split(' ');
+        return nameParts[nameParts.length - 1];
+      }
+
+      // Function to load the YAML file
+      async function loadAuthorData() {
+        try {
+          // Github Pages sites are served from a path like `https://arcadia-science.github.io/<repo>/`
+          // so we need to add the repo name to the path when we're on Github Pages.
+          const siteRoot = (window.location.hostname.endsWith('github.io')) ? `/${window.location.pathname.split('/')[1]}` : '';
+          const authorYamlPath = `${siteRoot}/authors.yml`;
+          const response = await fetch(authorYamlPath);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const yamlText = await response.text();
+          window.authorData = jsyaml.load(yamlText);
+          initializeAuthors();
+        } catch (error) {
+          console.error('Error loading author data:', error);
+        }
+      }
+
+      function initializeAuthors() {
+        // Find the quarto-title-meta div
+        const titleMeta = document.querySelector('.quarto-title-meta');
+        if (!titleMeta) {
+          return;
+        }
+
+        // Get template content
+        const template = document.getElementById('authors-template');
+        if (!template) {
+          return;
+        }
+        const authorsSection = template.content.cloneNode(true);
+
+        // Get the authors content div from the cloned template
+        const authorsContent = authorsSection.querySelector('.authors-content');
+
+        // Update sort to use last name
+        const sortedAuthors = [...authorData.authors].sort((a, b) => {
+          const lastNameA = getLastName(a.name);
+          const lastNameB = getLastName(b.name);
+          return lastNameA.localeCompare(lastNameB);
+        });
+
+        // Process authors from the data
+        sortedAuthors.forEach(author => {
+          const authorP = document.createElement('p');
+
+          // Create name span
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'author-name';
+          nameSpan.textContent = author.name;
+          authorP.appendChild(nameSpan);
+
+          // Add ORCID if present
+          if (author.orcid) {
+            const orcidLink = document.createElement('a');
+            orcidLink.href = `https://orcid.org/${author.orcid}`;
+            orcidLink.className = 'quarto-title-author-orcid';
+
+            const orcidImage = document.createElement('img');
+            orcidImage.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg==';
+            orcidLink.appendChild(orcidImage);
+
+            authorP.appendChild(orcidLink);
+          }
+
+          // Add to authors content
+          authorsContent.appendChild(authorP);
+
+          // Add tippy tooltip with roles if present
+          if (author.roles) {
+            const tooltipContent = `Roles: ${author.roles.map(r => r.charAt(0).toUpperCase() + r.slice(1)).join(', ')}`;
+            tippy(nameSpan, {
+              content: tooltipContent,
+              allowHTML: true,
+              placement: 'bottom',
+              arrow: true,
+              theme: 'custom'
+            });
+          }
+        });
+
+        // Create container and insert at the beginning of title meta
+        const containerDiv = document.createElement('div');
+        titleMeta.insertBefore(containerDiv, titleMeta.firstChild);
+        containerDiv.appendChild(authorsSection);
+
+        // Add toggle functionality
+        const toggle = document.querySelector('.authors-toggle');
+        const content = document.querySelector('.authors-content');
+
+        if (!toggle || !content) {
+          return;
+        }
+
+        toggle.addEventListener('click', () => {
+          const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+          toggle.setAttribute('aria-expanded', !isExpanded);
+          content.classList.toggle('is-visible');
+        });
+
+        // Initialize ARIA attributes
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-controls', 'authors-content');
+        content.setAttribute('id', 'authors-content');
+      }
+
+      // Start loading when DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadAuthorData);
+      } else {
+        loadAuthorData();
+      }
+    });
+  }
+</script>

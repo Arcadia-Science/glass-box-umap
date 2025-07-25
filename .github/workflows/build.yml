@@ -1,0 +1,80 @@
+on:
+  # Run the workflow when new tags are created.
+  push:
+    tags:
+      - v*
+  # Allow the workflow to be triggered manually.
+  workflow_dispatch:
+
+name: Build
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PUBLISH_BRANCH: publish
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Create a name for the build branch
+        run: |
+          git checkout main
+          echo "BUILD_BRANCH=build-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      # Reset the `publish` branch to point to `main`, because we use the `publish` branch
+      # only to store the build artifacts, not for version control.
+      - name: Reset the publish branch
+        run: |
+          git checkout -b $PUBLISH_BRANCH || true
+          git checkout $PUBLISH_BRANCH
+          git reset --hard origin/main
+          git push --force origin $PUBLISH_BRANCH
+          git checkout main
+
+      # Delete the build branch if it already exists,
+      # as the `peter-evans/create-pull-request` action used below will update the branch
+      # if it exists, which we don't want.
+      # Note: deleting the build branch will also close the corresponding PR, if it exists.
+      - name: Delete the build branch
+        run: |
+          git branch -D $BUILD_BRANCH || true
+          git push --force --delete origin $BUILD_BRANCH || true
+
+      - name: Build the publication
+        run: |
+          git checkout main
+          uv run --no-project _build.py
+
+      # Open a PR to merge the build artifacts into the `publish` branch.
+      # Note: this action automatically creates the build branch and commits all unstaged changes to it.
+      - name: Open PR
+        uses: peter-evans/create-pull-request@v7
+        env:
+          PR_BODY: |
+            This PR creates a new version of the public Quarto publication. It was automatically created by the `build.yml` workflow.
+
+            To preview this version of the publication, check out this PR branch locally and run `quarto preview`.
+
+            To publish this version of the publication, merge this PR into the `publish` branch.
+        with:
+          # `base` is the target branch for the PR.
+          base: ${{ env.PUBLISH_BRANCH }}
+          # `branch` is the source branch for the PR.
+          branch: ${{ env.BUILD_BRANCH }}
+          commit-message: "Update the public Quarto publication"
+          title: "[Publication] Update the public Quarto publication"
+          body: ${{ env.PR_BODY }}

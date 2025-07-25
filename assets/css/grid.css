@@ -1,0 +1,69 @@
+/* Force CSS grid to contain figures according to their column specs */
+.page-columns .column-body,
+.page-columns .column-body-outset,
+.page-columns .column-body-inset,
+.page-columns .column-page,
+.page-columns .column-page-inset,
+.page-columns .column-page-outset,
+.page-columns .column-screen,
+.page-columns .column-screen-inset {
+    width: 100%;
+    height: auto;
+}
+
+/* Mobile-first base variables */
+:root {
+    --grid-margin: clamp(1rem, 3vw, 1.5em);
+    --grid-edge-col: minmax(0, 3fr);
+    --grid-page-margin: clamp(1rem, 2vw, 450px);
+    --grid-body-outset: clamp(1rem, 3vw, 35px);
+    --grid-body-padding: clamp(1rem, 2vw, 1.5em);
+    --grid-body-content: minmax(min(100vw - 2rem, 500px), 850px);
+    --grid-sidebar-width: clamp(0px, 15vw, 145px);
+    --grid-mobile-outer-left-edge: 0.5rem;
+    --grid-mobile-inner-left-edge: 1rem;
+    --grid-mobile-inner-right-edge: 0.5rem;
+    --grid-mobile-outer-right-edge: 0.5rem;
+}
+
+/* Base mobile layout */
+body .page-columns {
+    display: grid;
+    gap: 0;
+    grid-template-columns: 
+        [screen-start] var(--grid-margin)
+        [screen-start-inset] var(--grid-edge-col)
+        [page-start page-start-inset] var(--grid-page-margin)
+        [body-start-outset] var(--grid-body-outset)
+        [body-start] var(--grid-body-padding)
+        [body-content-start] var(--grid-body-content)
+        [body-content-end] var(--grid-body-padding)
+        [body-end] var(--grid-body-outset)
+        [body-end-outset] var(--grid-sidebar-width)
+        [page-end-inset] var(--grid-page-margin)
+        [page-end] var(--grid-edge-col)
+        [screen-end-inset] var(--grid-margin)
+        [screen-end];
+}
+
+/* Simplified mobile layout for small screens */
+@media (max-width: 640px) {
+    body .page-columns {
+        grid-template-columns: 
+            [screen-start screen-start-inset] 0rem
+            [page-start-inset page-start body-start-outset] var(--grid-mobile-outer-left-edge)
+            [body-start body-content-start] var(--grid-mobile-inner-left-edge)
+            [content] 1fr
+            [body-content-end body-end] var(--grid-mobile-inner-right-edge)
+            [body-end-outset page-end-inset page-end] var(--grid-mobile-outer-right-edge)
+            [screen-end-inset screen-end] 0rem
+    }
+}
+
+/* Prevents logo cutoff on very small screens */
+@media (max-width: 335px) {
+    img.navbar-logo {
+        visibility: hidden;
+    }
+}
+

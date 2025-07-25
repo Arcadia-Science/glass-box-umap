@@ -1,0 +1,12 @@
+{
+  "hash": "00c6585da7e60a5dc108effdc21f1078",
+  "result": {
+    "engine": "jupyter",
+    "markdown": "---\ntitle: \"{{< var pub.title >}} --\"\ndate: 'January 1, 2025'\nabstract-title: \"Summary\"\n---\n\n## Abstract\n\nDespite the header being `## Abstract`, this section will render as a highlighted section titled *Summary*.\n\n----\n\n:::{.callout-note title=\"AI usage disclosure\" collapse=\"true\"}\nThis is a placeholder for the AI usage disclosure. Once all authors sign the AI code form on AirTable, SlackBot will message you an AI disclosure that you should place here.\n:::\n\n## Purpose\n\nOnce edited by you, this file will become your publication. Alternatively, if you already have a notebook written that you're trying to transform into a pub, replace this file with your own, but be sure to add the YAML front matter (the first cell) to your notebook.\n\n## Learn more\n\nRefer to [Demo](/examples/demo.html) to learn about possible syntax.\n\n\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [],
+    "includes": {}
+  }
+}
