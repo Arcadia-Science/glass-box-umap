@@ -1,0 +1,177 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "This is the title for the notebook pub template –",
+    "section": "",
+    "text": "AI usage disclosure\n\n\n\n\n\nThis is a placeholder for the AI usage disclosure. Once all authors sign the AI code form on AirTable, SlackBot will message you an AI disclosure that you should place here."
+  },
+  {
+    "objectID": "index.html#introduction",
+    "href": "index.html#introduction",
+    "title": "This is the title for the notebook pub template –",
+    "section": "Introduction",
+    "text": "Introduction\nOnce edited by you, this file will become your publication. Alternatively, if you already have a notebook written that you’re trying to transform into a pub, replace this file with your own, but be sure to add the YAML front matter (the first cell) to your notebook."
+  },
+  {
+    "objectID": "index.html#learn-more",
+    "href": "index.html#learn-more",
+    "title": "This is the title for the notebook pub template –",
+    "section": "Learn More",
+    "text": "Learn More\nRefer to Demo to learn about possible syntax."
+  },
+  {
+    "objectID": "pages/SETUP.html",
+    "href": "pages/SETUP.html",
+    "title": "Setup",
+    "section": "",
+    "text": "This document details how to create a local copy of this pub’s codebase, setup your compute environment, and reproduce the pub itself. This will enable you to experiment with the analysis in the pub and, optionally, contribute revisions to it.\n\n\nThe codebase is hosted on GitHub and can be found here.\nTo obtain a local copy of this repo, you can either clone it directly or fork it to your own GitHub account, then clone your fork. If you aren’t sure what’s best, our suggestion is to clone directly unless you both (1) want to propose a revision for the publication and (2) are not an employee of Arcadia Science.\nTo clone:\ngit clone https://github.com/Arcadia-Science/notebook-pub-template.git\n\n\n\n\n\n\n\n\n\nImportant\n\n\n\nThe publication is rendered with Quarto. If you don’t have it installed (check with quarto --version), you can install it here.\n\n\nThis repository uses conda to manage the computational and build environment. If you don’t have it installed (check with conda --version), you can find operating system-specific instructions for installing miniconda here. After installing, run the following commands to create and activate the environment.\nconda env create -n notebook-pub-template --file env.yml\nconda activate notebook-pub-template\nNow, install any internal packages in the repository:\npip install -e .\nAnd finally, if you plan to submit a pull request, install the pre-commit hooks:\npre-commit install"
+  },
+  {
+    "objectID": "pages/SETUP.html#obtain-local-copy",
+    "href": "pages/SETUP.html#obtain-local-copy",
+    "title": "Setup",
+    "section": "",
+    "text": "The codebase is hosted on GitHub and can be found here.\nTo obtain a local copy of this repo, you can either clone it directly or fork it to your own GitHub account, then clone your fork. If you aren’t sure what’s best, our suggestion is to clone directly unless you both (1) want to propose a revision for the publication and (2) are not an employee of Arcadia Science.\nTo clone:\ngit clone https://github.com/Arcadia-Science/notebook-pub-template.git"
+  },
+  {
+    "objectID": "pages/SETUP.html#installation",
+    "href": "pages/SETUP.html#installation",
+    "title": "Setup",
+    "section": "",
+    "text": "Important\n\n\n\nThe publication is rendered with Quarto. If you don’t have it installed (check with quarto --version), you can install it here.\n\n\nThis repository uses conda to manage the computational and build environment. If you don’t have it installed (check with conda --version), you can find operating system-specific instructions for installing miniconda here. After installing, run the following commands to create and activate the environment.\nconda env create -n notebook-pub-template --file env.yml\nconda activate notebook-pub-template\nNow, install any internal packages in the repository:\npip install -e .\nAnd finally, if you plan to submit a pull request, install the pre-commit hooks:\npre-commit install"
+  },
+  {
+    "objectID": "pages/SETUP.html#reproduce",
+    "href": "pages/SETUP.html#reproduce",
+    "title": "Setup",
+    "section": "Reproduce",
+    "text": "Reproduce\nThe best way to ensure you’ve correctly set up your code and compute environment is to reproduce this work. Fortunately, the analysis, and therefore the publication itself, can be reproduced with the following command:\nmake execute\n(Make sure you’re in the conda environment you created above)\nThis will execute and render the notebook index.ipynb, then build the publication site. To preview the site, use\nmake preview\nThis will open a local instance of the publication in your default browser."
+  },
+  {
+    "objectID": "pages/SETUP.html#modify",
+    "href": "pages/SETUP.html#modify",
+    "title": "Setup",
+    "section": "Modify",
+    "text": "Modify\nTo modify or extend any analyses, open up index.ipynb with Jupyter or your favorite IDE. To preview changes as you modify the notebook, run make preview again and leave the command running. As you make changes to the notebook, the preview site will automatically reload."
+  },
+  {
+    "objectID": "pages/SETUP.html#publish",
+    "href": "pages/SETUP.html#publish",
+    "title": "Setup",
+    "section": "Publish",
+    "text": "Publish\nIf you’ve improved the publication, consider contributing so we can update the hosted publication with your edits (big or small!). To get started, see our contributing guide."
+  },
+  {
+    "objectID": "pages/CONTRIBUTING.html",
+    "href": "pages/CONTRIBUTING.html",
+    "title": "Contributing",
+    "section": "",
+    "text": "We welcome improvements to this publication! If you’d like to improve or extend the publication, please submit a pull request. We’ll collaborate with you to incorporate your revisions. Alternatively, you’re welcome to leave a comment on the pub using Giscus.\n\nDid you spot any mistakes?\nDo you think an analysis is missing?\nDo you think the wording could be improved?\nDid you spot a typo or grammatical mistake?\n\nThese are just a few examples of revisions that we’d be happy to receive from you.\n\n\n\n\n\n\nNote\n\n\n\nTo learn about how we credit external collaborators, click here.\n\n\n\n\nIf you haven’t already, follow our setup guide to create a local copy of the code and compute environment.\n\n\n\nEdit index.ipynb to your liking.\n\n\n\nTo publish your revisions, we need you to open a pull request. And in order for us to merge your pull request, here’s what we’ll need from you in addition to your content changes.\nBegin with a clean branch (no uncommitted changes). Then run the notebook from the command line:\nmake execute\nThis command will update index.ipynb with the latest execution results.\nThen run make preview to see how the publication is rendering. Verify that your changes appear how you intend them to appear. If not, make the necessary changes and re-run make execute.\nOnce everything looks good, commit index.ipynb and all files in the _freeze/ directory.\nFinally, submit a pull request and we’ll work with you to merge your changes.\nOnce we approve and merge your pull request, we’ll publish a new version of the pub. We’ll notify you when this new version goes live at the hosted URL. Thanks for contributing!"
+  },
+  {
+    "objectID": "pages/CONTRIBUTING.html#getting-started",
+    "href": "pages/CONTRIBUTING.html#getting-started",
+    "title": "Contributing",
+    "section": "",
+    "text": "If you haven’t already, follow our setup guide to create a local copy of the code and compute environment."
+  },
+  {
+    "objectID": "pages/CONTRIBUTING.html#make-your-changes",
+    "href": "pages/CONTRIBUTING.html#make-your-changes",
+    "title": "Contributing",
+    "section": "",
+    "text": "Edit index.ipynb to your liking."
+  },
+  {
+    "objectID": "pages/CONTRIBUTING.html#steps-before-publishing",
+    "href": "pages/CONTRIBUTING.html#steps-before-publishing",
+    "title": "Contributing",
+    "section": "",
+    "text": "To publish your revisions, we need you to open a pull request. And in order for us to merge your pull request, here’s what we’ll need from you in addition to your content changes.\nBegin with a clean branch (no uncommitted changes). Then run the notebook from the command line:\nmake execute\nThis command will update index.ipynb with the latest execution results.\nThen run make preview to see how the publication is rendering. Verify that your changes appear how you intend them to appear. If not, make the necessary changes and re-run make execute.\nOnce everything looks good, commit index.ipynb and all files in the _freeze/ directory.\nFinally, submit a pull request and we’ll work with you to merge your changes.\nOnce we approve and merge your pull request, we’ll publish a new version of the pub. We’ll notify you when this new version goes live at the hosted URL. Thanks for contributing!"
+  },
+  {
+    "objectID": "pages/FAQ.html",
+    "href": "pages/FAQ.html",
+    "title": "FAQ",
+    "section": "",
+    "text": "This notebook publication uses a format we’re experimenting with that treats a scientist’s working computational analysis as the publication itself, dissolving the separation that exists between code and publication. Our hypothesis is that this lets us publish faster, promote early-stage work, and increase reproducibility. For details, see our commentary on notebook publications.\n\n\n\nThere is a comment section at the bottom of the pub, where you can read and contribute to any community discussion. Note that commenting requires a GitHub account and authorizing Giscus, a GitHub Discussions widget.\n\n\n\nAll the code for this publication and its analysis are hosted on GitHub at this URL. Any associated data is either hosted or linked to from this repository.\n\n\n\nReproducing this publication is as easy as issuing a few commands from the command line. Follow this setup guide to get started.\n\n\n\nWe welcome improvements to this publication! Please see our guide for contributing."
+  },
+  {
+    "objectID": "pages/FAQ.html#what-is-this",
+    "href": "pages/FAQ.html#what-is-this",
+    "title": "FAQ",
+    "section": "",
+    "text": "This notebook publication uses a format we’re experimenting with that treats a scientist’s working computational analysis as the publication itself, dissolving the separation that exists between code and publication. Our hypothesis is that this lets us publish faster, promote early-stage work, and increase reproducibility. For details, see our commentary on notebook publications."
+  },
+  {
+    "objectID": "pages/FAQ.html#how-can-i-comment",
+    "href": "pages/FAQ.html#how-can-i-comment",
+    "title": "FAQ",
+    "section": "",
+    "text": "There is a comment section at the bottom of the pub, where you can read and contribute to any community discussion. Note that commenting requires a GitHub account and authorizing Giscus, a GitHub Discussions widget."
+  },
+  {
+    "objectID": "pages/FAQ.html#where-is-the-datacode",
+    "href": "pages/FAQ.html#where-is-the-datacode",
+    "title": "FAQ",
+    "section": "",
+    "text": "All the code for this publication and its analysis are hosted on GitHub at this URL. Any associated data is either hosted or linked to from this repository."
+  },
+  {
+    "objectID": "pages/FAQ.html#how-can-i-reproduce-this",
+    "href": "pages/FAQ.html#how-can-i-reproduce-this",
+    "title": "FAQ",
+    "section": "",
+    "text": "Reproducing this publication is as easy as issuing a few commands from the command line. Follow this setup guide to get started."
+  },
+  {
+    "objectID": "pages/FAQ.html#how-can-i-contribute",
+    "href": "pages/FAQ.html#how-can-i-contribute",
+    "title": "FAQ",
+    "section": "",
+    "text": "We welcome improvements to this publication! Please see our guide for contributing."
+  },
+  {
+    "objectID": "examples/demo.html",
+    "href": "examples/demo.html",
+    "title": "A brief syntax demo",
+    "section": "",
+    "text": "This notebook demos some key features. For a more extensive resource, see Quarto’s excellent documentation."
+  },
+  {
+    "objectID": "examples/demo.html#introduction",
+    "href": "examples/demo.html#introduction",
+    "title": "A brief syntax demo",
+    "section": "",
+    "text": "This notebook demos some key features. For a more extensive resource, see Quarto’s excellent documentation."
+  },
+  {
+    "objectID": "examples/demo.html#text",
+    "href": "examples/demo.html#text",
+    "title": "A brief syntax demo",
+    "section": "Text",
+    "text": "Text\n\nHeaders\nh1 headers (# &lt;HEADER-TEXT&gt;) are reserved for the title of the pub, so use h2 (## &lt;HEADER-TEXT&gt;) for section titles and h3, h4, etc. for sub-sections.\n\n\nCallouts\nTo draw more attention to a piece of text, use callouts:\n\n\n\n\n\n\nImportant\n\n\n\nThe most effective way to see the rendered pub is to setup a live preview that re-renders the pub whenever you save this file. Do that with make preview.\n\n\n\n\nCitations & Footnotes\nTo cite something, add its bibtex entry to ref.bib and then cite it (Avasthi et al., 2024). Here’s another (Lin et al., 2023). For in-depth description of available citation syntax, visit Quarto’s documentation.\nAlso, don’t forget about footnotes1.\n1 To add additional information, like what you’re reading right now, use footnotes.\nTo create a multi-paragraph footnote, indent subsequent paragraphs. Footnotes can also cite things (Avasthi et al., 2024)."
+  },
+  {
+    "objectID": "examples/demo.html#math",
+    "href": "examples/demo.html#math",
+    "title": "A brief syntax demo",
+    "section": "Math",
+    "text": "Math\nRender math2 using standard \\(\\LaTeX\\) syntax. Inline with $...$ and display with $$...$$.\n2 Quarto uses MathJax for math rendering.\\[\ne^{ \\pm i\\theta } = \\cos \\theta \\pm i\\sin \\theta\n\\tag{1}\\]\nEuler’s equation (Equation 1) is pretty."
+  },
+  {
+    "objectID": "examples/demo.html#code",
+    "href": "examples/demo.html#code",
+    "title": "A brief syntax demo",
+    "section": "Code",
+    "text": "Code\nWrite code as you would in any Jupyter notebook.\n\ndef alertness(hours_sleep, coffees):\n    base_alertness = min(hours_sleep / 8 * 100, 100)\n    coffee_boost = min(coffees * 30, 60)\n    total = min(base_alertness + coffee_boost, 100)\n    return round(total, 1)\n\n\nprint(\"Alertness stats:\")\nprint(f\"4hrs sleep + 1 coffee: {alertness(4, 1)}%\")\nprint(f\"8hrs sleep + 0 coffee: {alertness(8, 0)}%\")\nprint(f\"2hrs sleep + 3 coffee: {alertness(2, 3)}%\")\n\nAlertness stats:\n4hrs sleep + 1 coffee: 70.0%\n8hrs sleep + 0 coffee: 100.0%\n2hrs sleep + 3 coffee: 85.0%\n\n\n\nVisibility & Placement\nSpecify per-block instructions with comments at the top of the code block.\nFold the code block (#| code-fold: true):\n\n\nSource code for this table\nimport pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [True, True, False], \"c\": [\"marco\", \"polo\", \"marco\"]})\ndf\n\n\n\n\n\n  \n    \n      \n      a\n      b\n      c\n    \n  \n  \n    \n      0\n      1\n      True\n      marco\n    \n    \n      1\n      2\n      True\n      polo\n    \n    \n      2\n      3\n      False\n      marco\n    \n  \n\n\n\n\nSuppress code block visibility while retaining the cell output (#| echo: false):\n\n\n\n\n\n\nNote\n\n\n\nThe code block below runs and the output is visible, but the code itself is absent from the rendering.\n\n\n\n\nThe code that generated this print statement is hidden.\n\n\nRender the output in different places, like in the right margin (#| column: margin):\n\ndf\n\n\n\n\n\n  \n    \n      \n      a\n      b\n      c\n    \n  \n  \n    \n      0\n      1\n      True\n      marco\n    \n    \n      1\n      2\n      True\n      polo\n    \n    \n      2\n      3\n      False\n      marco\n    \n  \n\n\n\nIn general, content placement in highly customizable. For more options, see this Quarto resource.\n\n\nAnnotation\nYou can annotate lines of code. Lines will reveal their annotation when the user hovers over the circled number on the right hand side of the code block.\n\ndef alertness(hours_sleep, coffees):\n1    base_alertness = min(hours_sleep / 8 * 100, 100)\n2    coffee_boost = min(coffees * 20, 60)\n3    total = min(base_alertness + coffee_boost, 100)\n    return round(total, 1)\n\n\n1\n\nScale to percentage, cap at 100\n\n2\n\nEach coffee adds 20%, max 60% boost\n\n3\n\nCap total at 100%\n\n\n\n\nFor details, see Quarto’s code annotation documentation.\n\n\nCodebase\nYou can choose to either fold (#| code-fold: true) or supress (#| echo: false) code snippets that distract from the narrative. However, if you’ve written an extensive amount of code, it may be more practical to define it in a package that this notebook imports from, rather than defining it in the notebook itself. This project is already set up to import from packages found in the src/ directory, so place any such code there. As an example, this code block imports code from a placeholder analysis package found at src/analysis.\n\n1from analysis import polo_if_marco\n\npolo_if_marco(\"marco\")\n\n\n1\n\nSource code\n\n\n\n\n'polo'\n\n\nIf you want to package any of your code for the purposes of simplifying this notebook, replace the contents of src/analysis/ with your own package."
+  },
+  {
+    "objectID": "examples/demo.html#figures-tables",
+    "href": "examples/demo.html#figures-tables",
+    "title": "A brief syntax demo",
+    "section": "Figures & Tables",
+    "text": "Figures & Tables\n\nCaptions & Labeling\nIn general, if a cell output is a figure or table, you should caption and label it.\n\ndf\n\n\n\nTable 1: This is a small table.\n\n\n\n\n\n\n  \n    \n      \n      a\n      b\n      c\n    \n  \n  \n    \n      0\n      1\n      True\n      marco\n    \n    \n      1\n      2\n      True\n      polo\n    \n    \n      2\n      3\n      False\n      marco\n    \n  \n\n\n\n\n\n\n\nThis is how you reference Table 1.\n\n\n\n\n\n\nNote\n\n\n\nIf the cell output is a table, the label ID should be prefixed with tbl-. If it’s a figure, prefix with fig-.\nFor example, a table could be captioned and labeled with:\n#| label: tbl-small-table\n#| tbl-cap: \"This is a small table.\"\nAnd a figure could be captioned and labeled with:\n#| label: fig-some-figure\n#| fig-cap: \"This is some figure.\"\n\n\nIf your code block produces several plots, you can subcaption each:\nimport matplotlib.pyplot as plt\nimport numpy as np\n\n\ndef random_plot():\n    plt.figure()\n    plt.scatter(np.random.rand(10), np.random.rand(10), marker=\"o\")\n    plt.tight_layout()\n    plt.show()\n    plt.close()\n\n\nfor _ in range(4):\n    random_plot()\n\n\n\n\n\n\n\n\n\n\n\n(a) This is the first plot.\n\n\n\n\n\n\n\n\n\n\n\n(b) This is the second.\n\n\n\n\n\n\n\n\n\n\n\n\n\n(c) The third.\n\n\n\n\n\n\n\n\n\n\n\n(d) And finally, here’s the fourth.\n\n\n\n\n\n\n\nFigure 1: A panel of scatter plots.\n\n\n\nFigure 1 is just one example layout for multi-panel figures. For more customization options, see Quarto’s documentation on figures.\n\n\nInteractivity\nInteractive widgets can be used. For example, Plotly:\n\nimport plotly.express as px\n\ndf = px.data.gapminder()\npx.scatter(\n    df,\n    x=\"gdpPercap\",\n    y=\"lifeExp\",\n    animation_frame=\"year\",\n    animation_group=\"country\",\n    size=\"pop\",\n    color=\"continent\",\n    hover_name=\"country\",\n    log_x=True,\n    size_max=55,\n    range_x=[100, 100000],\n    range_y=[25, 90],\n)\n\n                                                \n\n\n\n\n\n\n\n\nNote\n\n\n\nIt’s possible that your local preview fails to render the above widget, and you instead see something to the effect of:\nUnable to display output for mime type(s): application/vnd.plotly.v1+json\nIf you want to see how your widget renders within the pub, run make execute and then start a new preview (make preview)."
+  }
+]
