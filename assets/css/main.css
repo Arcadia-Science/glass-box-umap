@@ -1,0 +1,32 @@
+/* Import other CSS files */
+@import url('./navbar.css');
+@import url('./mini-title.css');
+@import url('./frontmatter.css');
+@import url('./sidebar.css');
+@import url('./article.css');
+@import url('./footer.css');
+@import url('./colors.css');
+@import url('./grid.css');
+
+:root {
+    --nb-header-font-family: "Georgia";
+    --nb-header-font-weight: 100;
+    --nb-h1-font-size: 2.5rem;
+    --nb-h2-font-size: 2rem;
+    --nb-toc-title-font-size: 1.2rem; 
+    --nb-main-text-font-family: "Helvetica Neue";
+    --nb-banner-title-font-family: 'Helvetica Neue'; 
+    --bs-code-color: var(--arcadia-dusk);
+    --bs-code-bg-color: #f6f6f6;
+    --bs-code-border-color: #e6e6e6;
+    --bs-code-left-border-color: #003B4F99;
+    --bs-link-color-rgb: var(--arcadia-dusk);
+
+    --callout-note-rgb: var(--arcadia-pewter);
+    --callout-warning-rgb: var(--arcadia-mustard);
+    --callout-important-rgb: var(--arcadia-dragon);
+    --callout-tip-rgb: var(--arcadia-teal);
+    --callout-caution-rgb: var(--arcadia-tumbleweed);
+
+    --arcadia-logo-size: 2rem;
+}
