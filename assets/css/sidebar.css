@@ -1,0 +1,46 @@
+#quarto-margin-sidebar {
+  transition: top 0.2s ease-out !important;
+}
+
+/* Adjust body padding when both navbar and mini title are visible*/
+body.mini-title-visible #quarto-margin-sidebar{
+  top: var(--mini-title-height) !important;
+}
+
+body.mini-title-visible.navbar-visible #quarto-margin-sidebar {
+  top: calc(var(--mini-title-height) + var(--navbar-height)) !important;
+}
+
+#toc-title {
+  font-family: var(--nb-header-font-family);
+  font-size: var(--nb-toc-title-font-size);
+  font-weight: 150;
+}
+
+.sidebar nav[role=doc-toc] ul>li>a.active, .sidebar nav[role=doc-toc] ul>li>ul>li>a.active {
+    border-left: 2px solid var(--arcadia-dusk);
+    color: var(--arcadia-dusk) !important;
+    font-weight: 500;
+}
+
+.sidebar nav[role=doc-toc] ul>li>a:hover,
+.sidebar nav[role=doc-toc] ul>li>ul>li>a:hover {
+    border-left: 2px solid var(--arcadia-forest);
+    color: var(--arcadia-forest) !important;
+    opacity: 0.8;  /* Makes it slightly faded */
+    transition: all 0.2s ease;  /* Smooth transition */
+}
+
+/* match striped table off-color with code background color */
+.table {
+    --bs-table-striped-bg: var(--bs-code-bg-color);
+}
+
+/* Add small vspace between paragraphs of a multi-paragraph footnote */
+.column-margin.column-container [id^="fn"] > p + p {
+  margin-top: 0.5em !important;
+}
+/* Space after last paragraph */
+.column-margin.column-container [id^="fn"] > p:last-child {
+  margin-bottom: 1.5em !important;
+}

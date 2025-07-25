@@ -1,0 +1,12 @@
+{
+  "hash": "bec76cfbb2f2533c657e97b53497ca67",
+  "result": {
+    "engine": "jupyter",
+    "markdown": "---\ntitle: \"{{< var pub.title >}} --\"\ndate: 'January 1, 2025'\nabstract-title: \"Summary\"\n---\n\n## Abstract\n\nDespite the header being `## Abstract`, this section will render as a highlighted section titled *Summary*.\n\n## Introduction\n\nOnce edited by you, this file will become your publication. Alternatively, if you already have a notebook written that you're trying to transform into a pub, replace this file with your own, but be sure to add the YAML front matter (the first cell) to your notebook.\n\n## Learn More\n\nRefer to [Demo](demo.ipynb) to learn about possible syntax.\n\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [],
+    "includes": {}
+  }
+}

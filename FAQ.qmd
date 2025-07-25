@@ -1,0 +1,25 @@
+---
+comments: false
+---
+
+# FAQ
+
+## What is this?
+
+This *notebook publication* uses a format we're experimenting with that treats a scientist's working computational analysis as the publication itself, dissolving the separation that exists between code and publication. Our hypothesis is that this lets us publish faster, promote early-stage work, and increase reproducibility. For details, see [our commentary](https://doi.org/10.57844/arcadia-ca21-23bb) on notebook publications.
+
+## How can I comment?
+
+There is a comment section at the bottom of the [pub](index.ipynb), where you can read and contribute to any community discussion. Note that commenting requires a GitHub account and authorizing Giscus, a GitHub Discussions widget.
+
+## Where is the data/code?
+
+All the code and data for this publication and its analysis are hosted on GitHub at [this URL](https://github.com/{{< var pub.org >}}/{{< var pub.repo >}}).
+
+## How can I reproduce this?
+
+Reproducing this publication is easy. Follow this [setup guide](SETUP.qmd) to get started.
+
+## How can I contribute?
+
+We welcome improvements to this publication! Please see our guide for [contributing](CONTRIBUTING.qmd).

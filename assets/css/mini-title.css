@@ -1,0 +1,99 @@
+.mini-title {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--arcadia-pewter);
+  color: white;
+  z-index: 1020;
+  height: var(--mini-title-height);
+  transform: translateY(-100%);
+  transition: transform 0.3s ease-out, top 0.2s ease-out;
+}
+
+/* When navbar is visible, position mini title below it */
+.navbar-visible .mini-title {
+  top: var(--navbar-height);
+}
+
+.mini-title.visible {
+  transform: translateY(0);
+}
+
+.mini-title-content {
+  grid-column: page-start/page-end-inset;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center the flex container */
+  opacity: 0.0;
+  width: 100%;
+  height: 100%;
+  font-family: var(--nb-banner-title-font-family) !important;
+  font-weight: 250 !important; 
+  font-size: 1.2rem;
+}
+
+.mini-title.visible .mini-title-content {
+  opacity: 1.0;
+  transition: opacity 1s ease-in-out;
+}
+
+.mini-title-logo-wrapper {
+  flex: 0 0 auto;
+  margin-right: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  height: var(--mini-title-height);
+}
+
+.mini-title-logo-wrapper a {
+  display: flex;
+  height: 100%;
+  align-items: center;
+}
+
+.mini-title-logo-wrapper a:hover {
+  opacity: 0.8; /* subtle hover effect */
+  transition: opacity 0.2s ease;
+}
+
+.mini-title-logo-wrapper img {
+  max-height: 100%;
+  width: auto;
+  padding: 0.25rem;
+  object-fit: contain;
+}
+
+.mini-title-content p {
+  flex: 0 1 auto;
+  text-align: center;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: fit-content;
+}
+
+#mini-version-control {
+  flex: 0 0 auto;
+  margin-left: 1rem;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  height: var(--mini-title-height);
+}
+
+#mini-version-control .nav-link {
+  color: white;
+  padding: 0;
+}
+
+#mini-version-control .nav-link:hover {
+  opacity: 0.8;
+}
+
+#mini-version-control iconify-icon {
+  font-size: 0.9em;
+}

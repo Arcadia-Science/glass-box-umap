@@ -1,0 +1,31 @@
+# For roles, choose from:
+#
+# - conceptualization
+# - formal analysis
+# - investigation
+# - methodology
+# - software
+# - supervision
+# - writing
+# - critical feedback
+# - data curation
+# - editing
+# - project administration
+# - resources
+# - validation
+# - visualization
+authors:
+  - name: First M. Last
+    orcid: 0000-0002-6473-0921
+    roles:
+      - conceptualization
+      - formal analysis
+      - investigation
+      - methodology
+      - software
+  - name: Contributor Name
+    orcid: 0000-0001-2345-6789
+    roles:
+      - data curation
+      - validation
+  - name: Another Author

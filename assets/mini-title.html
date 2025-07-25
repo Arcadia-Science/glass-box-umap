@@ -1,0 +1,125 @@
+<template id="mini-title-template">
+  <div class="mini-title page-columns page-full">
+    <div class="mini-title-content">
+      <div class="mini-title-logo-wrapper">
+        <a href="https://research.arcadiascience.com/">
+          <img src="./assets/logo_white.png" alt="Logo">
+        </a>
+      </div>
+      <p></p>
+      <div id="mini-version-control"></div>
+    </div>
+  </div>
+</template>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Get required elements
+    const template = document.getElementById('mini-title-template');
+    const titleBanner = document.querySelector('.quarto-title-banner');
+    const abstract = document.querySelector('.abstract');
+    const navbar = document.querySelector('#quarto-header');
+    let prevRatio = {appear: 1, disappear: 1};
+
+    if (template && titleBanner && abstract && navbar) {
+      // Add the mini title to the document body
+      const miniTitleContent = document.importNode(template.content, true);
+      document.body.appendChild(miniTitleContent);
+
+      // Get and set the title text from h1.title
+      const titleElement = document.querySelector('h1.title');
+      const miniTitleP = document.querySelector('.mini-title-content p');
+      if (titleElement && miniTitleP) {
+        const titleText = titleElement.childNodes[0].textContent.trim();
+        miniTitleP.textContent = titleText;
+
+        // Only clone and add version control if title is not the demo title
+        if (titleText !== '{{< meta demo-title >}}') {
+          // Clone version control dropdown if it exists
+          const originalDropdown = document.querySelector('.navbar-nav .nav-item.dropdown:has(iconify-icon[icon="qlementine-icons:version-control-16"])');
+          if (originalDropdown) {
+            const clonedDropdown = originalDropdown.cloneNode(true);
+            // Remove menu-text class but keep contents
+            const menuTextSpan = clonedDropdown.querySelector('.menu-text');
+            if (menuTextSpan) {
+              menuTextSpan.classList.remove('menu-text');
+            }
+            // Add to mini version control container
+            const versionContainer = document.querySelector('#mini-version-control');
+            versionContainer.appendChild(clonedDropdown);
+            // Initialize Bootstrap dropdown
+            if (typeof bootstrap !== 'undefined') {
+              const dropdownElement = clonedDropdown.querySelector('.dropdown-toggle');
+              if (dropdownElement) {
+                new bootstrap.Dropdown(dropdownElement);
+              }
+            }
+          }
+        }
+      }
+
+      const stickyMiniTitle = document.querySelector('.mini-title');
+
+      // Navbar state management
+      function updateNavbarState() {
+        const isNavbarPinned = navbar.classList.contains('headroom--pinned');
+        const isNavbarTop = !navbar.classList.contains('headroom--not-top');
+
+        if (isNavbarPinned || isNavbarTop) {
+          document.body.classList.add('navbar-visible');
+        } else {
+          document.body.classList.remove('navbar-visible');
+        }
+      }
+
+      // Observe navbar class changes
+      const navbarObserver = new MutationObserver(updateNavbarState);
+      navbarObserver.observe(navbar, {
+        attributes: true,
+        attributeFilter: ['class']
+      });
+      updateNavbarState(); // Initial state
+
+      // Mini title visibility functions
+      function toggleMiniTitle(show) {
+        document.body.classList.toggle('mini-title-visible', show);
+        stickyMiniTitle.classList.toggle('visible', show);
+      }
+
+      // Create intersection observer with configurable options
+      function createIntersectionObserver(type, rootMargin) {
+        return new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            const currentRatio = entry.intersectionRatio;
+
+            if (prevRatio[type] === 0 && currentRatio > 0) {
+              toggleMiniTitle(false);
+            } else if (prevRatio[type] > 0 && currentRatio === 0) {
+              toggleMiniTitle(true);
+            }
+
+            prevRatio[type] = currentRatio;
+          });
+        }, {
+          threshold: [0, 0.1],
+          rootMargin
+        });
+      }
+
+      // Create observers with different root margins
+      const appearObserver = createIntersectionObserver('appear', '-48px');
+      const disappearObserver = createIntersectionObserver('disappear', '48px');
+
+      // Start observing title banner with both observers
+      appearObserver.observe(titleBanner);
+      disappearObserver.observe(titleBanner);
+
+      // Cleanup
+      window.addEventListener('beforeunload', () => {
+        navbarObserver.disconnect();
+        appearObserver.disconnect();
+        disappearObserver.disconnect();
+      });
+    }
+  });
+</script>

@@ -1,0 +1,80 @@
+---
+comments: false
+---
+
+# Setup
+
+This document details how to create a local copy of this pub's codebase and setup your compute environment. This is a prerequisite for reproducing this publication, experimenting with the analysis, or contributing a revision.
+
+## Obtain local copy
+
+The codebase is hosted on GitHub and can be found [here](https://github.com/{{< var pub.org >}}/{{< var pub.repo >}}).
+
+To obtain a local copy, you have the option of either *cloning* or *forking* the repository. If you aren't sure what's best, our suggestion is to clone unless you both (1) want to propose a revision for the publication and (2) are not an employee of Arcadia Science.
+
+To clone:
+
+```bash
+git clone https://github.com/{{< var pub.org >}}/{{< var pub.repo >}}.git
+```
+
+## Installation
+
+::: {.callout-important}
+The publication is rendered with [Quarto](https://quarto.org/). If you don't have it installed (check with `quarto --version`), you can install it [here](https://quarto.org/docs/get-started/).
+:::
+
+This repository uses conda to manage the computational and build environment. If you don't have it installed (check with `conda --version`), you can find operating system-specific instructions for installing miniconda [here](https://docs.conda.io/projects/miniconda/en/latest/). After installing, run the following commands to create and activate the environment.
+
+```bash
+conda env create -n {{< var pub.repo >}} --file env.yml
+conda activate {{< var pub.repo >}}
+```
+
+Now, install any internal packages in the repository:
+
+```bash
+pip install -e .
+```
+
+And finally, if you plan to submit a pull request, install the [pre-commit](https://pre-commit.com/) hooks:
+
+```bash
+pre-commit install
+```
+
+# What's next?
+
+With a copy of the code and compute environment set up on your local machine, you can now reproduce or modify a local copy of the publication however you see fit. Read on to get started.
+
+## Reproduce
+
+The best way to ensure you've correctly set up your code and compute environment is to reproduce this work. Fortunately, the analysis, and therefore the publication itself, can be reproduced with the following command:
+
+```bash
+make execute
+```
+
+This will execute and render the notebook `index.ipynb`, then build the publication site HTML, generating the directory `_site/`. Open `_site/index.html` to view your local copy of the publication.
+
+## Modify
+
+To modify or extend any analyses, open up `index.ipynb` with Jupyter or your favorite IDE:
+
+```bash
+jupyter-lab index.ipynb
+```
+
+## Preview
+
+To create a live preview of your pub, run the following:
+
+```bash
+make preview
+```
+
+This will open a local copy of the publication in your default browser. The command watches for changes such that whenever `index.ipynb` is saved, the publication is re-rendered.
+
+## Publish
+
+If you've improved the publication, consider contributing so we can update the hosted publication with your edits (big or small!). To get started, see our [contributing guide](CONTRIBUTING.qmd).
