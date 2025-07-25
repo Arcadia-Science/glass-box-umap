@@ -15,7 +15,7 @@ All the learning resources for this template can be found in `developer-docs/`.
 
 **NOTE: When ready to publish, fill in the information below, then delete this line and everything above it.**
 
-# [PUB-TITLE]
+# Glass Box UMAP
 
 This code repository contains or points to all materials required for creating and hosting the publication entitled, *"[PUB-TITLE]"*.
 
