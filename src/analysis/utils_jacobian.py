@@ -68,7 +68,7 @@ def train_parametric_umap(network, train_dataset, config: dict):
         **config.get("pumap_kwargs", {})
     )
     # The fit method is assumed to exist on the PUMAP object
-    # encoder.fit(train_dataset)
+    encoder.fit(train_dataset)
     print(" Model training complete.")
     return encoder
 
@@ -221,28 +221,28 @@ def export_results(class_genesorted, filename: str):
 
 # --- Main Execution Block ---
 
-def main():
-    """
-    Main function to run the end-to-end workflow.
-    """
-    # --- Configuration ---
-    config = {
-        "seed": 24,
-        "pca_components": 50,
-        "network_class": "deepReLUNet", # or "bfbilinear"
-        "train_params": {
-            "lr": 8e-4,
-            "epochs": 96,
-            "batch_size": 1024,
-            "pumap_kwargs": {"non_parametric_embeddings": True}
-        },
-        "jacobian_batch_size": 40,
-        "plot_params": {
-            "n_features": 16,
-            "stat": "mean"
-        },
-        "output_filename": "bone_marrow_features.csv"
-    }
+# def main():
+#     """
+#     Main function to run the end-to-end workflow.
+#     """
+    # # --- Configuration ---
+    # config = {
+    #     "seed": 24,
+    #     "pca_components": 50,
+    #     "network_class": "deepReLUNet", # or "bfbilinear"
+    #     "train_params": {
+    #         "lr": 8e-4,
+    #         "epochs": 96,
+    #         "batch_size": 1024,
+    #         "pumap_kwargs": {"non_parametric_embeddings": True}
+    #     },
+    #     "jacobian_batch_size": 40,
+    #     "plot_params": {
+    #         "n_features": 16,
+    #         "stat": "mean"
+    #     },
+    #     "output_filename": "bone_marrow_features.csv"
+    # }
     
     # --- Workflow ---
 #     setup_environment(config["seed"])

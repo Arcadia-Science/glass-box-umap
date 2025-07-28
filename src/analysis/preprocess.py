@@ -34,15 +34,15 @@ def download_and_load_data(url, filename):
     # change to python
     # !wget ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE194nnn/GSE194122/suppl/GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz
     # ftp_url = "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE194nnn/GSE194122/suppl/GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz"
-    
-    subprocess.run(["wget", url])
+    import subprocess
+    # subprocess.run(["wget", url])
     # # Unzip the file
     # change to python
     # !gunzip GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz
     # h5ad_filename = "GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz"
 
     subprocess.run(["gunzip", filename])
-    import subprocess
+
     adata = ad.read_h5ad('GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad')
 
     # Use pooch to download and cache the file
@@ -52,7 +52,7 @@ def download_and_load_data(url, filename):
     #     known_hash=known_hash,
     #     processor=pooch.Decompress(), # Automatically decompress .gz
     # )
-    adata = ad.read_h5ad(file_path)
+    # adata = ad.read_h5ad(file_path)
     print("Data loaded successfully.")
     return adata
 
@@ -76,7 +76,7 @@ def initial_preprocessing(adata):
     adata.var["mt"] = adata.var_names.str.startswith("MT-")
     adata.var["ribo"] = adata.var_names.str.startswith(("RPS", "RPL"))
     adata.var["hb"] = adata.var_names.str.contains("^HB[^(P)]")
-    print("✅ Initial preprocessing complete.")
+    print("Initial preprocessing complete.")
     return adata
 
 
@@ -108,7 +108,7 @@ def run_quality_control(adata, perform_qc=True):
         multi_panel=True,
     )
     sc.pl.scatter(adata, "total_counts", "n_genes_by_counts", color="pct_counts_mt")
-    print("✅ Quality control complete.")
+    print("Quality control complete.")
     return adata
 
 
@@ -133,7 +133,7 @@ def filter_and_detect_doublets(adata, run_scrublet=False):
         print("🧬 Running Scrublet for doublet detection...")
         sc.pp.scrublet(adata, batch_key="sample")
     
-    print("✅ Filtering and doublet detection complete.")
+    print("Filtering and doublet detection complete.")
     return adata
 
 
@@ -157,7 +157,7 @@ def normalize_and_select_features(adata):
     # Find and plot highly variable genes
     sc.pp.highly_variable_genes(adata, n_top_genes=2000)
     sc.pl.highly_variable_genes(adata)
-    print("✅ Normalization and feature selection complete.")
+    print("Normalization and feature selection complete.")
     return adata
 
 
@@ -182,7 +182,7 @@ def run_dimensionality_reduction(adata):
         dimensions=[(0, 1), (2, 3)],
         ncols=2,
     )
-    print("✅ PCA complete.")
+    print("PCA complete.")
     return adata
 
 
@@ -200,7 +200,7 @@ def compute_embedding_and_clusters(adata):
     sc.pp.neighbors(adata)
     sc.tl.umap(adata)
     sc.tl.leiden(adata, flavor="igraph", n_iterations=2)
-    print("✅ Embedding and clustering complete.")
+    print("Embedding and clustering complete.")
     return adata
 
 
