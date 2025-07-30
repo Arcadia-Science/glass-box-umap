@@ -12,8 +12,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import scanpy as sc
 
-from utils import PUMAP, Datamodule, Model
-from networks import deepReLUNet, deepSiLUNet, deepBilinearNet
+from .utils_spectral import PUMAP, Datamodule, Model
+from .networks import deepReLUNet, deepSiLUNet, deepBilinearNet
 
 # --- Function Definitions ---
 
@@ -62,7 +62,7 @@ def train_parametric_umap(network, train_dataset, config: dict):
     encoder = PUMAP(
         network,
         lr=config.get("lr", 8e-4),
-        epochs=config.get("epochs", 96),
+        epochs=config.get("epochs", 24),
         batch_size=config.get("batch_size", 1024),
         random_state=config.get("seed", 24),
         **config.get("pumap_kwargs", {})
@@ -97,7 +97,7 @@ def generate_and_plot_embedding(encoder, adata: sc.AnnData, train_dataset: torch
 
     # Plot with Scanpy
     adata.obsm['X_parametric_umap'] = embedding
-    sc.pl.umap(adata, use_raw=False, basis='parametric_umap', alpha=0.85, color='cell_type')
+    sc.pl.umap(adata, use_raw=False, alpha=0.85, color='cell_type')
     
     return embedding
 
@@ -138,7 +138,7 @@ def compute_gene_space_jacobian(encoder, adata: sc.AnnData, train_dataset: torch
     for i in range(num_samples):
         jac_pca = jacobians_pca[i]
         # Project Jacobian from PCA space to gene space: J_gene = J_pca @ PCs.T
-        jnp = (pcs @ jac_pca.T).T
+        jnp = (pcs @ jac_pca.detach().cpu().float().numpy().T).T
         # Weight by that cell's gene expression
         jnpx = jnp * adfmz[i]
         jacobxall.append(jnpx.astype('float16'))
@@ -164,6 +164,7 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
     """
     print("🎨 Plotting feature importances for cell types...")
     genes = adata.to_df().columns.values
+    cv = adata.obs.cell_type.astype('category').cat.codes
     class_genesorted = {}
 
     for cell_type in celltypes:
@@ -172,7 +173,7 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
         
         # Plot 1: UMAP with highlighted cell type
         is_cell_type = adata.obs["cell_type"] == cell_type
-        ax1.scatter(embedding[:, 0], embedding[:, 1], c='lightgray', s=2, alpha=0.5)
+        ax1.scatter(embedding[:, 0], embedding[:, 1], c = cv, cmap='tab20', s=2, alpha=0.5)
         ax1.scatter(embedding[is_cell_type, 0], embedding[is_cell_type, 1], s=5, c='black', label=cell_type)
         ax1.set_title(f"UMAP with '{cell_type}' Highlighted")
         ax1.set_xlabel("UMAP 1")

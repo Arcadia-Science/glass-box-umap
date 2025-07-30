@@ -13,7 +13,6 @@ import scanpy as sc
 import anndata as ad
 import numpy as np
 import matplotlib.pyplot as plt
-import pooch
 
 # --- Function Definitions ---
 
@@ -31,31 +30,11 @@ def download_and_load_data(url, filename):
     print("Downloading and loading data...")
     
     # # Download the compressed file from the GEO FTP server
-    # change to python
-    # !wget ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE194nnn/GSE194122/suppl/GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz
-    # ftp_url = "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE194nnn/GSE194122/suppl/GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz"
     import subprocess
-    # subprocess.run(["wget", url])
-    # # Unzip the file
-    # change to python
-    # !gunzip GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz
-    # h5ad_filename = "GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz"
+    if not os.path.isfile(filename):
+        subprocess.run(["wget", url])
 
-    subprocess.run(["gunzip", filename])
-
-    adata = ad.read_h5ad('GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad')
-
-    # Use pooch to download and cache the file
-    # scanpy example
-    # file_path = pooch.retrieve(
-    #     url=url,
-    #     known_hash=known_hash,
-    #     processor=pooch.Decompress(), # Automatically decompress .gz
-    # )
-    # adata = ad.read_h5ad(file_path)
-    print("Data loaded successfully.")
-    return adata
-
+        subprocess.run(["gunzip", filename])
 
 def initial_preprocessing(adata):
     """
@@ -227,7 +206,7 @@ def visualize_final_results(adata, perform_qc_reassessment=True):
         )
     print("🎉 Analysis visualization complete!")
 
-def preprocess_bone_marrow(DOWNLOAD_DATA = True, FILTER_BY_SAMPLES = False, QUALITY_CONTROL = True,
+def download_bone_marrow_dataset(DOWNLOAD_DATA = True,
                             data_url = "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE194nnn/GSE194122/suppl/GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz",                                
                             h5ad_filename = "GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz"
     ):
@@ -238,24 +217,42 @@ def preprocess_bone_marrow(DOWNLOAD_DATA = True, FILTER_BY_SAMPLES = False, QUAL
     # Set to False to skip downloading if the file already exists and is unzipped
     # DOWNLOAD_DATA = True
     # # NOTE: The original script had this flag but didn't use it to load separate samples.
-    # # Set to True to run doublet detection (requires `batch_key`).
-    # FILTER_BY_SAMPLES = False
-    # # Set to False to skip the optional QC metric calculation and plotting
-    # QUALITY_CONTROL = False
 
-    # --- Workflow ---
     if DOWNLOAD_DATA:
         adata = download_and_load_data(data_url, h5ad_filename)
     else:
         # Assumes the file is already downloaded and unzipped in the current directory
         adata = ad.read_h5ad(h5ad_filename)
-
+    
+def preprocess_bone_marrow_dataset(FILTER_BY_SAMPLES = False, QUALITY_CONTROL = True,
+                                   h5ad_filename = "GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad"
+    ):
+    """
+    Main function to run the single-cell analysis workflow.
+    """
+    # --- Parameters ---
+    # FILTER_BY_SAMPLES = False
+    # # Set to False to skip the optional QC metric calculation and plotting
+    # QUALITY_CONTROL = False
+    
+    adata = ad.read_h5ad(h5ad_filename)
     adata = initial_preprocessing(adata)
     adata = run_quality_control(adata, perform_qc=QUALITY_CONTROL)
     adata = filter_and_detect_doublets(adata, run_scrublet=FILTER_BY_SAMPLES)
     adata = normalize_and_select_features(adata)
-    adata = run_dimensionality_reduction(adata)
-    adata = compute_embedding_and_clusters(adata)
-    visualize_final_results(adata, perform_qc_reassessment=QUALITY_CONTROL)
     
+    adata = run_dimensionality_reduction(adata)
     return adata
+
+def umap_original(adata, QUALITY_CONTROL = True,
+    ):
+    """
+    Main function to run the single-cell analysis workflow.
+    """
+    # --- Parameters ---
+    # FILTER_BY_SAMPLES = False
+    # # Set to False to skip the optional QC metric calculation and plotting
+    # QUALITY_CONTROL = False
+
+    adata = compute_umap_embedding_and_clusters(adata)
+    visualize_final_results(adata, perform_qc_reassessment=QUALITY_CONTROL)

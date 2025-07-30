@@ -94,14 +94,14 @@ class Bilinear(nn.Module):
 
 class deepReLUNet(nn.Module):
     """A deep network using PReLU activation."""
-    def __init__(self, input_size: int, hidden_size: int, output_size: int):
+    def __init__(self, input_size: int = 50, hidden_size: int = 256, output_size: int = 2):
         super().__init__()
         self.model = nn.Sequential(
-            nn.Linear(input_size, hidden_size, bias=False), nn.PReLU(),
-            nn.Linear(hidden_size, hidden_size, bias=False), nn.PReLU(),
-            nn.Linear(hidden_size, hidden_size, bias=False), nn.PReLU(),
-            nn.Linear(hidden_size, hidden_size, bias=False), nn.PReLU(),
-            nn.Linear(hidden_size, hidden_size, bias=False), nn.PReLU(),
+            nn.Linear(input_size, hidden_size, bias=False), nn.PReLU(), LayerNormDetached(hidden_size),
+            nn.Linear(hidden_size, hidden_size, bias=False), nn.PReLU(), LayerNormDetached(hidden_size),
+            nn.Linear(hidden_size, hidden_size, bias=False), nn.PReLU(), LayerNormDetached(hidden_size),
+            nn.Linear(hidden_size, hidden_size, bias=False), nn.PReLU(), LayerNormDetached(hidden_size),
+            nn.Linear(hidden_size, hidden_size, bias=False), nn.PReLU(), LayerNormDetached(hidden_size),
             nn.Linear(hidden_size, output_size, bias=False)
         )
 
@@ -111,7 +111,7 @@ class deepReLUNet(nn.Module):
 
 class deepSiLUNet(nn.Module):
     """A deep network using SiLU activation with a detached gate for evaluation."""
-    def __init__(self, input_size: int, hidden_size: int, output_size: int):
+    def __init__(self, input_size: int = 50, hidden_size: int = 256, output_size: int = 2):
         super().__init__()
         self.hidden0 = nn.Linear(input_size, hidden_size, bias=False)
         self.hidden1 = nn.Linear(hidden_size, hidden_size, bias=False)
