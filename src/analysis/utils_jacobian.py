@@ -12,7 +12,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import scanpy as sc
 
-from .utils_spectral import PUMAP, Datamodule, Model
+from .utils import PUMAP, Datamodule, Model
 from .networks import deepReLUNet, deepSiLUNet, deepBilinearNet
 
 # --- Function Definitions ---
