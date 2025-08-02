@@ -165,7 +165,7 @@ def run_dimensionality_reduction(adata):
     return adata
 
 
-def compute_embedding_and_clusters(adata):
+def compute_umap_embedding_and_clusters(adata):
     """
     Computes nearest neighbors, UMAP embedding, and Leiden clustering.
 
