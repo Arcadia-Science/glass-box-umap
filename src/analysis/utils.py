@@ -442,7 +442,7 @@ class Model(pl.LightningModule):
         encoder: nn.Module,
         decoder=None,
         beta = 1.0,
-        min_dist=0.9,
+        min_dist=0.01,
         reconstruction_loss=F.binary_cross_entropy_with_logits,
         match_nonparametric_umap=False,
     ):
