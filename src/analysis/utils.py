@@ -351,9 +351,9 @@ class UMAPDataset(Dataset):
         self.data = torch.Tensor(data)
 
     def __len__(self):
-        return int(self.edges_to_exp.shape[0]/1)
+        # return int(self.edges_to_exp.shape[0]/1)
 
-        # return int(self.data.shape[0])
+        return int(self.data.shape[0])
 
     def __getitem__(self, index):
         edges_to_exp = self.data[self.edges_to_exp[index]]
@@ -406,9 +406,9 @@ class UMAPDataset(Dataset):
         self.data = torch.Tensor(data)
 
     def __len__(self):
-        # return int(self.data.shape[0])
+        return int(self.data.shape[0])
 
-        return int(self.edges_to_exp.shape[0]/1)
+        # return int(self.edges_to_exp.shape[0]/1)
     def __getitem__(self, index):
         edges_to_exp = self.data[self.edges_to_exp[index]]
         edges_from_exp = self.data[self.edges_from_exp[index]]
@@ -540,8 +540,8 @@ class PUMAP():
         self.match_nonparametric_umap = match_nonparametric_umap
         self.non_parametric_embeddings = non_parametric_embeddings
 
-    def fit(self, X, precomputed_graph=None):
-        trainer = pl.Trainer(accelerator='gpu', devices=1, max_epochs=self.epochs)
+    def fit(self, X, precomputed_graph=None, gradient_clip_val=4.0):
+        trainer = pl.Trainer(accelerator='gpu', devices=1, max_epochs=self.epochs, gradient_clip_val=gradient_clip_val )
         # trainer = pl.Trainer(accelerator='gpu', devices=1, max_epochs=self.epochs)
         self.model = Model(self.lr, self.encoder, min_dist=self.min_dist, match_nonparametric_umap=self.match_nonparametric_umap)
         if precomputed_graph is None:
