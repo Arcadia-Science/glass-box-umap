@@ -23,7 +23,7 @@ def setup_environment(seed_value: int):
     torch.manual_seed(seed_value)
     np.random.seed(seed_value)
 
-def prepare_data(adata: sc.AnnData, pca_components: int = 50):
+def prepare_data(adata: sc.AnnData, pca_components: int = 50, pca_start: int = 0):
     """
     Prepares training data from an AnnData object.
 
@@ -36,7 +36,7 @@ def prepare_data(adata: sc.AnnData, pca_components: int = 50):
         mean-centered gene expression matrix.
     """
     print("Preparing data for training...")
-    train_dataset = torch.tensor([adata.obsm["X_pca"][:, :pca_components]], dtype=torch.float32)
+    train_dataset = torch.tensor([adata.obsm["X_pca"][:, pca_start:pca_components]], dtype=torch.float32)
     
     # Calculate mean-centered gene expression matrix
     adf = adata.to_df()
