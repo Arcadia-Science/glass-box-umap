@@ -522,7 +522,7 @@ class PUMAP():
         lr=1e-3,
         epochs=30,
         batch_size=256*2,
-        num_workers=32,
+        num_workers=20,
         random_state='random',
         match_nonparametric_umap=False,
         non_parametric_embeddings=None
