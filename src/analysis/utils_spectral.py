@@ -300,10 +300,10 @@ class PUMAP():
         epochs=30,
         batch_size=256*2,
         num_workers=1,
-        random_state='random',
+        random_state=100,
         # Removed match_nonparametric_umap from PUMAP __init__ as it's always False now
         non_parametric_embeddings=None, # Still allowed if user wants to provide external embeddings
-        init_pos='spectral', # 'spectral' or 'random'
+        init_pos='random', # 'spectral' or 'random'
         n_components=2, # Number of dimensions for the UMAP embedding
     ):
         self.encoder = encoder
@@ -320,13 +320,13 @@ class PUMAP():
         self.init_pos = init_pos
         self.n_components = n_components
 
-    def fit(self, X, precomputed_graph=None):
+    def fit(self, X, precomputed_graph=None, gradient_clip_val=None):
         """
         Fits the parametric UMAP model to the data.
         Handles graph computation and spectral initialization.
         """
         # Initialize PyTorch Lightning Trainer
-        trainer = pl.Trainer(accelerator='gpu', devices=1, max_epochs=self.epochs)
+        trainer = pl.Trainer(accelerator='gpu', devices=1, max_epochs=self.epochs, gradient_clip_val=gradient_clip_val)
 
         # Determine the graph to use for UMAP (either computed from X or precomputed)
         if precomputed_graph is None:
