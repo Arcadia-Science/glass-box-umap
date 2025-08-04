@@ -32,7 +32,7 @@ def download_and_load_data(url, filename):
     # # Download the compressed file from the GEO FTP server
     import subprocess
     if not os.path.isfile(filename):
-        subprocess.run(["wget", url])
+        subprocess.run(["wget", url, "--no-verbose"])
 
         subprocess.run(["gunzip", filename])
 
@@ -140,7 +140,7 @@ def normalize_and_select_features(adata):
     return adata
 
 
-def run_dimensionality_reduction(adata):
+def run_dimensionality_reduction(adata,n_pcs=50):
     """
     Performs PCA and visualizes the results.
 
@@ -176,8 +176,10 @@ def compute_umap_embedding_and_clusters(adata):
         ad.AnnData: The AnnData object with UMAP and clustering results.
     """
     print("📊 Computing neighborhood graph, UMAP, and clusters...")
-    sc.pp.neighbors(adata)
-    sc.tl.umap(adata)
+    # sc.pp.neighbors(adata)
+
+    sc.pp.neighbors(adata, n_neighbors=15, n_pcs = 50, use_rep='X_pca')
+    sc.tl.umap(adata, init_pos='random')
     sc.tl.leiden(adata, flavor="igraph", n_iterations=2)
     print("Embedding and clustering complete.")
     return adata
@@ -225,7 +227,7 @@ def download_bone_marrow_dataset(DOWNLOAD_DATA = True,
         adata = ad.read_h5ad(h5ad_filename)
     
 def preprocess_bone_marrow_dataset(FILTER_BY_SAMPLES = False, QUALITY_CONTROL = True,
-                                   h5ad_filename = "GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad"
+                                   h5ad_filename = "GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad",n_pcs=50
     ):
     """
     Main function to run the single-cell analysis workflow.
@@ -241,7 +243,7 @@ def preprocess_bone_marrow_dataset(FILTER_BY_SAMPLES = False, QUALITY_CONTROL = 
     adata = filter_and_detect_doublets(adata, run_scrublet=FILTER_BY_SAMPLES)
     adata = normalize_and_select_features(adata)
     
-    adata = run_dimensionality_reduction(adata)
+    adata = run_dimensionality_reduction(adata,n_pcs=n_pcs)
     return adata
 
 def umap_original(adata, QUALITY_CONTROL = True,

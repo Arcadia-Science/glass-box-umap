@@ -442,7 +442,7 @@ class Model(pl.LightningModule):
         encoder: nn.Module,
         decoder=None,
         beta = 1.0,
-        min_dist=0.1,
+        min_dist=0.9,
         reconstruction_loss=F.binary_cross_entropy_with_logits,
         match_nonparametric_umap=False,
     ):
@@ -456,7 +456,7 @@ class Model(pl.LightningModule):
         self._a, self._b = find_ab_params(1.0, min_dist)
 
     def configure_optimizers(self):
-        return torch.optim.AdamW(self.parameters(), lr=self.lr)
+        return torch.optim.AdamW(self.parameters(), lr=self.lr, weight_decay=1e-4)
 
     def training_step(self, batch, batch_idx):
         if not self.match_nonparametric_umap:
@@ -522,7 +522,7 @@ class PUMAP():
         lr=1e-3,
         epochs=30,
         batch_size=256*2,
-        num_workers=20,
+        num_workers=2,
         random_state='random',
         match_nonparametric_umap=False,
         non_parametric_embeddings=None
