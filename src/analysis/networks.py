@@ -31,6 +31,54 @@ class LayerNormDetached(nn.Module):
         norm_x = (x - mean) / torch.sqrt(var)
         return self.scale * norm_x
 
+class BatchNormDetached(nn.Module):
+    """
+    A simple implementation of BatchNorm1d, similar to the provided LayerNorm example.
+
+    This version calculates batch statistics during the forward pass and does not
+    differentiate between training and evaluation modes. It's useful for
+    understanding the core normalization logic but lacks the running statistics
+    needed for effective inference.
+    """
+    def __init__(self, num_features, eps=1e-5):
+        """
+        Args:
+            num_features (int): The number of features in the input tensor (C in a B, C shape).
+            eps (float): A small value added to the denominator for numerical stability.
+        """
+        super().__init__()
+        self.eps = eps
+        # Learnable scale parameter (gamma)
+        self.scale = nn.Parameter(torch.ones(num_features))
+        # Learnable shift parameter (beta)
+        # self.shift = nn.Parameter(torch.zeros(num_features))
+
+    def forward(self, x):
+        """
+        Applies batch normalization.
+
+        Args:
+            x (torch.Tensor): The input tensor of shape (N, C), where N is the
+                              batch size and C is the number of features.
+        
+        Returns:
+            torch.Tensor: The normalized tensor.
+        """
+        # if x.dim() != 2:
+        #     raise ValueError(f"Expected 2D input (got {x.dim()}D input)")
+
+        # Calculate mean and variance over the batch dimension (dim=0)
+        mean = x.mean(dim=0, keepdim=True)
+        # Use unbiased=False to match PyTorch's default nn.BatchNorm1d during training
+        var = x.var(dim=0, keepdim=True, unbiased=False)
+
+        # Normalize the input
+        if self.training:
+            norm_x = (x - mean) / torch.sqrt(var + self.eps)
+        else:
+            norm_x = (x - mean) / (torch.sqrt(var + self.eps).clone().detach())
+        # Apply the learnable scale and shift
+        return self.scale * norm_x 
 class BilinearDetached(nn.Module):
     """
     A custom Bilinear layer where weights and inputs can be detached during evaluation.
