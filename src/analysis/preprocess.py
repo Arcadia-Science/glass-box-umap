@@ -226,7 +226,7 @@ def download_bone_marrow_dataset(DOWNLOAD_DATA = True,
         # Assumes the file is already downloaded and unzipped in the current directory
         adata = ad.read_h5ad(h5ad_filename)
     
-def preprocess_bone_marrow_dataset(FILTER_BY_SAMPLES = False, QUALITY_CONTROL = True,
+def preprocess_bone_marrow_dataset(adata = None, FILTER_BY_SAMPLES = False, QUALITY_CONTROL = True,
                                    h5ad_filename = "GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad",n_pcs=50
     ):
     """
@@ -236,8 +236,8 @@ def preprocess_bone_marrow_dataset(FILTER_BY_SAMPLES = False, QUALITY_CONTROL = 
     # FILTER_BY_SAMPLES = False
     # # Set to False to skip the optional QC metric calculation and plotting
     # QUALITY_CONTROL = False
-    
-    adata = ad.read_h5ad(h5ad_filename)
+    if adata is None:
+        adata = ad.read_h5ad(h5ad_filename)
     adata = initial_preprocessing(adata)
     adata = run_quality_control(adata, perform_qc=QUALITY_CONTROL)
     adata = filter_and_detect_doublets(adata, run_scrublet=FILTER_BY_SAMPLES)
