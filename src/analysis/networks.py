@@ -168,6 +168,13 @@ class deepSiLUNet(nn.Module):
         self.hidden4 = nn.Linear(hidden_size, hidden_size, bias=False)
         self.output = nn.Linear(hidden_size, output_size, bias=False)
 
+        self.ln0 = LayerNormDetached(hidden_size)
+        self.ln1 = LayerNormDetached(hidden_size)
+        self.ln2 = LayerNormDetached(hidden_size)
+        self.ln3 = LayerNormDetached(hidden_size)
+        self.ln4 = LayerNormDetached(hidden_size)
+
+
     def _silu_with_detached_gate(self, x: torch.Tensor) -> torch.Tensor:
         """Applies SiLU, detaching the sigmoid gate during evaluation."""
         if not self.training:
@@ -176,12 +183,18 @@ class deepSiLUNet(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the SiLU network."""
-        h = self._silu_with_detached_gate(self.hidden0(x))
-        h = self._silu_with_detached_gate(self.hidden1(h))
-        h = self._silu_with_detached_gate(self.hidden2(h))
-        h = self._silu_with_detached_gate(self.hidden3(h))
-        h = self._silu_with_detached_gate(self.hidden4(h))
+        h = self.ln0(self._silu_with_detached_gate(self.hidden0(x)))
+        h = self.ln1(self._silu_with_detached_gate(self.hidden1(h)))
+        h = self.ln2(self._silu_with_detached_gate(self.hidden2(h)))
+        h = self.ln3(self._silu_with_detached_gate(self.hidden3(h)))
+        h = self.ln4(self._silu_with_detached_gate(self.hidden4(h)))
         return self.output(h)
+        # h = self._silu_with_detached_gate(self.hidden0(x))
+        # h = self._silu_with_detached_gate(self.hidden1(h))
+        # h = self._silu_with_detached_gate(self.hidden2(h))
+        # h = self._silu_with_detached_gate(self.hidden3(h))
+        # h = self._silu_with_detached_gate(self.hidden4(h))
+        # return self.output(h)
 
 class deepBilinearNet(nn.Module):
     """A deep network composed of sequential Bilinear layers."""
