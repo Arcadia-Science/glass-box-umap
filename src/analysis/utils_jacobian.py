@@ -45,7 +45,7 @@ def prepare_data(adata: sc.AnnData, pca_components: int = 50, pca_start: int = 0
     print(f" Data prepared with training shape: {train_dataset.shape}")
     return train_dataset, adfmz
 
-def train_parametric_umap(network, train_dataset, config: dict):
+def train_parametric_umap(network, train_dataset, config: dict, precomputed_distances=None):
     """
     Initializes and trains the Parametric UMAP model.
 
@@ -68,7 +68,7 @@ def train_parametric_umap(network, train_dataset, config: dict):
         **config.get("pumap_kwargs", {})
     )
     # The fit method is assumed to exist on the PUMAP object
-    encoder.fit(train_dataset)
+    encoder.fit(train_dataset, precomputed_graph=precomputed_distances)
     print(" Model training complete.")
     return encoder
 
