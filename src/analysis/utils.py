@@ -33,7 +33,7 @@ def convert_distance_to_log_probability(distances, a=1.0, b=1.0):
 
 
 def compute_cross_entropy(
-    probabilities_graph, log_probabilities_distance, EPS=1e-4, repulsion_strength=1.0
+    probabilities_graph, log_probabilities_distance, EPS=1e-4, repulsion_strength=4.0
 ):
     """
     Compute cross entropy between low and high probability
