@@ -82,7 +82,7 @@ def umap_loss(
     _a,
     _b,
     batch_size,
-    negative_sample_rate=1,
+    negative_sample_rate=5,
     repulsion_strength=1.0,
 ):
     """
@@ -457,17 +457,17 @@ class Model(pl.LightningModule):
 
     def configure_optimizers(self):
 
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=1e-4)
-        scheduler = CosineAnnealingLR(optimizer, T_max=16, eta_min=1e-6)
-        return {"optimizer": optimizer, "lr_scheduler": scheduler}
+        # optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr, weight_decay=1e-4)
+        # scheduler = CosineAnnealingLR(optimizer, T_max=16, eta_min=1e-6)
+        # return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
-        # return torch.optim.AdamW(self.parameters(), lr=self.lr, weight_decay=1e-4)
+        return torch.optim.AdamW(self.parameters(), lr=self.lr, weight_decay=1e-4)
 
     def training_step(self, batch, batch_idx):
         if not self.match_nonparametric_umap:
             (edges_to_exp, edges_from_exp) = batch
             embedding_to, embedding_from = self.encoder(edges_to_exp), self.encoder(edges_from_exp)
-            encoder_loss = umap_loss(embedding_to, embedding_from, self._a, self._b, edges_to_exp.shape[0], negative_sample_rate=1)
+            encoder_loss = umap_loss(embedding_to, embedding_from, self._a, self._b, edges_to_exp.shape[0], negative_sample_rate=5)
             self.log("umap_loss", encoder_loss, prog_bar=True)
 
             if self.decoder:
