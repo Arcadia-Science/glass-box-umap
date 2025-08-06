@@ -33,7 +33,7 @@ def convert_distance_to_log_probability(distances, a=1.0, b=1.0):
 
 
 def compute_cross_entropy(
-    probabilities_graph, log_probabilities_distance, EPS=1e-4, repulsion_strength=2.0
+    probabilities_graph, log_probabilities_distance, EPS=1e-4, repulsion_strength=4.0
 ):
     """
     Compute cross entropy between low and high probability
@@ -188,73 +188,73 @@ def get_umap_graph(X, n_neighbors=15, metric="precomputed", random_state=None):
     n_iters = max(5, int(round(np.log2(X.shape[0]))))
     # distance metric
 
-    # if metric == "precomputed":
-    #     import numba
-    #     @numba.njit(parallel=True)
-    #     def _extract_and_sort(data, indices, indptr, n_samples, k):
-    #         """
-    #         Numba-jitted function to perform the extraction and sorting efficiently.
-    #         For each row, it finds its neighbors and sorts them by distance.
-    #         """
-    #         # Create placeholder arrays for the results
-    #         knn_indices = np.zeros((n_samples, k), dtype=np.int64)
-    #         knn_dists = np.zeros((n_samples, k), dtype=np.float32)
+    if metric == "precomputed_sparse":
+        import numba
+        @numba.njit(parallel=True)
+        def _extract_and_sort(data, indices, indptr, n_samples, k):
+            """
+            Numba-jitted function to perform the extraction and sorting efficiently.
+            For each row, it finds its neighbors and sorts them by distance.
+            """
+            # Create placeholder arrays for the results
+            knn_indices = np.zeros((n_samples, k), dtype=np.int64)
+            knn_dists = np.zeros((n_samples, k), dtype=np.float32)
         
-    #         # Use prange for a parallel loop
-    #         for i in numba.prange(n_samples):
-    #             # Get the slice corresponding to the current row
-    #             start = indptr[i]
-    #             end = indptr[i+1]
+            # Use prange for a parallel loop
+            for i in numba.prange(n_samples):
+                # Get the slice corresponding to the current row
+                start = indptr[i]
+                end = indptr[i+1]
                 
-    #             # Get the distances and indices for the neighbors in this row
-    #             row_dists = data[start:end]
-    #             row_indices = indices[start:end]
+                # Get the distances and indices for the neighbors in this row
+                row_dists = data[start:end]
+                row_indices = indices[start:end]
                 
-    #             # Sort the neighbors by distance (important!)
-    #             sort_order = np.argsort(row_dists)
+                # Sort the neighbors by distance (important!)
+                sort_order = np.argsort(row_dists)
                 
-    #             # Store the sorted results
-    #             knn_dists[i, :] = row_dists[sort_order]
-    #             knn_indices[i, :] = row_indices[sort_order]
+                # Store the sorted results
+                knn_dists[i, :] = row_dists[sort_order]
+                knn_indices[i, :] = row_indices[sort_order]
                 
-    #         return knn_indices, knn_dists
-    #     def extract_knn_from_sparse(sparse_matrix, k):
-    #         """
-    #         Extracts sorted k-NN indices and distances from a sparse distance matrix.
+            return knn_indices, knn_dists
+        def extract_knn_from_sparse(sparse_matrix, k):
+            """
+            Extracts sorted k-NN indices and distances from a sparse distance matrix.
         
-    #         Args:
-    #             sparse_matrix (scipy.sparse.csr_matrix): A sparse matrix where non-zero entries
-    #                                                      are the distances to k-nearest neighbors.
-    #             k (int): The number of neighbors stored in the matrix.
+            Args:
+                sparse_matrix (scipy.sparse.csr_matrix): A sparse matrix where non-zero entries
+                                                         are the distances to k-nearest neighbors.
+                k (int): The number of neighbors stored in the matrix.
         
-    #         Returns:
-    #             tuple: A tuple containing:
-    #                 - knn_indices (np.ndarray): Shape (n_samples, k)
-    #                 - knn_dists (np.ndarray): Shape (n_samples, k)
-    #         """
-    #         # Ensure the matrix is in CSR format for efficient row slicing
-    #         sparse_matrix_csr = sparse_matrix.tocsr()
+            Returns:
+                tuple: A tuple containing:
+                    - knn_indices (np.ndarray): Shape (n_samples, k)
+                    - knn_dists (np.ndarray): Shape (n_samples, k)
+            """
+            # Ensure the matrix is in CSR format for efficient row slicing
+            sparse_matrix_csr = sparse_matrix.tocsr()
             
-    #         n_samples, _ = sparse_matrix_csr.shape
+            n_samples, _ = sparse_matrix_csr.shape
             
-    #         # Call the fast Numba function to do the work
-    #         knn_indices, knn_dists = _extract_and_sort(
-    #             sparse_matrix_csr.data,
-    #             sparse_matrix_csr.indices,
-    #             sparse_matrix_csr.indptr,
-    #             n_samples,
-    #             k
-    #         )
+            # Call the fast Numba function to do the work
+            knn_indices, knn_dists = _extract_and_sort(
+                sparse_matrix_csr.data,
+                sparse_matrix_csr.indices,
+                sparse_matrix_csr.indptr,
+                n_samples,
+                k
+            )
             
-    #         return knn_indices, knn_dists
+            return knn_indices, knn_dists
 
         
-    #     knn_indices, knn_dists = extract_knn_from_sparse(sparse_knn_graph, k=n_neighbors)
-    #     disconnected_index = knn_dists == np.inf
-    #     knn_indices[disconnected_index] = -1
+        knn_indices, knn_dists = extract_knn_from_sparse(sparse_knn_graph, k=n_neighbors)
+        disconnected_index = knn_dists == np.inf
+        knn_indices[disconnected_index] = -1
 
     #     knn_search_index = None
-    if metric == "precomputed":
+    elif metric == "precomputed":
         print("PRECOMPUTED graph, finding NNs")
         from umap.utils import (
             submatrix,
