@@ -32,153 +32,153 @@ def convert_distance_to_log_probability(distances, a=1.0, b=1.0):
     return -torch.log1p(a * distances ** (2 * b))
 
 
-def compute_cross_entropy(
-    probabilities_graph, log_probabilities_distance, EPS=1e-4, repulsion_strength=4.0
-):
-    """
-    Compute cross entropy between low and high probability
+# def compute_cross_entropy(
+#     probabilities_graph, log_probabilities_distance, EPS=1e-4, repulsion_strength=4.0
+# ):
+#     """
+#     Compute cross entropy between low and high probability
 
-    Parameters
-    ----------
-    probabilities_graph : array
-        high dimensional probabilities
-    log_probabilities_distance : array
-        low dimensional log probabilities
-    EPS : float, optional
-        offset to ensure log is taken of a positive number, by default 1e-4
-    repulsion_strength : float, optional
-        strength of repulsion between negative samples, by default 1.0
+#     Parameters
+#     ----------
+#     probabilities_graph : array
+#         high dimensional probabilities
+#     log_probabilities_distance : array
+#         low dimensional log probabilities
+#     EPS : float, optional
+#         offset to ensure log is taken of a positive number, by default 1e-4
+#     repulsion_strength : float, optional
+#         strength of repulsion between negative samples, by default 1.0
 
-    Returns
-    -------
-    attraction_term: float
-        attraction term for cross entropy loss
-    repellant_term: float
-        repellent term for cross entropy loss
-    cross_entropy: float
-        cross entropy umap loss
+#     Returns
+#     -------
+#     attraction_term: float
+#         attraction term for cross entropy loss
+#     repellant_term: float
+#         repellent term for cross entropy loss
+#     cross_entropy: float
+#         cross entropy umap loss
 
-    """
-    # cross entropy
-    m = nn.LogSigmoid()
-    attraction_term = -probabilities_graph * m(log_probabilities_distance)
-    # use numerically stable repellent term
-    # Shi et al. 2022 (https://arxiv.org/abs/2111.08851)
-    # log(1 - sigmoid(logits)) = log(sigmoid(logits)) - logits
+#     """
+#     # cross entropy
+#     m = nn.LogSigmoid()
+#     attraction_term = -probabilities_graph * m(log_probabilities_distance)
+#     # use numerically stable repellent term
+#     # Shi et al. 2022 (https://arxiv.org/abs/2111.08851)
+#     # log(1 - sigmoid(logits)) = log(sigmoid(logits)) - logits
     
-    repellant_term = (
-        -(1.0 - probabilities_graph)
-        * (m(log_probabilities_distance) - log_probabilities_distance)
-        * repulsion_strength
-    )
+#     repellant_term = (
+#         -(1.0 - probabilities_graph)
+#         * (m(log_probabilities_distance) - log_probabilities_distance)
+#         * repulsion_strength
+#     )
 
-    # balance the expected losses between attraction and repel
-    CE = attraction_term + repellant_term
-    return attraction_term, repellant_term, CE
+#     # balance the expected losses between attraction and repel
+#     CE = attraction_term + repellant_term
+#     return attraction_term, repellant_term, CE
 
-def umap_loss(
-    embedding_to,
-    embedding_from,
-    _a,
-    _b,
-    batch_size,
-    negative_sample_rate=5,
-    repulsion_strength=2.0,
-):
-    """
-    Corrected UMAP loss function.
+# def umap_loss(
+#     embedding_to,
+#     embedding_from,
+#     _a,
+#     _b,
+#     batch_size,
+#     negative_sample_rate=5,
+#     repulsion_strength=4.0,
+# ):
+#     """
+#     Corrected UMAP loss function.
     
-    Args:
-        embedding_to (torch.Tensor): The 'to' embeddings of positive pairs.
-        embedding_from (torch.Tensor): The 'from' embeddings of positive pairs.
-        _a (float): The 'a' parameter of the UMAP low-dimensional curve.
-        _b (float): The 'b' parameter of the UMAP low-dimensional curve.
-        batch_size (int): The number of positive pairs in the batch.
-        negative_sample_rate (int): The number of negative samples per positive pair.
-        repulsion_strength (float): The weight of the repulsion term.
+#     Args:
+#         embedding_to (torch.Tensor): The 'to' embeddings of positive pairs.
+#         embedding_from (torch.Tensor): The 'from' embeddings of positive pairs.
+#         _a (float): The 'a' parameter of the UMAP low-dimensional curve.
+#         _b (float): The 'b' parameter of the UMAP low-dimensional curve.
+#         batch_size (int): The number of positive pairs in the batch.
+#         negative_sample_rate (int): The number of negative samples per positive pair.
+#         repulsion_strength (float): The weight of the repulsion term.
 
-    Returns:
-        torch.Tensor: The final UMAP loss.
-    """
-    # print("NSR: ", negative_sample_rate)
-    # 1. Create positive and negative sample pairs
-    embedding_neg_to = embedding_to.repeat(negative_sample_rate, 1)
-    repeat_neg = embedding_from.repeat(negative_sample_rate, 1)
-    embedding_neg_from = repeat_neg[torch.randperm(repeat_neg.shape[0])]
+#     Returns:
+#         torch.Tensor: The final UMAP loss.
+#     """
+#     # print("NSR: ", negative_sample_rate)
+#     # 1. Create positive and negative sample pairs
+#     embedding_neg_to = embedding_to.repeat(negative_sample_rate, 1)
+#     repeat_neg = embedding_from.repeat(negative_sample_rate, 1)
+#     embedding_neg_from = repeat_neg[torch.randperm(repeat_neg.shape[0])]
 
-    # 2. Calculate distances for positive and negative pairs
-    dist_pos = (embedding_to - embedding_from).norm(dim=1)
-    dist_neg = (embedding_neg_to - embedding_neg_from).norm(dim=1)
+#     # 2. Calculate distances for positive and negative pairs
+#     dist_pos = (embedding_to - embedding_from).norm(dim=1)
+#     dist_neg = (embedding_neg_to - embedding_neg_from).norm(dim=1)
 
-    # 3. Calculate the attraction term (for positive pairs)
-    # The term is log(Q_ij), where Q_ij = 1 / (1 + a*d^(2b))
-    # This simplifies to -log(1 + a*d^(2b))
-    # We use torch.log1p for numerical stability: log(1 + x)
-    loss_attraction = torch.log1p(_a * dist_pos.pow(2 * _b))
+#     # 3. Calculate the attraction term (for positive pairs)
+#     # The term is log(Q_ij), where Q_ij = 1 / (1 + a*d^(2b))
+#     # This simplifies to -log(1 + a*d^(2b))
+#     # We use torch.log1p for numerical stability: log(1 + x)
+#     loss_attraction = torch.log1p(_a * dist_pos.pow(2 * _b))
 
-    # 4. Calculate the repulsion term (for negative pairs)
-    # The term is log(1 - Q_ij), where Q_ij is the similarity for negative pairs
-    # This simplifies to log(1 + 1/(a*d^(2b)))
-    # We use .clamp(min=1e-8) to prevent division by zero if distance is zero
-    loss_repulsion = torch.log1p(
-        1.0 / (_a * dist_neg.pow(2 * _b).clamp(min=1e-8))
-    )
+#     # 4. Calculate the repulsion term (for negative pairs)
+#     # The term is log(1 - Q_ij), where Q_ij is the similarity for negative pairs
+#     # This simplifies to log(1 + 1/(a*d^(2b)))
+#     # We use .clamp(min=1e-8) to prevent division by zero if distance is zero
+#     loss_repulsion = torch.log1p(
+#         1.0 / (_a * dist_neg.pow(2 * _b).clamp(min=1e-8))
+#     )
 
-    # 5. Combine and average the losses
-    # The UMAP loss is the sum of attraction and repulsion terms.
-    # We take the mean of each and apply the repulsion strength.
-    loss = torch.mean(loss_attraction) + repulsion_strength * torch.mean(loss_repulsion)
+#     # 5. Combine and average the losses
+#     # The UMAP loss is the sum of attraction and repulsion terms.
+#     # We take the mean of each and apply the repulsion strength.
+#     loss = torch.mean(loss_attraction) + repulsion_strength * torch.mean(loss_repulsion)
     
-    return loss
+#     return loss
 
 
 # def convert_distance_to_probability(distances, a=1.0, b=1.0):
 #     #return 1.0 / (1.0 + a * distances ** (2 * b))
 #     return -torch.log1p(a * distances ** (2 * b))
 
-# def compute_cross_entropy(
-#     probabilities_graph, probabilities_distance, EPS=1e-4, repulsion_strength=1.0
-# ):
-#     # cross entropy
-#     attraction_term = -probabilities_graph * torch.nn.functional.logsigmoid(
-#         probabilities_distance
-#     )
-#     repellant_term = (
-#         -(1.0 - probabilities_graph)
-#         * (torch.nn.functional.logsigmoid(probabilities_distance)-probabilities_distance)
-#         * repulsion_strength
-#     )
+def compute_cross_entropy(
+    probabilities_graph, probabilities_distance, EPS=1e-4, repulsion_strength=4.0
+):
+    # cross entropy
+    attraction_term = -probabilities_graph * torch.nn.functional.logsigmoid(
+        probabilities_distance
+    )
+    repellant_term = (
+        -(1.0 - probabilities_graph)
+        * (torch.nn.functional.logsigmoid(probabilities_distance)-probabilities_distance)
+        * repulsion_strength
+    )
 
-#     # balance the expected losses between atrraction and repel
-#     CE = attraction_term + repellant_term
-#     return attraction_term, repellant_term, CE
+    # balance the expected losses between atrraction and repel
+    CE = attraction_term + repellant_term
+    return attraction_term, repellant_term, CE
 
-# def umap_loss(embedding_to, embedding_from, _a, _b, batch_size, negative_sample_rate=5):
-#     # get negative samples by randomly shuffling the batch
-#     embedding_neg_to = embedding_to.repeat(negative_sample_rate, 1)
-#     repeat_neg = embedding_from.repeat(negative_sample_rate, 1)
-#     embedding_neg_from = repeat_neg[torch.randperm(repeat_neg.shape[0])]
-#     distance_embedding = torch.cat((
-#         (embedding_to - embedding_from).norm(dim=1),
-#         (embedding_neg_to - embedding_neg_from).norm(dim=1)
-#     ), dim=0)
+def umap_loss(embedding_to, embedding_from, _a, _b, batch_size, negative_sample_rate=5):
+    # get negative samples by randomly shuffling the batch
+    embedding_neg_to = embedding_to.repeat(negative_sample_rate, 1)
+    repeat_neg = embedding_from.repeat(negative_sample_rate, 1)
+    embedding_neg_from = repeat_neg[torch.randperm(repeat_neg.shape[0])]
+    distance_embedding = torch.cat((
+        (embedding_to - embedding_from).norm(dim=1),
+        (embedding_neg_to - embedding_neg_from).norm(dim=1)
+    ), dim=0)
 
-#     # convert probabilities to distances
-#     probabilities_distance = convert_distance_to_log_probability(
-#         distance_embedding, _a, _b
-#     )
-#     # set true probabilities based on negative sampling
-#     probabilities_graph = torch.cat(
-#         (torch.ones(batch_size), torch.zeros(batch_size * negative_sample_rate)), dim=0,
-#     )
+    # convert probabilities to distances
+    probabilities_distance = convert_distance_to_log_probability(
+        distance_embedding, _a, _b
+    )
+    # set true probabilities based on negative sampling
+    probabilities_graph = torch.cat(
+        (torch.ones(batch_size), torch.zeros(batch_size * negative_sample_rate)), dim=0,
+    )
 
-#     # compute cross entropy
-#     (attraction_loss, repellant_loss, ce_loss) = compute_cross_entropy(
-#         probabilities_graph.cuda(),
-#         probabilities_distance.cuda(),
-#     )
-#     loss = torch.mean(ce_loss)
-#     return loss
+    # compute cross entropy
+    (attraction_loss, repellant_loss, ce_loss) = compute_cross_entropy(
+        probabilities_graph.cuda(),
+        probabilities_distance.cuda(),
+    )
+    loss = torch.mean(ce_loss)
+    return loss
 
 def get_umap_graph(X, n_neighbors=15, metric="precomputed", random_state=None):
     random_state = check_random_state(None) if random_state == None else random_state
@@ -522,7 +522,7 @@ class PUMAP():
         encoder,
         decoder=None,
         n_neighbors=15,
-        min_dist=0.1,
+        min_dist=0.5,
         metric="euclidean",
         lr=1e-3,
         epochs=30,
