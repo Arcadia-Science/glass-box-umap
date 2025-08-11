@@ -101,7 +101,7 @@ def generate_and_plot_embedding(encoder, adata: sc.AnnData, train_dataset: torch
     
     return embedding
 
-def compute_gene_space_jacobian(encoder, adata: sc.AnnData, train_dataset: torch.Tensor, adfmz, batch_size: int = 40):
+def compute_gene_space_jacobian(encoder, adata: sc.AnnData, train_dataset: torch.Tensor, adfmz, batch_size: int = 40, return_jacobian: bool = False):
     """
     Computes the model's Jacobian and projects it to the original gene space.
 
@@ -144,7 +144,10 @@ def compute_gene_space_jacobian(encoder, adata: sc.AnnData, train_dataset: torch
         jacobxall.append(jnpx.astype('float16'))
 
     print(" Jacobian calculation complete.")
-    return np.array(jacobxall)
+    if return_jacobian:
+        return np.array(jacobxall), jacobians_pca
+    else:
+        return np.array(jacobxall)
 
 def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: list, n_features: int = 20, stat: str = 'mean'):
     """
