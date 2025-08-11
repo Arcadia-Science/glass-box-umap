@@ -173,8 +173,8 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
         
         # Plot 1: UMAP with highlighted cell type
         is_cell_type = adata.obs["cell_type"] == cell_type
-        ax1.scatter(embedding[:, 0], embedding[:, 1], c = cv, cmap='tab20', s=2, alpha=0.5)
-        ax1.scatter(embedding[is_cell_type, 0], embedding[is_cell_type, 1], s=5, c='black', label=cell_type)
+        ax1.scatter(embedding[:, 0], embedding[:, 1], c = cv, cmap='tab20', s=2, alpha=0.2)
+        ax1.scatter(embedding[is_cell_type, 0], embedding[is_cell_type, 1], s=5, label=cell_type)
         ax1.set_title(f"UMAP with '{cell_type}' Highlighted")
         ax1.set_xlabel("UMAP 1")
         ax1.set_ylabel("UMAP 2")
