@@ -168,8 +168,10 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
     print("🎨 Plotting feature importances for cell types...")
     genes = adata.to_df().columns.values
     cv = adata.obs.cell_type.astype('category').cat.codes
-    class_features, class_genesorted = {}, {}
+    class_features_dict, class_genesorted_dict = {}, {}
 
+    class_genesorted={}
+    
     for cell_type in celltypes:
         print(f"\nAnalyzing cell type: {cell_type}")
 
@@ -222,11 +224,11 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
         
     # return class_genesorted
 
-        class_features[cell_type]=[jx0_agg[idx_sorted[:n_features]],jx1_agg[idx_sorted[:n_features]]]
-        class_genesorted[cell_type]=[idx_sorted[:n_features], class_genesorted[cell_type], magnitude[idx_sorted[:n_features]]]
+        class_features_dict[cell_type]=[jx0_agg[idx_sorted[:]],jx1_agg[idx_sorted[:]]]
+        class_genesorted_dict[cell_type]=[idx_sorted[:], class_genesorted[cell_type], magnitude[idx_sorted[:]]]
         #     # pdf.savefig()
         #     # plt.close()
-    return class_features,class_genesorted
+    return class_features_dict, class_genesorted_dict
 
 def export_results(class_genesorted, filename: str):
     """Saves the feature importance results to a CSV file."""
