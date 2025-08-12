@@ -149,7 +149,7 @@ def compute_gene_space_jacobian(encoder, adata: sc.AnnData, train_dataset: torch
     else:
         return np.array(jacobxall)
 
-def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: list, n_features: int = 20, stat: str = 'mean'):
+def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: list, n_features: int = 20, stat: str = 'mean', showPlot=True):
     """
     For each cell type, plots the UMAP and the most important features derived
     from the Jacobian.
@@ -168,20 +168,24 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
     print("🎨 Plotting feature importances for cell types...")
     genes = adata.to_df().columns.values
     cv = adata.obs.cell_type.astype('category').cat.codes
-    class_genesorted = {}
+    class_features, class_genesorted = {}, {}
 
     for cell_type in celltypes:
         print(f"\nAnalyzing cell type: {cell_type}")
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
-        
-        # Plot 1: UMAP with highlighted cell type
+
         is_cell_type = adata.obs["cell_type"] == cell_type
-        ax1.scatter(embedding[:, 0], embedding[:, 1], c = cv, cmap='tab20', s=2, alpha=0.2)
-        ax1.scatter(embedding[is_cell_type, 0], embedding[is_cell_type, 1], s=5, label=cell_type)
-        ax1.set_title(f"UMAP with '{cell_type}' Highlighted")
-        ax1.set_xlabel("UMAP 1")
-        ax1.set_ylabel("UMAP 2")
-        ax1.legend()
+        
+        if showPlot:
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+            
+            # Plot 1: UMAP with highlighted cell type
+            is_cell_type = adata.obs["cell_type"] == cell_type
+            ax1.scatter(embedding[:, 0], embedding[:, 1], c = cv, cmap='tab20', s=2, alpha=0.2)
+            ax1.scatter(embedding[is_cell_type, 0], embedding[is_cell_type, 1], s=5, label=cell_type)
+            ax1.set_title(f"UMAP with '{cell_type}' Highlighted")
+            ax1.set_xlabel("UMAP 1")
+            ax1.set_ylabel("UMAP 2")
+            ax1.legend()
 
         # Plot 2: Feature importance plot
         jx0 = jacobxall[:, 0, :]
@@ -193,13 +197,13 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
         else: # Default to mean
             jx0_agg = np.mean(jx0[is_cell_type, :], axis=0)
             jx1_agg = np.mean(jx1[is_cell_type, :], axis=0)
-
-        ax2.scatter(jx0_agg, jx1_agg, s=1, alpha=0.7)
-        ax2.set_title(f"Mean Feature Contributions for '{cell_type}'")
-        ax2.set_xlabel("Contribution to UMAP 1")
-        ax2.set_ylabel("Contribution to UMAP 2")
-        ax2.axhline(0, color='grey', lw=0.5)
-        ax2.axvline(0, color='grey', lw=0.5)
+        if showPlot:
+            ax2.scatter(jx0_agg, jx1_agg, s=1, alpha=0.7)
+            ax2.set_title(f"Mean Feature Contributions for '{cell_type}'")
+            ax2.set_xlabel("Contribution to UMAP 1")
+            ax2.set_ylabel("Contribution to UMAP 2")
+            ax2.axhline(0, color='grey', lw=0.5)
+            ax2.axvline(0, color='grey', lw=0.5)
         
         # Annotate top features
         magnitude = np.sqrt(jx0_agg**2 + jx1_agg**2)
@@ -207,14 +211,22 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
         
         top_genes = []
         for i in idx_sorted[:n_features]:
-            ax2.annotate(genes[i], (jx0_agg[i], jx1_agg[i]))
+            if showPlot:
+                ax2.annotate(genes[i], (jx0_agg[i], jx1_agg[i]))
             top_genes.append(genes[i])
         class_genesorted[cell_type] = top_genes
         
-        plt.tight_layout()
-        plt.show()
+        if showPlot:
+            plt.tight_layout()
+            plt.show()
         
-    return class_genesorted
+    # return class_genesorted
+
+        class_features[cell_type]=[jx0_agg[idx_sorted[:n_features]],jx1_agg[idx_sorted[:n_features]]]
+        class_genesorted[cell_type]=[idx_sorted[:n_features], class_genesorted[cell_type], magnitude[idx_sorted[:n_features]]]
+        #     # pdf.savefig()
+        #     # plt.close()
+    return class_features,class_genesorted
 
 def export_results(class_genesorted, filename: str):
     """Saves the feature importance results to a CSV file."""
