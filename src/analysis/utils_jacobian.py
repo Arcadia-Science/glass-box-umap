@@ -171,23 +171,32 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
     class_features_dict, class_genesorted_dict = {}, {}
 
     class_genesorted={}
+
+    # Choose a colormap
+    cmap = plt.cm.get_cmap('tab20') # Or any other suitable qualitative colormap
+
+    # Retrieve colors for each category
+    category_colors = [cmap(code) for code in range(len(adata.obs.cell_type.astype('category').cat.codes.unique()))]
+
     
-    for cell_type in celltypes:
+    for ci, cell_type in enumerate(celltypes):
         print(f"\nAnalyzing cell type: {cell_type}")
 
         is_cell_type = adata.obs["cell_type"] == cell_type
         
         if showPlot:
+            # fig, (ax1) = plt.subplots(1, 1, figsize=(6, 6))
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
             
             # Plot 1: UMAP with highlighted cell type
             is_cell_type = adata.obs["cell_type"] == cell_type
-            ax1.scatter(embedding[:, 0], embedding[:, 1], c = cv, cmap='tab20', s=2, alpha=0.2)
-            ax1.scatter(embedding[is_cell_type, 0], embedding[is_cell_type, 1], s=5, label=cell_type)
+            ax1.scatter(embedding[:, 0], embedding[:, 1], c = cv, cmap='tab20', s=2, alpha=0.003)
+            ax1.scatter(embedding[is_cell_type, 0], embedding[is_cell_type, 1], c = category_colors[ci], s=3, marker='x',label=cell_type)
             ax1.set_title(f"UMAP with '{cell_type}' Highlighted")
             ax1.set_xlabel("UMAP 1")
             ax1.set_ylabel("UMAP 2")
             ax1.legend()
+            ax1.grid()
 
         # Plot 2: Feature importance plot
         jx0 = jacobxall[:, 0, :]
@@ -200,13 +209,19 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
             jx0_agg = np.mean(jx0[is_cell_type, :], axis=0)
             jx1_agg = np.mean(jx1[is_cell_type, :], axis=0)
         if showPlot:
-            ax2.scatter(jx0_agg, jx1_agg, s=1, alpha=0.7)
+
+            # ax2 = ax1.twinx() 
+            ax2.scatter(1*jx0_agg, 1*jx1_agg, s=4, c=category_colors[ci])
             ax2.set_title(f"Mean Feature Contributions for '{cell_type}'")
             ax2.set_xlabel("Contribution to UMAP 1")
             ax2.set_ylabel("Contribution to UMAP 2")
             ax2.axhline(0, color='grey', lw=0.5)
             ax2.axvline(0, color='grey', lw=0.5)
-        
+            xmax = np.max(np.abs(jx0_agg))
+            ymax = np.max(np.abs(jx1_agg))
+            ax2.set_xlim([-1.1*xmax,1.1*xmax])
+            ax2.set_ylim([-1.1*ymax,1.1*ymax])
+            ax2.grid()
         # Annotate top features
         magnitude = np.sqrt(jx0_agg**2 + jx1_agg**2)
         idx_sorted = np.argsort(magnitude)[::-1]
@@ -214,10 +229,16 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
         top_genes = []
         for i in idx_sorted[:n_features]:
             if showPlot:
-                ax2.annotate(genes[i], (jx0_agg[i], jx1_agg[i]))
+                scx = max(abs(embedding[is_cell_type, 0]))/max(abs(jx0_agg[idx_sorted[:n_features]]))
+                scy = max(abs(embedding[is_cell_type, 1]))/max(abs(jx1_agg[idx_sorted[:n_features]]))
+                ax1.arrow(0,0,scx*jx0_agg[i], scy*jx1_agg[i])#, color = category_colors[ci])
+                ax1.annotate(genes[i], (scx*jx0_agg[i], scy*jx1_agg[i]),fontsize=14)
+                ax2.arrow(0,0,1*jx0_agg[i], 1*jx1_agg[i], color = category_colors[ci])
+                ax2.annotate(genes[i], (1*jx0_agg[i], 1*jx1_agg[i]),fontsize=14)
             top_genes.append(genes[i])
         class_genesorted[cell_type] = top_genes
-        
+        # ax2.set_xlim(ax1.get_xlim)
+        # ax2.set_ylim(ax1.get_ylim)
         if showPlot:
             plt.tight_layout()
             plt.show()
