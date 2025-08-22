@@ -59,7 +59,7 @@ def initial_preprocessing(adata):
     return adata
 
 
-def run_quality_control(adata, perform_qc=True):
+def run_quality_control(adata, perform_qc=True, show_plot=False):
     """
     Calculates and visualizes quality control metrics.
 
@@ -78,15 +78,15 @@ def run_quality_control(adata, perform_qc=True):
     sc.pp.calculate_qc_metrics(
         adata, qc_vars=["mt", "ribo", "hb"], inplace=True, log1p=True
     )
-
-    # Visualize QC metrics
-    sc.pl.violin(
-        adata,
-        ["n_genes_by_counts", "total_counts", "pct_counts_mt"],
-        jitter=0.4,
-        multi_panel=True,
-    )
-    sc.pl.scatter(adata, "total_counts", "n_genes_by_counts", color="pct_counts_mt")
+    if show_plot:
+        # Visualize QC metrics
+        sc.pl.violin(
+            adata,
+            ["n_genes_by_counts", "total_counts", "pct_counts_mt"],
+            jitter=0.4,
+            multi_panel=True,
+        )
+        sc.pl.scatter(adata, "total_counts", "n_genes_by_counts", color="pct_counts_mt")
     print("Quality control complete.")
     return adata
 
@@ -116,7 +116,7 @@ def filter_and_detect_doublets(adata, run_scrublet=False):
     return adata
 
 
-def normalize_and_select_features(adata):
+def normalize_and_select_features(adata, show_plot=False):
     """
     Normalizes data and selects highly variable genes.
 
@@ -135,12 +135,13 @@ def normalize_and_select_features(adata):
 
     # Find and plot highly variable genes
     sc.pp.highly_variable_genes(adata, n_top_genes=2000)
-    sc.pl.highly_variable_genes(adata)
+    if show_plot:
+        sc.pl.highly_variable_genes(adata)
     print("Normalization and feature selection complete.")
     return adata
 
 
-def run_dimensionality_reduction(adata,n_pcs=50):
+def run_dimensionality_reduction(adata,n_pcs=50, show_plot=False):
     """
     Performs PCA and visualizes the results.
 
@@ -154,18 +155,19 @@ def run_dimensionality_reduction(adata,n_pcs=50):
     sc.tl.pca(adata)
 
     # Visualize PCA results
-    sc.pl.pca_variance_ratio(adata, n_pcs=50, log=True)
-    sc.pl.pca(
-        adata,
-        color=["cell_type", "pct_counts_mt"],
-        dimensions=[(0, 1), (2, 3)],
-        ncols=2,
-    )
+    if show_plot:
+        sc.pl.pca_variance_ratio(adata, n_pcs=50, log=True)
+        sc.pl.pca(
+            adata,
+            color=["cell_type", "pct_counts_mt"],
+            dimensions=[(0, 1), (2, 3)],
+            ncols=2,
+        )
     print("PCA complete.")
     return adata
 
 
-def compute_umap_embedding_and_clusters(adata):
+def compute_umap_embedding_and_clusters(adata, show_plot=False):
     """
     Computes nearest neighbors, UMAP embedding, and Leiden clustering.
 
@@ -180,6 +182,8 @@ def compute_umap_embedding_and_clusters(adata):
 
     sc.pp.neighbors(adata, n_neighbors=15, n_pcs = 50, use_rep='X_pca')
     sc.tl.umap(adata, init_pos='random')
+    # if show_plot:
+    #     sc.pl.umap(adata, color="cell_type", size=2)
     sc.tl.leiden(adata, flavor="igraph", n_iterations=2)
     print("Embedding and clustering complete.")
     return adata
@@ -226,7 +230,7 @@ def download_bone_marrow_dataset(DOWNLOAD_DATA = True,
         # Assumes the file is already downloaded and unzipped in the current directory
         adata = ad.read_h5ad(h5ad_filename)
     
-def preprocess_bone_marrow_dataset(adata = None, FILTER_BY_SAMPLES = False, QUALITY_CONTROL = True,
+def preprocess_bone_marrow_dataset(adata = None, full_preprocess=True, FILTER_BY_SAMPLES = False, QUALITY_CONTROL = True,
                                    h5ad_filename = "GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad",n_pcs=50
     ):
     """
@@ -239,11 +243,12 @@ def preprocess_bone_marrow_dataset(adata = None, FILTER_BY_SAMPLES = False, QUAL
     if adata is None:
         adata = ad.read_h5ad(h5ad_filename)
     adata = initial_preprocessing(adata)
-    adata = run_quality_control(adata, perform_qc=QUALITY_CONTROL)
-    adata = filter_and_detect_doublets(adata, run_scrublet=FILTER_BY_SAMPLES)
-    adata = normalize_and_select_features(adata)
-    
-    adata = run_dimensionality_reduction(adata,n_pcs=n_pcs)
+    if full_preprocess:
+        adata = run_quality_control(adata, perform_qc=QUALITY_CONTROL)
+        adata = filter_and_detect_doublets(adata, run_scrublet=FILTER_BY_SAMPLES)
+        adata = normalize_and_select_features(adata)
+        
+        adata = run_dimensionality_reduction(adata,n_pcs=n_pcs)
     return adata
 
 def umap_original(adata, QUALITY_CONTROL = True,
