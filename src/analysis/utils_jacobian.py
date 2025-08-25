@@ -217,6 +217,13 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
             jx1_agg_bg = np.mean(jx1[not_cell_type, :], axis=0)
         jx0_agg_diff = jx0_agg-jx0_agg_bg
         jx1_agg_diff = jx1_agg-jx1_agg_bg
+
+
+        out0=np.array([jx0[is_cell_type, :],jx1[is_cell_type, :]]).T@np.array([np.sum(jx0_agg_diff),np.sum(jx1_agg_diff)])#[0].shape#.mean(axis=1).shape
+        out1=np.array([jx0[not_cell_type, :],jx1[not_cell_type, :]]).T@np.array([np.sum(jx0_agg_diff),np.sum(jx1_agg_diff)])#[0].shape#.mean(axis=1).shape
+
+        # [ind_to_gene[ii] for ii in np.argsort(out0.mean(axis=1)-out1.mean(axis=1))[::-1][:8]]
+
         if showPlot:
 
              
@@ -233,7 +240,7 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
             # ax2.grid()
 
         # Annotate top features
-        magnitude = np.sqrt(jx0_agg**2 + jx1_agg**2)
+        magnitude = out0.mean(axis=1)-out1.mean(axis=1)#p.sqrt(jx0_agg**2 + jx1_agg**2)
         idx_sorted = np.argsort(magnitude)[::-1]
         
         top_genes = []
