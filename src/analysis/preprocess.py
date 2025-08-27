@@ -105,7 +105,7 @@ def filter_and_detect_doublets(adata, run_scrublet=False):
     print("🧹 Filtering data and detecting doublets...")
     # Basic filtering
     sc.pp.filter_cells(adata, min_genes=100)
-    sc.pp.filter_genes(adata, min_cells=3)
+    sc.pp.filter_genes(adata, min_cells=20)#3)
 
     # Optional doublet detection
     if run_scrublet:
