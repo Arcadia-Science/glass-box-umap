@@ -149,7 +149,7 @@ def compute_gene_space_jacobian(encoder, adata: sc.AnnData, train_dataset: torch
     else:
         return np.array(jacobxall)
 
-def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: list, n_features: int = 20, stat: str = 'mean', showPlot=True):
+def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: list, n_features: int = 20, stat: str = 'mean', showPlot=True, genes=None, pcaxall=None):
     """
     For each cell type, plots the UMAP and the most important features derived
     from the Jacobian.
@@ -167,7 +167,8 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
     """
     import arcadia_pycolor as apc
     print("🎨 Plotting feature importances for cell types...")
-    genes = adata.to_df().columns.values
+    if genes is None:
+        genes = adata.to_df().columns.values
     cv = adata.obs.cell_type.astype('category').cat.codes
     class_features_dict, class_genesorted_dict = {}, {}
 
@@ -188,8 +189,10 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
         
         if showPlot:
             # fig, (ax1) = plt.subplots(1, 1, figsize=(6, 6))
-            # fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
-            fig, (ax1, ax2, ax22) = plt.subplots(1, 3, figsize=(19, 6))
+            if pcaxall is None:
+                fig, (ax1, ax22) = plt.subplots(1, 2, figsize=(16, 6))
+            else:
+                fig, (ax1, ax2, ax22) = plt.subplots(1, 3, figsize=(19, 6))
             
             # Plot 1: UMAP with highlighted cell type
             is_cell_type = adata.obs["cell_type"] == cell_type
@@ -218,7 +221,7 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
         jx0_agg_diff = jx0_agg-jx0_agg_bg
         jx1_agg_diff = jx1_agg-jx1_agg_bg
 
-        out0=np.array([jx0[:, :],jx1[:, :]]).T@np.array([np.sum(jx0_agg_diff),np.sum(jx1_agg_diff)])#[0].shape#.mean(axis=1).shape
+        # out0=np.array([jx0[:, :],jx1[:, :]]).T@np.array([np.sum(jx0_agg_diff),np.sum(jx1_agg_diff)])#[0].shape#.mean(axis=1).shape
 
         # print(jx0.shape)
         # print(jx0.mean(axis=0).shape)
@@ -229,30 +232,32 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
 
         # [ind_to_gene[ii] for ii in np.argsort(out0.mean(axis=1)-out1.mean(axis=1))[::-1][:8]]
 
-        if showPlot:
+        # if showPlot:
 
              
-            ax2.scatter(1*jx0_agg, 1*jx1_agg, s=4, c=category_colors[ci])
-            ax2.set_title(f"Mean Feature Contributions for '{cell_type}'")
-            ax2.set_xlabel("Contribution to UMAP 1")
-            ax2.set_ylabel("Contribution to UMAP 2")
-            ax2.axhline(0, color='grey', lw=0.5)
-            ax2.axvline(0, color='grey', lw=0.5)
-            # xmax = np.max(np.abs(jx0_agg))
-            # ymax = np.max(np.abs(jx1_agg))
-            # ax2.set_xlim([-1.1*xmax,1.1*xmax])
-            # ax2.set_ylim([-1.1*ymax,1.1*ymax])
-            # ax2.grid()
+        #     ax2.scatter(1*jx0_agg, 1*jx1_agg, s=4, c=category_colors[ci])
+        #     ax2.set_title(f"Mean Feature Contributions for '{cell_type}'")
+        #     ax2.set_xlabel("Contribution to UMAP 1")
+        #     ax2.set_ylabel("Contribution to UMAP 2")
+        #     ax2.axhline(0, color='grey', lw=0.5)
+        #     ax2.axvline(0, color='grey', lw=0.5)
+        #     # xmax = np.max(np.abs(jx0_agg))
+        #     # ymax = np.max(np.abs(jx1_agg))
+        #     # ax2.set_xlim([-1.1*xmax,1.1*xmax])
+        #     # ax2.set_ylim([-1.1*ymax,1.1*ymax])
+        #     # ax2.grid()
 
         # Annotate top features
         # magnitude = out0.mean(axis=1)#-out1.mean(axis=1)#p.sqrt(jx0_agg**2 + jx1_agg**2)
-        proj = np.array([jx0_agg,jx1_agg]).T@np.array([np.sum(jx0_agg),np.sum(jx0_agg)])
 
-        idx_sorted_proj = np.argsort(np.abs(proj))[::-1]
+        # proj = np.array([jx0_agg,jx1_agg]).T@np.array([np.sum(jx0_agg),np.sum(jx0_agg)])
+        # print("proj: ",proj.shape)
+        # idx_sorted_proj = np.argsort(np.abs(proj))[::-1]
 
         magnitude = np.sqrt(jx0_agg**2 + jx1_agg**2)
         idx_sorted = np.argsort(np.abs(magnitude))[::-1]
-        
+        proj=magnitude
+        idx_sorted_proj =idx_sorted
         top_genes = []
         for ii,i in enumerate(idx_sorted[:n_features]):
             # if ii < 5:
@@ -260,7 +265,7 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
             if showPlot:
                 # scx = max(abs(embedding[is_cell_type, 0]))/max(abs(jx0_agg[idx_sorted[:n_features]]))
                 # scy = max(abs(embedding[is_cell_type, 1]))/max(abs(jx1_agg[idx_sorted[:n_features]]))
-                sc = max(np.sqrt(embedding[is_cell_type, 0]**2+embedding[is_cell_type, 1]**2))/max(np.sqrt(jx1_agg[idx_sorted[:n_features]]**2+jx1_agg[idx_sorted[:n_features]]**2))
+                sc = max(np.sqrt(embedding[is_cell_type, 0]**2+embedding[is_cell_type, 1]**2))/max(np.sqrt(jx0_agg[idx_sorted[:n_features]]**2+jx1_agg[idx_sorted[:n_features]]**2))
                 ax1.arrow(0,0,sc*jx0_agg[i], sc*jx1_agg[i], color = 'k')#category_colors[ci])
                 # ax1.arrow(0,0,15*jx0_agg[i], 15*jx1_agg[i], color = 'k')#category_colors[ci])
                 ax1.annotate(genes[i], (sc*jx0_agg[i], sc*jx1_agg[i]),fontsize=14)
@@ -300,30 +305,30 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
             ax22.set_title(f"Mean Feature Contributions for '{cell_type}'")
             ax22.grid('off')
 
-        for ii,i in enumerate(idx_sorted[:n_features]):
-            # if ii < 5:
-            #     print(genes[i], np.sqrt(jx0_agg[i]**2+ 1*jx1_agg[i]**2))
-            if showPlot:
-                # scx = max(abs(embedding[is_cell_type, 0]))/max(abs(jx0_agg[idx_sorted[:n_features]]))
-                # scy = max(abs(embedding[is_cell_type, 1]))/max(abs(jx1_agg[idx_sorted[:n_features]]))
-                sc = max(np.sqrt(embedding[is_cell_type, 0]**2+embedding[is_cell_type, 1]**2))/max(np.sqrt(jx1_agg[idx_sorted[:n_features]]**2+jx1_agg[idx_sorted[:n_features]]**2))
-                ax2.arrow(0,0,1*jx0_agg[i], 1*jx1_agg[i], color = 'k')#category_colors[ci])
-                # ax1.arrow(0,0,15*jx0_agg[i], 15*jx1_agg[i], color = 'k')#category_colors[ci])
-                ax2.annotate(genes[i], (1*jx0_agg[i], 1*jx1_agg[i]),fontsize=14)
+        # for ii,i in enumerate(idx_sorted[:n_features]):
+        #     # if ii < 5:
+        #     #     print(genes[i], np.sqrt(jx0_agg[i]**2+ 1*jx1_agg[i]**2))
+        #     if showPlot:
+        #         # scx = max(abs(embedding[is_cell_type, 0]))/max(abs(jx0_agg[idx_sorted[:n_features]]))
+        #         # scy = max(abs(embedding[is_cell_type, 1]))/max(abs(jx1_agg[idx_sorted[:n_features]]))
+        #         sc = max(np.sqrt(embedding[is_cell_type, 0]**2+embedding[is_cell_type, 1]**2))/max(np.sqrt(jx1_agg[idx_sorted[:n_features]]**2+jx1_agg[idx_sorted[:n_features]]**2))
+        #         ax2.arrow(0,0,1*jx0_agg[i], 1*jx1_agg[i], color = 'k')#category_colors[ci])
+        #         # ax1.arrow(0,0,15*jx0_agg[i], 15*jx1_agg[i], color = 'k')#category_colors[ci])
+        #         ax2.annotate(genes[i], (1*jx0_agg[i], 1*jx1_agg[i]),fontsize=14)
 
-                # ax2.set_xlim([-1.1*xmax,1.1*xmax])
-                # ax2.set_ylim([-1.1*ymax,1.1*ymax])
-                # ax2.arrow(0,0,1*jx0_agg[i], 1*jx1_agg[i], color = category_colors[ci])
-                # ax2.annotate(genes[i], (1*jx0_agg[i], 1*jx1_agg[i]),fontsize=14)
-                # top_genes.append(genes[i])
+        #         # ax2.set_xlim([-1.1*xmax,1.1*xmax])
+        #         # ax2.set_ylim([-1.1*ymax,1.1*ymax])
+        #         # ax2.arrow(0,0,1*jx0_agg[i], 1*jx1_agg[i], color = category_colors[ci])
+        #         # ax2.annotate(genes[i], (1*jx0_agg[i], 1*jx1_agg[i]),fontsize=14)
+        #         # top_genes.append(genes[i])
 
-                # magnitude_diff = np.sqrt(jx0_agg_diff**2 + jx1_agg_diff**2)
-                # idx_sorted_diff = np.argsort(magnitude_diff)[::-1]
-                # bc = ax3.barh(genes[idx_sorted_diff[:n_features]], np.sqrt(jx0_agg_diff[idx_sorted_diff[:n_features]]**2+ 1*jx1_agg_diff[idx_sorted_diff[:n_features]]**2))
-                # ax3.bar_label(bc, labels=genes[idx_sorted_diff[:n_features]])
-                # ax3.tick_params(axis='x', labelrotation=90)
-                # ax3.set_title(f"Mean Feature Contributions for '{cell_type}'")
-                # # ax2.grid()
+        #         # magnitude_diff = np.sqrt(jx0_agg_diff**2 + jx1_agg_diff**2)
+        #         # idx_sorted_diff = np.argsort(magnitude_diff)[::-1]
+        #         # bc = ax3.barh(genes[idx_sorted_diff[:n_features]], np.sqrt(jx0_agg_diff[idx_sorted_diff[:n_features]]**2+ 1*jx1_agg_diff[idx_sorted_diff[:n_features]]**2))
+        #         # ax3.bar_label(bc, labels=genes[idx_sorted_diff[:n_features]])
+        #         # ax3.tick_params(axis='x', labelrotation=90)
+        #         # ax3.set_title(f"Mean Feature Contributions for '{cell_type}'")
+        #         # # ax2.grid()
         if showPlot:
             plt.tight_layout()
             plt.show()
