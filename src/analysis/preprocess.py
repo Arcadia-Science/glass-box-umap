@@ -152,11 +152,11 @@ def run_dimensionality_reduction(adata,n_pcs=50, show_plot=False):
         ad.AnnData: The AnnData object with PCA results.
     """
     print("📉 Reducing dimensionality with PCA...")
-    sc.tl.pca(adata)
+    sc.tl.pca(adata, n_comps=n_pcs)
 
     # Visualize PCA results
     if show_plot:
-        sc.pl.pca_variance_ratio(adata, n_pcs=50, log=True)
+        sc.pl.pca_variance_ratio(adata, n_pcs=n_pcs, log=True)
         sc.pl.pca(
             adata,
             color=["cell_type", "pct_counts_mt"],
