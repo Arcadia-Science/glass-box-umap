@@ -159,9 +159,9 @@ def run_dimensionality_reduction(adata,n_pcs=50, show_plot=False):
         sc.pl.pca_variance_ratio(adata, n_pcs=n_pcs, log=True)
         sc.pl.pca(
             adata,
-            color=["cell_type", "pct_counts_mt"],
-            dimensions=[(0, 1), (2, 3)],
-            ncols=2,
+            color=["cell_type"],#, "pct_counts_mt"],
+            dimensions=[(0, 1)],#, (2, 3)],
+            ncols=1,
         )
     print("PCA complete.")
     return adata
@@ -231,7 +231,7 @@ def download_bone_marrow_dataset(DOWNLOAD_DATA = True,
         adata = ad.read_h5ad(h5ad_filename)
     
 def preprocess_bone_marrow_dataset(adata = None, full_preprocess=True, FILTER_BY_SAMPLES = False, QUALITY_CONTROL = True,
-                                   h5ad_filename = "GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad",n_pcs=50
+                                   h5ad_filename = "GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad",n_pcs=50,show_plot=False
     ):
     """
     Main function to run the single-cell analysis workflow.
@@ -248,7 +248,7 @@ def preprocess_bone_marrow_dataset(adata = None, full_preprocess=True, FILTER_BY
         adata = filter_and_detect_doublets(adata, run_scrublet=FILTER_BY_SAMPLES)
         adata = normalize_and_select_features(adata)
         
-        adata = run_dimensionality_reduction(adata,n_pcs=n_pcs)
+        adata = run_dimensionality_reduction(adata,n_pcs=n_pcs,show_plot=show_plot)
     return adata
 
 def umap_original(adata, QUALITY_CONTROL = True,
