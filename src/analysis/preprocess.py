@@ -134,14 +134,15 @@ def normalize_and_select_features(adata, show_plot=False):
     sc.pp.log1p(adata)
 
     # Find and plot highly variable genes
-    sc.pp.highly_variable_genes(adata, n_top_genes=2000)
+    # sc.pp.highly_variable_genes(adata, n_top_genes=2000)
+    sc.pp.highly_variable_genes(adata, n_top_genes=2000, batch_key="Samplename")
     if show_plot:
         sc.pl.highly_variable_genes(adata)
     print("Normalization and feature selection complete.")
     return adata
 
 
-def run_dimensionality_reduction(adata,n_pcs=50, show_plot=False):
+def run_dimensionality_reduction(adata,n_pcs=50, show_plot=False, use_highly_variable=True):
     """
     Performs PCA and visualizes the results.
 
@@ -152,7 +153,7 @@ def run_dimensionality_reduction(adata,n_pcs=50, show_plot=False):
         ad.AnnData: The AnnData object with PCA results.
     """
     print("📉 Reducing dimensionality with PCA...")
-    sc.tl.pca(adata, n_comps=n_pcs)
+    sc.tl.pca(adata, n_comps=n_pcs, use_highly_variable=use_highly_variable)
 
     # Visualize PCA results
     if show_plot:

@@ -304,7 +304,7 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
             ax22.tick_params(axis='x', labelrotation=90)
             ax22.set_title(f"Mean Feature Contributions for '{cell_type}'")
             ax22.grid('off')
-
+        
         # for ii,i in enumerate(idx_sorted[:n_features]):
         #     # if ii < 5:
         #     #     print(genes[i], np.sqrt(jx0_agg[i]**2+ 1*jx1_agg[i]**2))
@@ -335,8 +335,11 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
         
     # return class_genesorted
 
-        class_features_dict[cell_type]=[jx0_agg[idx_sorted[:]],jx1_agg[idx_sorted[:]]]
-        class_genesorted_dict[cell_type]=[idx_sorted[:], class_genesorted[cell_type], magnitude[idx_sorted[:]]]
+        class_features_dict[cell_type]=[jx0_agg[idx_sorted_proj[:]],jx1_agg[idx_sorted_proj[:]]]
+
+        # np.abs(proj[idx_sorted_proj[:n_features][::-1]])
+
+        class_genesorted_dict[cell_type]=[idx_sorted_proj[:], class_genesorted[cell_type], magnitude[idx_sorted[:]]]
         #     # pdf.savefig()
         #     # plt.close()
     return class_features_dict, class_genesorted_dict
