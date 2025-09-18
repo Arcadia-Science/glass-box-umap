@@ -115,7 +115,7 @@ def compute_gene_space_jacobian(encoder, adata: sc.AnnData, train_dataset: torch
     Returns:
         The Jacobian projected into gene space and weighted by expression.
     """
-    print("🧠 Computing Jacobian and projecting to gene space...")
+    print("Computing Jacobian and projecting to gene space...")
     encoder.eval()
     
     # 1. Compute Jacobian in batches (in PCA space)
