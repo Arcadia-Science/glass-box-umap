@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Refactored script for single-cell analysis using Scanpy.
+Script for single-cell analysis using Scanpy.
 
 This script processes CITE-seq data of bone marrow mononuclear cells (BMMCs)
 by performing quality control, normalization, dimensionality reduction,
@@ -47,7 +47,7 @@ def initial_preprocessing(adata):
     Returns:
         ad.AnnData: The preprocessed AnnData object.
     """
-    print("⚙️  Running initial preprocessing...")
+    print("Running initial preprocessing...")
     adata.obs_names_make_unique()
     adata.var_names_make_unique()
 
@@ -74,7 +74,7 @@ def run_quality_control(adata, perform_qc=True, show_plot=False):
         print("Skipping quality control step.")
         return adata
 
-    print("🔬 Running quality control...")
+    print("Running quality control...")
     sc.pp.calculate_qc_metrics(
         adata, qc_vars=["mt", "ribo", "hb"], inplace=True, log1p=True
     )
@@ -102,7 +102,7 @@ def filter_and_detect_doublets(adata, run_scrublet=False):
     Returns:
         ad.AnnData: The filtered AnnData object.
     """
-    print("🧹 Filtering data and detecting doublets...")
+    print("Filtering data and detecting doublets...")
     # Basic filtering
     sc.pp.filter_cells(adata, min_genes=100)
     sc.pp.filter_genes(adata, min_cells=20)#3)
@@ -126,7 +126,7 @@ def normalize_and_select_features(adata, show_plot=False):
     Returns:
         ad.AnnData: The processed AnnData object.
     """
-    print("⚖️  Normalizing data and selecting features...")
+    print("Normalizing data and selecting features...")
     # Save raw counts
     adata.layers["counts"] = adata.X.copy()
     # Normalize and log-transform
@@ -152,7 +152,7 @@ def run_dimensionality_reduction(adata,n_pcs=50, show_plot=False, use_highly_var
     Returns:
         ad.AnnData: The AnnData object with PCA results.
     """
-    print("📉 Reducing dimensionality with PCA...")
+    print("Reducing dimensionality with PCA...")
     sc.tl.pca(adata, n_comps=n_pcs, use_highly_variable=use_highly_variable)
 
     # Visualize PCA results
@@ -178,7 +178,7 @@ def compute_umap_embedding_and_clusters(adata, show_plot=False):
     Returns:
         ad.AnnData: The AnnData object with UMAP and clustering results.
     """
-    print("📊 Computing neighborhood graph, UMAP, and clusters...")
+    print("Computing neighborhood graph, UMAP, and clusters...")
     # sc.pp.neighbors(adata)
 
     sc.pp.neighbors(adata, n_neighbors=15, n_pcs = 50, use_rep='X_pca')
@@ -198,7 +198,7 @@ def visualize_final_results(adata, perform_qc_reassessment=True):
         adata (ad.AnnData): The final AnnData object.
         perform_qc_reassessment (bool): If True, plots UMAPs with QC metrics.
     """
-    print("🎨 Generating final visualizations...")
+    print("Generating final visualizations...")
     # Visualize cell types and clusters on UMAP
     sc.pl.umap(adata, color="cell_type", size=2)
     sc.pl.umap(adata, color=["leiden"])
@@ -264,3 +264,33 @@ def umap_original(adata, QUALITY_CONTROL = True,
 
     adata = compute_umap_embedding_and_clusters(adata)
     visualize_final_results(adata, perform_qc_reassessment=QUALITY_CONTROL)
+
+# | code-fold: true
+#dataset and preprocessing
+def init_data(donors=True,t_cells=False,n_pcs=50):
+    """
+    Filter dataset by most common cell types or by T cells only.
+    """
+    if t_cells:
+        adata = preprocess_bone_marrow_dataset(n_pcs=n_pcs, full_preprocess=False)
+        adata_subset1 = adata[adata.obs['cell_type'] == 'CD4+ T activated', :]
+        adata_subset3 = adata[adata.obs['cell_type'] == 'CD4+ T naive', :]
+
+        adata = ad.concat([adata_subset1,adata_subset3], label="T_cell_type")
+
+    elif donors:
+        adata = preprocess_bone_marrow_dataset(n_pcs=n_pcs, full_preprocess=False)
+        adata_subset1 = adata[adata.obs['Samplename'] == 'site1_donor1_cite', :]
+        adata_subset3 = adata[adata.obs['Samplename'] == 'site1_donor3_cite', :]
+
+        adata = ad.concat([adata_subset1,adata_subset3], label="donors")
+        adata.obs_names_make_unique()
+
+        # mask = adata.obs.cell_type.isin(adata.obs.cell_type.value_counts()[:12].index.values)
+        # adata = adata[mask,:]
+        adata = preprocess_bone_marrow_dataset(adata,n_pcs=n_pcs, full_preprocess=True)
+        mask = adata.obs.cell_type.isin(adata.obs.cell_type.value_counts()[:12].index.values)
+        adata = adata[mask,:]
+    else:
+        adata = preprocess_bone_marrow_dataset(adata,n_pcs=n_pcs, full_preprocess=True)
+    return adata
