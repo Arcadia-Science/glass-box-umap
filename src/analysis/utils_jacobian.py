@@ -19,7 +19,7 @@ from .networks import deepReLUNet, deepSiLUNet, deepBilinearNet
 
 def setup_environment(seed_value: int):
     """Sets random seeds for reproducibility."""
-    print(f"🌱 Setting random seed to {seed_value}")
+    print(f"Setting random seed to {seed_value}")
     torch.manual_seed(seed_value)
     np.random.seed(seed_value)
 
@@ -84,7 +84,7 @@ def generate_and_plot_embedding(encoder, adata: sc.AnnData, train_dataset: torch
     Returns:
         The generated embedding as a numpy array.
     """
-    print("✨ Generating and visualizing embedding...")
+    print("Generating and visualizing embedding...")
     embedding = encoder.transform(train_dataset.squeeze()).squeeze()
 
     # Plot with Seaborn
@@ -166,7 +166,7 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
         A dictionary mapping cell types to their top features.
     """
     import arcadia_pycolor as apc
-    print("🎨 Plotting feature importances for cell types...")
+    print("Plotting feature importances for cell types...")
     if genes is None:
         genes = adata.to_df().columns.values
     cv = adata.obs.cell_type.astype('category').cat.codes
@@ -343,6 +343,7 @@ def plot_feature_importance(adata: sc.AnnData, embedding, jacobxall, celltypes: 
         #     # pdf.savefig()
         #     # plt.close()
     return class_features_dict, class_genesorted_dict
+
 
 def export_results(class_genesorted, filename: str):
     """Saves the feature importance results to a CSV file."""
