@@ -36,7 +36,7 @@ def convert_distance_to_probability(distances, a=1.0, b=1.0):
     return -torch.log1p(a * distances ** (2 * b))
 
 def compute_cross_entropy(
-    probabilities_graph, probabilities_distance, EPS=1e-4, repulsion_strength=4.0
+    probabilities_graph, probabilities_distance, EPS=1e-4, repulsion_strength=3.0
 ):
     # cross entropy
     attraction_term = -probabilities_graph * torch.nn.functional.logsigmoid(
