@@ -114,7 +114,106 @@ def get_umap_graph(X, n_neighbors=10, metric="cosine", random_state=None):
     return umap_graph
 
 """ Model """
+# import torch
+# import torch.nn as nn
+# import torch.nn.functional as F
+# import pytorch_lightning as pl
 
+# # Assuming umap_loss and find_ab_params are defined elsewhere
+# from umap.parametric_umap import umap_loss, find_ab_params
+
+# class Model(pl.LightningModule):
+#     def __init__(
+#         self,
+#         lr: float,
+#         encoder: nn.Module,
+#         decoder: nn.Module, # Decoder is required for fine-tuning
+#         beta: float = 1.0,
+#         gamma: float = 1.0, # NEW: Weight for the cyclic loss
+#         fine_tune_decoder: bool = False, # NEW: Flag to enable fine-tuning mode
+#         min_dist=0.1,
+#         reconstruction_loss=F.binary_cross_entropy_with_logits,
+#         match_nonparametric_umap=False,
+#     ):
+#         super().__init__()
+#         # Using save_hyperparameters is good practice in PyTorch Lightning
+#         self.save_hyperparameters(ignore=['encoder', 'decoder', 'reconstruction_loss'])
+#         self.encoder = encoder
+#         self.decoder = decoder
+#         self.reconstruction_loss = reconstruction_loss
+#         self._a, self._b = find_ab_params(1.0, min_dist)
+
+#         # ✅ 1. Freeze the encoder if we are in fine-tuning mode
+#         if self.hparams.fine_tune_decoder:
+#             print("✅ Fine-tuning mode enabled: Encoder weights are frozen.")
+#             for param in self.encoder.parameters():
+#                 param.requires_grad = False
+
+#     def configure_optimizers(self):
+#         # ✅ 2. Only pass the decoder's parameters to the optimizer
+#         if self.hparams.fine_tune_decoder:
+#             print("✅ Optimizer configured to update decoder weights only.")
+#             return torch.optim.AdamW(self.decoder.parameters(), lr=self.hparams.lr)
+#         else:
+#             # Original behavior: train all parameters
+#             return torch.optim.AdamW(self.parameters(), lr=self.hparams.lr)
+
+#     def training_step(self, batch, batch_idx):
+#         # Route to the correct training logic based on the mode
+#         if self.hparams.fine_tune_decoder:
+#             return self.decoder_finetuning_step(batch)
+        
+#         # Original training logic is preserved below
+#         if not self.hparams.match_nonparametric_umap:
+#             (edges_to_exp, edges_from_exp) = batch
+#             embedding_to, embedding_from = self.encoder(edges_to_exp), self.encoder(edges_from_exp)
+#             encoder_loss = umap_loss(embedding_to, embedding_from, self._a, self._b, edges_to_exp.shape[0], negative_sample_rate=5)
+#             self.log("umap_loss", encoder_loss, prog_bar=True)
+            
+#             if self.decoder:
+#                 recon = self.decoder(embedding_to)
+#                 recon_loss = self.reconstruction_loss(recon, edges_to_exp)
+#                 self.log("recon_loss", recon_loss, prog_bar=True)
+#                 return encoder_loss + self.hparams.beta * recon_loss
+#             else:
+#                 return encoder_loss
+            
+#         else:
+#             data, embedding = batch
+#             embedding_parametric = self.encoder(data)
+#             encoder_loss = F.mse_loss(embedding_parametric, embedding)
+#             self.log("encoder_loss", encoder_loss, prog_bar=True)
+            
+#             if self.decoder:
+#                 recon = self.decoder(embedding_parametric)
+#                 recon_loss = self.reconstruction_loss(recon, data)
+#                 self.log("recon_loss", recon_loss, prog_bar=True)
+#                 return encoder_loss + self.hparams.beta * recon_loss
+#             else:
+#                 return encoder_loss
+
+#     # ✅ 3. New training step for fine-tuning with cyclic loss
+#     def decoder_finetuning_step(self, batch):
+#         # This assumes the dataloader provides the original data and the target UMAP embedding
+#         data, embedding = batch
+
+#         # Loss 1: Reconstruction Loss (main decoder task)
+#         # Reconstruct the original data from its embedding
+#         recon = self.decoder(embedding)
+#         recon_loss = self.reconstruction_loss(recon, data)
+#         self.log("ft_recon_loss", recon_loss, prog_bar=True)
+
+#         # Loss 2: Cyclic Loss (consistency task)
+#         # Pass the reconstruction back through the frozen encoder and check
+#         # if the resulting embedding matches the original embedding.
+#         re_encoded_embedding = self.encoder(recon)
+#         cyclic_loss = F.mse_loss(embedding, re_encoded_embedding)
+#         self.log("ft_cyclic_loss", cyclic_loss, prog_bar=True)
+
+#         # Total loss is a weighted sum of the two
+#         total_loss = self.hparams.beta * recon_loss + self.hparams.gamma * cyclic_loss
+#         self.log("ft_total_loss", total_loss)
+#         return total_loss
 
 class Model(pl.LightningModule):
     def __init__(
@@ -209,7 +308,8 @@ class PUMAP():
         num_workers=1,
         num_gpus=1,
         match_nonparametric_umap=False,
-        nonparametric_embeddings=None
+        nonparametric_embeddings=None,
+        save_ckpts=False
     ):
         self.encoder = encoder
         self.decoder = decoder
@@ -227,9 +327,80 @@ class PUMAP():
         self.num_gpus = num_gpus
         self.match_nonparametric_umap = match_nonparametric_umap
         self.nonparametric_embeddings = nonparametric_embeddings
+        self.save_ckpts = save_ckpts
         
     def fit(self, X):
-        trainer = pl.Trainer(accelerator='gpu', devices=1, max_epochs=self.epochs)
+        if self.save_ckpts:
+            import os
+            from pytorch_lightning.callbacks import ModelCheckpoint
+
+            from pytorch_lightning.callbacks import Callback
+            class EveryNEpochsCheckpoint(Callback):
+                """
+                Save checkpoints every N epochs without blocking training.
+                
+                Args:
+                    save_dir: Directory to save checkpoints
+                    every_n_epochs: Save checkpoint every N epochs (default: 5)
+                    filename: Filename pattern (can use {epoch} placeholder)
+                """
+                
+                def __init__(
+                    self,
+                    save_dir: str = "checkpoints",
+                    every_n_epochs: int = 5,
+                    filename: str = "checkpoint_epoch_{epoch:03d}.ckpt"
+                ):
+                    self.save_dir = save_dir
+                    self.every_n_epochs = every_n_epochs
+                    self.filename = filename
+                    os.makedirs(save_dir, exist_ok=True)
+                
+                def on_train_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
+                    """Save checkpoint at the end of every N epochs"""
+                    epoch = trainer.current_epoch
+                    
+                    # Check if this epoch should trigger a save
+                    if (epoch + 1) % self.every_n_epochs == 0:
+                        filepath = os.path.join(
+                            self.save_dir,
+                            self.filename.format(epoch=epoch)
+                        )
+                        # Use trainer's save_checkpoint which is async and non-blocking
+                        trainer.save_checkpoint(filepath)
+                        print(f"Saved checkpoint: {filepath}")
+
+            # Create the callback
+            checkpoint_callback = EveryNEpochsCheckpoint(
+                save_dir="my_checkpoints",
+                every_n_epochs=5,
+                filename="model_epoch_{epoch:03d}.ckpt",
+                # monitor='val_loss',          # The metric to monitor
+            )
+
+            # checkpoint_callback = ModelCheckpoint(
+            #     dirpath='/colab/glass-box-umap/ckpts_v2/',
+            #     filename='epoch={epoch:02d}-val_loss={val_loss:.2f}',
+            #     monitor='val_loss',
+            #     save_top_k=1,  # Save all checkpoints
+            #     every_n_epochs=4  # Save checkpoint every n epochs
+            # )
+            # Configure the callback to save the best model based on validation loss
+            # checkpoint_callback = ModelCheckpoint(
+            #     dirpath='/colab/glass-box-umap/ckpts_v2/',  # Directory to save checkpoints
+            #     filename='best-model-{epoch:02d}-{val_loss:.2f}', # Dynamic filename
+            #     monitor='val_loss',          # The metric to monitor
+            #     mode='min',                  # 'min' for loss, 'max' for accuracy
+            #     save_top_k=1,                # Save only the single best model
+            #     verbose=True                 # Optional: print a message when a checkpoint is saved
+            # )
+
+            trainer = pl.Trainer(accelerator='gpu', devices=1, max_epochs=self.epochs, callbacks=[checkpoint_callback])#, default_root_dir='/colab/glass-box-umap/ckpts_1007')#
+            # print(checkpoint_callback)
+            # print('ckpts')
+            # trainer = pl.Trainer(accelerator='gpu', devices=1, max_epochs=self.epochs, default_root_dir='/colab/glass-box-umap/ckpts_1007')
+        else:
+            trainer = pl.Trainer(accelerator='gpu', devices=1, max_epochs=self.epochs)
         encoder = default_encoder(X.shape[1:], self.n_components) if self.encoder is None else self.encoder
         
         if self.decoder is None or isinstance(self.decoder, nn.Module):
@@ -245,6 +416,8 @@ class PUMAP():
                 model=self.model,
                 datamodule=Datamodule(UMAPDataset(X, graph), self.batch_size, self.num_workers)
                 )
+            if self.save_ckpts:
+                print(checkpoint_callback.best_model_path)
         else:
             if self.nonparametric_embeddings is None:
                 print("Fitting Non parametric Umap")
@@ -259,7 +432,6 @@ class PUMAP():
         
     @torch.no_grad()
     def transform(self, X):
-        print(f"Reducing array of shape {X.shape} to ({X.shape[0]}, {self.n_components})")
         return self.model.encoder(X).detach().cpu().numpy()
     
     @torch.no_grad()
