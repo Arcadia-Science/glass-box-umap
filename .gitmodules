@@ -1,0 +1,3 @@
+[submodule "external/umap_pytorch"]
+	path = external/umap_pytorch
+	url = https://github.com/james-golden-arcadia/umap_pytorch
