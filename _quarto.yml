@@ -93,3 +93,4 @@ demo-title: A brief syntax demo
 
 filters:
 - abstract-section
+- collapse-output
