@@ -78,8 +78,6 @@ format:
     title-block-banner: true
     toc: true
     toc-expand: 2
-  docx:
-    toc: true # Example: add a table of contents to the docx
 comments:
   giscus:
     repo: Arcadia-Science/notebook-pub-template
