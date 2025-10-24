@@ -74,7 +74,7 @@ format:
     css: 
     - assets/css/main.css
     - assets/css/citation-box.css
-    page-layout: full
+    page-layout: article
     title-block-banner: true
     toc: true
     toc-expand: 2
