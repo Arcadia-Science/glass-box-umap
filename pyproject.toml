@@ -10,8 +10,12 @@ license = { file = "LICENSE" }
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools]
+packages = ["analysis", "umap_pytorch"]
+
+[tool.setuptools.package-dir]
+analysis = "src/analysis"
+umap_pytorch = "external/umap_pytorch/umap_pytorch"
 
 [tool.ruff]
 # The directories to consider when resolving first- vs. third-party imports
