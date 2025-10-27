@@ -11,6 +11,7 @@ project:
   - CITATION.cff
 execute:
   freeze: auto
+  warning: false
 website:
   favicon: "assets/logo_white.png"
   twitter-card: true
