@@ -87,6 +87,8 @@ bibliography: ref.bib
 csl: assets/arcadia.csl
 code-annotations: hover
 html-table-processing: none
+demo-title: A brief syntax demo
+
 filters:
 - abstract-section
-demo-title: A brief syntax demo
+- collapse-output

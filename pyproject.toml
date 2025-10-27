@@ -3,15 +3,19 @@ name = "notebook-pub-contents"
 description = "Python project for notebook publication."
 version = "0.0.0"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools]
+packages = ["analysis", "umap_pytorch"]
+
+[tool.setuptools.package-dir]
+analysis = "src/analysis"
+umap_pytorch = "external/umap_pytorch/umap_pytorch"
 
 [tool.ruff]
 # The directories to consider when resolving first- vs. third-party imports

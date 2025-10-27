@@ -9,8 +9,24 @@
 @import url("./grid.css");
 
 @font-face {
-  font-family: "SuisseIntl-Regular";
+  font-family: "SuisseIntl";
   src: url("https://www.arcadiascience.com/fonts/SuisseIntl-Regular.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SuisseIntl-Medium";
+  src: url("https://www.arcadiascience.com/fonts/SuisseIntl-Medium.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SuisseIntl-SemiBold";
+  src: url("https://www.arcadiascience.com/fonts/SuisseIntl-SemiBold.woff2")
     format("woff2");
   font-weight: normal;
   font-style: normal;
@@ -43,6 +59,14 @@
 @font-face {
   font-family: "SuisseWorks";
   src: url("https://www.arcadiascience.com/fonts/SuisseWorks.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SuisseIntlMono";
+  src: url("https://www.arcadiascience.com/fonts/SuisseIntlMono.woff2")
     format("woff2");
   font-weight: normal;
   font-style: normal;

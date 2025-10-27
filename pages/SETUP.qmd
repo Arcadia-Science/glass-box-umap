@@ -15,7 +15,7 @@ To obtain a local copy of this repo, you can either *clone* it directly or fork 
 To clone:
 
 ```bash
-git clone https://github.com/{{< var pub.org >}}/{{< var pub.repo >}}.git
+git clone https://github.com/{{< var pub.org >}}/{{< var pub.repo >}}.git --recurse-submodulesc
 ```
 
 ## Installation
