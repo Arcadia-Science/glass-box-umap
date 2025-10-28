@@ -1,29 +1,12 @@
-# Notebook Publication Template
+# From black box to glass box: Making UMAP embeddings interpretable with exact feature contributions
 
-This repo is a template for Jupyter notebook publications. The template produces a publication rendered and hosted by Quarto, which can be viewed at [this demo URL](https://arcadia-science.github.io/notebook-pub-template/).
-
-## Template Documentation
-
-All the learning resources for this template can be found in `developer-docs/`.
-
-- [Quickstart Guide](developer-docs/QUICKSTART.md) - **The most efficient way to get started** is to follow this guide (the rest can wait)
-- [Environment Setup Guide](developer-docs/ENVIRONMENT_SETUP.md) - How to set up your development environment
-- [Publishing Guide](developer-docs/PUBLISHING_GUIDE.md) - How to publish your notebook publication
-- [Template Architecture](developer-docs/TEMPLATE_ARCHITECTURE.md) - Understanding the template's structure
-
----
-
-**NOTE: When ready to publish, fill in the information below, then delete this line and everything above it.**
-
-# Glass Box UMAP
-
-This code repository contains or points to all materials required for creating and hosting the publication entitled, *"[PUB-TITLE]"*.
+This code repository contains or points to all materials required for creating and hosting the publication entitled, *"From black box to glass box: Making UMAP embeddings interpretable with exact feature contributions"*.
 
 The publication is hosted at [this URL]([PUB-URL]).
 
 ## Data Description
 
-[DESCRIPTION OF THE DATA]
+We apply the glass box UMAP approach to feature interpretation to the human bone marrow gene expression data of [A sandbox for prediction and integration of DNA, RNA, and proteins in single cells by Luecken et al. 2021](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE194122), which is included as the example dataset in ScanPy. 
 
 ## Reproduce
 
