@@ -1,32 +1,97 @@
 /* Import other CSS files */
-@import url('./navbar.css');
-@import url('./mini-title.css');
-@import url('./frontmatter.css');
-@import url('./sidebar.css');
-@import url('./article.css');
-@import url('./footer.css');
-@import url('./colors.css');
-@import url('./grid.css');
+@import url("./navbar.css");
+@import url("./mini-title.css");
+@import url("./frontmatter.css");
+@import url("./sidebar.css");
+@import url("./article.css");
+@import url("./footer.css");
+@import url("./colors.css");
+@import url("./grid.css");
+
+@font-face {
+  font-family: "SuisseIntl";
+  src: url("https://www.arcadiascience.com/fonts/SuisseIntl-Regular.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SuisseIntl-Medium";
+  src: url("https://www.arcadiascience.com/fonts/SuisseIntl-Medium.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SuisseIntl-SemiBold";
+  src: url("https://www.arcadiascience.com/fonts/SuisseIntl-SemiBold.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SuisseIntl-Thin";
+  src: url("https://www.arcadiascience.com/fonts/SuisseIntl-Thin.woff2")
+    format("woff2");
+  font-weight: 100;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SuisseIntl-ThinItalic";
+  src: url("https://www.arcadiascience.com/fonts/SuisseIntl-ThinItalic.woff2")
+    format("woff2");
+  font-weight: 100;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "SuisseWorks-Italic";
+  src: url("https://www.arcadiascience.com/fonts/SuisseWorks-Italic.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "SuisseWorks";
+  src: url("https://www.arcadiascience.com/fonts/SuisseWorks.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "SuisseIntlMono";
+  src: url("https://www.arcadiascience.com/fonts/SuisseIntlMono.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
 
 :root {
-    --nb-header-font-family: "Georgia";
-    --nb-header-font-weight: 100;
-    --nb-h1-font-size: 2.5rem;
-    --nb-h2-font-size: 2rem;
-    --nb-toc-title-font-size: 1.2rem; 
-    --nb-main-text-font-family: "Helvetica Neue";
-    --nb-banner-title-font-family: 'Helvetica Neue'; 
-    --bs-code-color: var(--arcadia-dusk);
-    --bs-code-bg-color: #f6f6f6;
-    --bs-code-border-color: #e6e6e6;
-    --bs-code-left-border-color: #003B4F99;
-    --bs-link-color-rgb: var(--arcadia-dusk);
+  --nb-header-font-family: "SuisseWorks", Georgia, serif;
+  --nb-header-font-weight: 100;
+  --nb-h1-font-size: 2.5rem;
+  --nb-h2-font-size: 2rem;
+  --nb-toc-title-font-size: 1.2rem;
+  --nb-main-text-font-family: "SuisseIntl", "Helvetica Neue", Arial, sans-serif;
+  --nb-banner-title-font-family: "SuisseIntl-Thin", "Helvetica Neue Light",
+    Arial, sans-serif;
+  --bs-code-color: var(--arcadia-dusk);
+  --bs-code-bg-color: #f6f6f6;
+  --bs-code-border-color: #e6e6e6;
+  --bs-code-left-border-color: #003b4f99;
+  --bs-link-color-rgb: var(--arcadia-dusk);
 
-    --callout-note-rgb: var(--arcadia-pewter);
-    --callout-warning-rgb: var(--arcadia-mustard);
-    --callout-important-rgb: var(--arcadia-dragon);
-    --callout-tip-rgb: var(--arcadia-teal);
-    --callout-caution-rgb: var(--arcadia-tumbleweed);
+  --callout-note-rgb: var(--arcadia-pewter);
+  --callout-warning-rgb: var(--arcadia-mustard);
+  --callout-important-rgb: var(--arcadia-dragon);
+  --callout-tip-rgb: var(--arcadia-teal);
+  --callout-caution-rgb: var(--arcadia-tumbleweed);
 
-    --arcadia-logo-size: 2rem;
+  --arcadia-logo-size: 2rem;
 }
