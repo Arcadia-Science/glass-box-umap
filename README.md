@@ -2,7 +2,7 @@
 
 This code repository contains or points to all materials required for creating and hosting the publication entitled, *"From black box to glass box: Making UMAP embeddings interpretable with exact feature contributions"*.
 
-The publication is hosted at [this URL]([PUB-URL]).
+The publication is hosted at [this URL](https://arcadia-science.github.io/glass-box-umap/).
 
 ## Data Description
 
