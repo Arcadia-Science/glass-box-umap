@@ -1,6 +1,5 @@
 pub:
   org: "Arcadia-Science"
   repo: "glass-box-umap"
-  title: "From black box to glass box: Making UMAP interpretable with exact feature
-    contributions"
+  title: "From black box to glass box: Making UMAP interpretable with exact feature contributions"
   google_analytics_id: "G-M9DENKG1LF"
