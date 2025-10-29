@@ -10,8 +10,8 @@ We apply the glass box UMAP approach to feature interpretation to the human bone
 
 ## Reproduce
 
-Please see [SETUP.qmd](SETUP.qmd).
+Please see [SETUP.qmd](pages/SETUP.qmd).
 
 ## Contribute
 
-Please see [CONTRIBUTING.qmd](CONTRIBUTING.qmd).
+Please see [CONTRIBUTING.qmd](pages/CONTRIBUTING.qmd).
