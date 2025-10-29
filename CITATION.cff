@@ -1,39 +1,41 @@
 cff-version: 1.2.0
 message: If you use this software, please cite the associated publication.
-title: This is the notebook pub demo
-doi: 10.57844/arcadia-fake-doi
+title: 'From black box to glass box: Making UMAP interpretable with exact feature
+  contributions'
+doi: 10.57844/arcadia-tnr4-7n9h
 authors:
-- family-names: Author
-  given-names: Test
+- family-names: Bell
+  given-names: Audrey
   affiliation: Arcadia Science
-  orcid: https://orcid.org/0000-0000-0000-0000
-- family-names: Author
-  given-names: Another Test
+  orcid: https://orcid.org/0009-0008-2270-1613
+- family-names: Golden
+  given-names: James R.
   affiliation: Arcadia Science
-  orcid: https://orcid.org/0009-0000-0000-0000
-- family-names: Author
-  given-names: Yet Another Test
+  orcid: https://orcid.org/0000-0002-9411-9680
+- family-names: Kiefl
+  given-names: Evan
   affiliation: Arcadia Science
-  orcid: https://orcid.org/0000-0000-0000-0000
-- family-names: Author
-  given-names: Final
+  orcid: https://orcid.org/0000-0002-6473-0921
+- family-names: Sandler
+  given-names: George
   affiliation: Arcadia Science
-  orcid: https://orcid.org/0000-0000-0000-0000
+  orcid: https://orcid.org/0000-0001-9420-1521
+- family-names: York
+  given-names: Ryan
+  affiliation: Arcadia Science
+  orcid: https://orcid.org/0000-0002-1073-1494
 preferred-citation:
-  title: This is the notebook pub demo
+  title: 'From black box to glass box: Making UMAP interpretable with exact feature
+    contributions'
   type: article
-  doi: 10.57844/arcadia-fake-doi
+  doi: 10.57844/arcadia-tnr4-7n9h
   authors:
-  - family-names: Author
-    given-names: Test
+  - family-names: Golden
+    given-names: James R.
     affiliation: Arcadia Science
-    orcid: https://orcid.org/0000-0000-0000-0000
-  - family-names: Author
-    given-names: Another Test
+    orcid: https://orcid.org/0000-0002-9411-9680
+  - family-names: York
+    given-names: Ryan
     affiliation: Arcadia Science
-    orcid: https://orcid.org/0000-0000-0000-0000
-  - family-names: Author
-    given-names: Yet Another Test
-    affiliation: Arcadia Science
-    orcid: https://orcid.org/0000-0000-0000-0000
+    orcid: https://orcid.org/0000-0002-1073-1494
   year: 2025

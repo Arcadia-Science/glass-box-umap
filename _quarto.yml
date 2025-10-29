@@ -26,8 +26,6 @@ website:
         href: index.ipynb
     - text: '{{< iconify nrk:back >}} Back to Pub'
       href: index.ipynb
-    - text: Demo
-      href: /examples/demo.html
     right:
     - text: FAQ
       href: pages/FAQ.qmd
@@ -80,7 +78,7 @@ format:
     toc-expand: 2
 comments:
   giscus:
-    repo: Arcadia-Science/notebook-pub-template
+    repo: Arcadia-Science/glass-box-umap
     input-position: top
 reference-location: margin
 bibliography: ref.bib

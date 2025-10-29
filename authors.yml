@@ -1,34 +1,27 @@
-# For roles, choose from:
-#
-# - conceptualization
-# - formal analysis
-# - investigation
-# - methodology
-# - software
-# - supervision
-# - writing
-# - critical feedback
-# - data curation
-# - editing
-# - project administration
-# - resources
-# - validation
-# - visualization
 authors:
-  - name: James R. Golden
-    orcid: 0000-0002-9411-9680
-    roles:
-      - conceptualization
-      - formal analysis
-      - investigation
-      - methodology
-      - software
-      - writing
-  - name: Ryan York
-    orcid: 0000-0000-0000-0000
-    roles:
-      - supervision
-  - name: Evan Kiefl
-    orcid: 0000-0000-0000-0000
-    roles:
-      - software
+- name: Audrey Bell
+  orcid: 0009-0008-2270-1613
+  roles:
+  - Critical Feedback
+- name: James R. Golden
+  orcid: 0000-0002-9411-9680
+  roles:
+  - Conceptualization
+  - Formal Analysis
+  - Investigation
+  - Software
+  - Visualization
+  - Writing
+- name: Evan Kiefl
+  orcid: 0000-0002-6473-0921
+  roles:
+  - Validation
+- name: George Sandler
+  orcid: 0000-0001-9420-1521
+  roles:
+  - Critical Feedback
+  - Visualization
+- name: Ryan York
+  orcid: 0000-0002-1073-1494
+  roles:
+  - Supervision
