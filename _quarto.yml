@@ -63,6 +63,7 @@ website:
     style: simple
 format:
   html:
+    html-math-method: katex
     include-in-header:
     - file: assets/logo-animation.html
     - file: assets/author-reveal.html
