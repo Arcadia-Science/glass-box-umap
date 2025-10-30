@@ -3,8 +3,8 @@ project:
   render:
   - '*.qmd'
   - '*.ipynb'
-  - 'examples/*.ipynb'
-  - 'pages/*.qmd'
+  - examples/*.ipynb
+  - pages/*.qmd
   resources:
   - assets/*
   - authors.yml
@@ -12,7 +12,7 @@ project:
 execute:
   freeze: auto
 website:
-  favicon: "assets/logo_white.png"
+  favicon: assets/logo_white.png
   twitter-card: true
   open-graph: true
   navbar:
@@ -22,8 +22,24 @@ website:
     left:
     - text: '{{< iconify qlementine-icons:version-control-16 >}}'
       menu:
-      - text: v01 (latest)
+      - text: v1.08 (latest)
         href: index.ipynb
+      - text: v1.07
+        href: index_v1.07.ipynb
+      - text: v1.06
+        href: index_v1.06.ipynb
+      - text: v1.05
+        href: index_v1.05.ipynb
+      - text: v1.04
+        href: index_v1.04.ipynb
+      - text: v1.03
+        href: index_v1.03.ipynb
+      - text: v1.01
+        href: index_v1.01.ipynb
+      - text: v1.0
+        href: index_v1.0.ipynb
+      - text: '1.02'
+        href: index_1.02.ipynb
     - text: '{{< iconify nrk:back >}} Back to Pub'
       href: index.ipynb
     right:
@@ -32,7 +48,7 @@ website:
     - text: Reproduce this pub
       href: pages/SETUP.qmd
     - text: Cite this pub
-      href: "#"
+      href: '#'
     - text: Contribute
       href: pages/CONTRIBUTING.qmd
     tools:
@@ -70,7 +86,7 @@ format:
     - file: assets/mini-title.html
     - file: assets/version-in-title.html
     - file: assets/citation-box.html
-    css: 
+    css:
     - assets/css/main.css
     - assets/css/citation-box.css
     page-layout: article
@@ -87,7 +103,6 @@ csl: assets/arcadia.csl
 code-annotations: hover
 html-table-processing: none
 demo-title: A brief syntax demo
-
 filters:
 - abstract-section
 - collapse-output
