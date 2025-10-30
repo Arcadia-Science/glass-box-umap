@@ -829,7 +829,11 @@ window.Quarto = {
     <ul class="dropdown-menu" aria-labelledby="nav-menu-iconify-qlementine-iconsversion-control-16-">    
         <li>
     <a class="dropdown-item" href="./index.html">
- <span class="dropdown-text">v1.05 (latest)</span></a>
+ <span class="dropdown-text">v1.06 (latest)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./index_v1.05.html">
+ <span class="dropdown-text">v1.05</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./index_v1.04.html">
@@ -2419,7 +2423,7 @@ Figure&nbsp;2: Jacobian reconstruction. To validate that the Jacobian reconstruc
 <span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    summary_file<span class="op">=</span>summary_interactive_file <span class="cf">if</span> <span class="kw">not</span> TRAIN <span class="cf">else</span> <span class="va">None</span></span>
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div id="cell-fig-umap-hover-top-genes" class="cell quarto-layout-panel" data-layout-ncol="1">
+<div id="cell-fig-umap-hover-top-genes" class="cell quarto-layout-panel" data-layout-ncol="1" aria-label="Interactive plotly plot of the PyTorch (v2.9.0) UMAP embedding colored by cell type, where hover tips show the top gene features.">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: flex-start;">
 <div id="fig-umap-hover-top-genes" class="cell-output cell-output-display quarto-float quarto-figure quarto-figure-center anchored">
@@ -2467,18 +2471,16 @@ Figure&nbsp;3: The PyTorch (v2.9.0) UMAP embedding colored by cell type with top
 <details class="code-fold">
 <summary>UMAP colored by top features</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">#plotly UMAP embedding colored by top gene features</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># | fig-alt:</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># |   - "Interactive plotly plot of the PyTorch (v2.9.0) UMAP embedding colored by top gene features."</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>plot_interactive(</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    reducer, </span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    adata_final,</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    groupby<span class="op">=</span>GROUPBY_KEY,</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    color_by<span class="op">=</span><span class="st">'top_gene'</span>,</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    fit_index<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    summary_file<span class="op">=</span>summary_interactive_file <span class="cf">if</span> <span class="kw">not</span> TRAIN <span class="cf">else</span> <span class="va">None</span></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>plot_interactive(</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    reducer, </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    adata_final,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    groupby<span class="op">=</span>GROUPBY_KEY,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    color_by<span class="op">=</span><span class="st">'top_gene'</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    fit_index<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    summary_file<span class="op">=</span>summary_interactive_file <span class="cf">if</span> <span class="kw">not</span> TRAIN <span class="cf">else</span> <span class="va">None</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div id="cell-fig-umap-plot-genes" class="cell quarto-layout-panel" data-layout-ncol="1">
+<div id="cell-fig-umap-plot-genes" class="cell quarto-layout-panel" data-layout-ncol="1" aria-label="Interactive plotly plot of the PyTorch (v2.9.0) UMAP embedding colored by top gene features.">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: flex-start;">
 <div id="fig-umap-plot-genes" class="cell-output cell-output-display quarto-float quarto-figure quarto-figure-center anchored">
