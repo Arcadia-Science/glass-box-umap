@@ -501,12 +501,14 @@ if (window.MathJax && window.MathJax.Hub && window.MathJax.Hub.Config) {window.M
 <!-- version-in-title.html -->
 <meta property="og:title" content="From black box to glass box: Making UMAP interpretable with exact feature contributions –">
 <meta property="og:description" content="">
-<meta property="og:image" content="https://Arcadia-Science.github.io/glass-box-umap/index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-1.png">
+<meta property="og:image" content="https://Arcadia-Science.github.io/glass-box-umap/index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-1.png">
+<meta property="og:image:alt" content="Scatter plot of the UMAP embedding with the class Reticulocyte highlighted, with the top gene features overlaid as vectors.">
 <meta property="og:image:height" content="734">
 <meta property="og:image:width" content="1021">
 <meta name="twitter:title" content="From black box to glass box: Making UMAP interpretable with exact feature contributions –">
 <meta name="twitter:description" content="">
-<meta name="twitter:image" content="https://Arcadia-Science.github.io/glass-box-umap/index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-1.png">
+<meta name="twitter:image" content="https://Arcadia-Science.github.io/glass-box-umap/index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-1.png">
+<meta name="twitter:image:alt" content="Scatter plot of the UMAP embedding with the class Reticulocyte highlighted, with the top gene features overlaid as vectors.">
 <meta name="twitter:image-height" content="734">
 <meta name="twitter:image-width" content="1021">
 <meta name="twitter:card" content="summary_large_image">
@@ -899,7 +901,7 @@ window.Quarto = {
   <div>
     <div class="abstract">
       <div class="block-title">Summary</div>
-      <p>We transform UMAP from a black box into a glass box. By learning the embedding function with a type of deep network with certain architectural constraints, we compute the network’s equivalent linear mapping (ELM) for each input point. The ELM yields a set of linear weights on the input features that reconstruct the embedding for each point, revealing the heretofore hidden logic of UMAP embeddings.</p>
+      <p>We transform UMAP from a black box into a glass box. By learning the embedding function with a certain type of deep network, we can compute equivalent linear mappings of the input features that exactly reconstruct each embedding, revealing the heretofore hidden logic of UMAP.</p>
       <div class="callout callout-style-default callout-note callout-titled" title="AI usage disclosure">
       <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
       <div class="callout-icon-container">
@@ -1620,7 +1622,7 @@ y(x) = J(x) \cdot x
 </section>
 <section id="umap-of-gene-expression-data" class="level2">
 <h2 class="anchored" data-anchor-id="umap-of-gene-expression-data">UMAP of gene expression data</h2>
-<p>Here we show the embeddings from the convetional, non-parametric UMAP from ScanPy (v1.11.4) as well as the PyTorch (v2.9.0) version of parametric UMAP. For visualizations we use the Arcadia Pycolor toolbox <span class="citation" data-cites="arcadia-pycolor">(<a href="#ref-arcadia-pycolor" role="doc-biblioref"><span>“Arcadia-pycolor,”</span> 2025</a>)</span> (v0.6.5).</p>
+<p>Here we show the embeddings from the conventional, non-parametric UMAP from ScanPy (v1.11.4) as well as the PyTorch (v2.9.0) version of parametric UMAP. For visualizations we use the Arcadia Pycolor toolbox <span class="citation" data-cites="arcadia-pycolor">(<a href="#ref-arcadia-pycolor" role="doc-biblioref"><span>“Arcadia-pycolor,”</span> 2025</a>)</span> (v0.6.5).</p>
 <div id="84ef251c" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Plotting methods</summary>
@@ -2283,7 +2285,7 @@ y(x) = J(x) \cdot x
 <span id="cb7-657"><a href="#cb7-657" aria-hidden="true" tabindex="-1"></a>setup_plotting_themes()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
-<p>Since the PyTorch (v2.9.0) UMAP implementation is slightly different than the conventional UMAP (v0.5.9.post2), we generate the embeddings using both approach and show them below in <a href="#fig-umap-original" class="quarto-xref">Figure&nbsp;1</a>.</p>
+<p>Since the PyTorch (v2.9.0) UMAP implementation is slightly different than the conventional UMAP (v0.5.9.post2), we generate the embeddings using both approaches and show them below in <a href="#fig-umap-original" class="quarto-xref">Figure&nbsp;1</a>.</p>
 <details class="code-fold">
 <summary>Conventional and parametric UMAP plots</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>adata_final.obsm[<span class="st">'X_parametric_umap_0'</span>] <span class="op">=</span> reducer.embeddings_[<span class="dv">0</span>]</span>
@@ -2297,10 +2299,10 @@ y(x) = J(x) \cdot x
 <div aria-describedby="fig-umap-original-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-umap-original" style="flex-basis: 100.0%;justify-content: flex-start;">
-<div id="fig-umap-original-1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-umap-original-1" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of conventional UMAP embeddings for gene expression data showing distinct cell type clusters.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-umap-original-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-umap-original-output-1.png" data-ref-parent="fig-umap-original" width="655" height="340" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-umap-original-output-1.png" data-ref-parent="fig-umap-original" alt="Scatter plot of conventional UMAP embeddings for gene expression data showing distinct cell type clusters." width="655" height="340" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-umap-original-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (a) The conventional ScanPy (v1.11.4) UMAP embedding.
@@ -2311,10 +2313,10 @@ y(x) = J(x) \cdot x
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-umap-original" style="flex-basis: 100.0%;justify-content: flex-start;">
-<div id="fig-umap-original-2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-umap-original-2" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of PyTorch (v2.9.0) UMAP embeddings for gene expression data showing similar clusters as in the conventional UMAP plot.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-umap-original-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-umap-original-output-2.png" data-ref-parent="fig-umap-original" width="655" height="340" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-umap-original-output-2.png" data-ref-parent="fig-umap-original" alt="Scatter plot of PyTorch (v2.9.0) UMAP embeddings for gene expression data showing similar clusters as in the conventional UMAP plot." width="655" height="340" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-umap-original-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (b) The PyTorch (v2.9.0) network UMAP embedding.
@@ -2360,10 +2362,10 @@ Figure&nbsp;1: The conventional ScanPy (v1.11.4) UMAP and the PyTorch (v2.9.0) n
 <div aria-describedby="fig-reconstruction-validation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-reconstruction-validation" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-reconstruction-validation-1" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-align="center">
+<div id="fig-reconstruction-validation-1" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Plot of the Jacobian reconstruction of the UMAP embedding positions as a function of the actual UMAP embedding positions, falling on the identity line, showing they are equivalent." data-fig-align="center">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-reconstruction-validation-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-reconstruction-validation-output-1.png" class="quarto-figure quarto-figure-center figure-img" data-ref-parent="fig-reconstruction-validation" width="379" height="365">
+<img src="index_1.02_files/figure-html/fig-reconstruction-validation-output-1.png" class="quarto-figure quarto-figure-center figure-img" data-ref-parent="fig-reconstruction-validation" alt="Plot of the Jacobian reconstruction of the UMAP embedding positions as a function of the actual UMAP embedding positions, falling on the identity line, showing they are equivalent." width="379" height="365">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-reconstruction-validation-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (a) UMAP embedding position vs.&nbsp;the Jacobian reconstruction.
@@ -2372,10 +2374,10 @@ Figure&nbsp;1: The conventional ScanPy (v1.11.4) UMAP and the PyTorch (v2.9.0) n
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-reconstruction-validation" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-reconstruction-validation-2" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-align="center">
+<div id="fig-reconstruction-validation-2" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Histogram of the reconstruction error for the points from the reconstruction plot, showing very low error with a maximum absolute value of 3e-14." data-fig-align="center">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-reconstruction-validation-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-reconstruction-validation-output-2.png" class="quarto-figure quarto-figure-center figure-img" data-ref-parent="fig-reconstruction-validation" width="369" height="364">
+<img src="index_1.02_files/figure-html/fig-reconstruction-validation-output-2.png" class="quarto-figure quarto-figure-center figure-img" data-ref-parent="fig-reconstruction-validation" alt="Histogram of the reconstruction error for the points from the reconstruction plot, showing very low error with a maximum absolute value of 3e-14." width="369" height="364">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-reconstruction-validation-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (b) Histogram of reconstruction error at float64. The max error is about 3e-14, approaching machine precision.
@@ -2409,7 +2411,7 @@ Figure&nbsp;2: Jacobian reconstruction. To validate that the Jacobian reconstruc
 <span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    summary_file<span class="op">=</span>summary_interactive_file <span class="cf">if</span> <span class="kw">not</span> TRAIN <span class="cf">else</span> <span class="va">None</span></span>
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div id="cell-fig-umap-hover-top-genes" class="cell quarto-layout-panel" data-layout-ncol="1" data-execution_count="11">
+<div id="cell-fig-umap-hover-top-genes" class="cell quarto-layout-panel" data-layout-ncol="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: flex-start;">
 <div id="fig-umap-hover-top-genes" class="cell-output cell-output-display quarto-float quarto-figure quarto-figure-center anchored">
@@ -2457,16 +2459,18 @@ Figure&nbsp;3: The PyTorch (v2.9.0) UMAP embedding colored by cell type with top
 <details class="code-fold">
 <summary>UMAP colored by top features</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">#plotly UMAP embedding colored by top gene features</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>plot_interactive(</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    reducer, </span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    adata_final,</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    groupby<span class="op">=</span>GROUPBY_KEY,</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    color_by<span class="op">=</span><span class="st">'top_gene'</span>,</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    fit_index<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    summary_file<span class="op">=</span>summary_interactive_file <span class="cf">if</span> <span class="kw">not</span> TRAIN <span class="cf">else</span> <span class="va">None</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># | fig-alt:</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># |   - "Interactive plotly plot of the PyTorch (v2.9.0) UMAP embedding colored by top gene features."</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>plot_interactive(</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    reducer, </span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    adata_final,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    groupby<span class="op">=</span>GROUPBY_KEY,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    color_by<span class="op">=</span><span class="st">'top_gene'</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    fit_index<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    summary_file<span class="op">=</span>summary_interactive_file <span class="cf">if</span> <span class="kw">not</span> TRAIN <span class="cf">else</span> <span class="va">None</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div id="cell-fig-umap-plot-genes" class="cell quarto-layout-panel" data-layout-ncol="1" data-execution_count="12">
+<div id="cell-fig-umap-plot-genes" class="cell quarto-layout-panel" data-layout-ncol="1">
 <div class="quarto-layout-row">
 <div class="quarto-layout-cell" style="flex-basis: 100.0%;justify-content: flex-start;">
 <div id="fig-umap-plot-genes" class="cell-output cell-output-display quarto-float quarto-figure quarto-figure-center anchored">
@@ -2500,7 +2504,7 @@ if (outputEl) {{
                         })                };            </script>        </div>
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-umap-plot-genes-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, showing that some cell types have regions with different top gene contributors, and some top gene contributors extend across type divisons. This plot only shows 84% of the points in the dataset, as the top features for the remaining points are more unique and would require a longer legend.
+Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, showing that some cell types have regions with different top gene contributors, and some top gene contributors extend across type divisions. This plot only shows 84% of the points in the dataset, as the top features for the remaining points are more unique and would require a longer legend.
 </figcaption>
 </figure>
 </div>
@@ -2530,10 +2534,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 <div aria-describedby="fig-top-gene-features-by-type-all-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-1" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of the UMAP embedding with the class Reticulocyte highlighted, with the top gene features overlaid as vectors.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-1.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-1.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Scatter plot of the UMAP embedding with the class Reticulocyte highlighted, with the top gene features overlaid as vectors." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (a) Reticulocyte, UMAP feature vectors for fit 0.
@@ -2542,10 +2546,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-2" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Horizontal bar plot of the top gene features for the class Reticulocyte.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-2.png" data-ref-parent="fig-top-gene-features-by-type-all" width="509" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-2.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Horizontal bar plot of the top gene features for the class Reticulocyte." width="509" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (b) Reticulocyte, UMAP feature length, mean over 16 fits.
@@ -2556,10 +2560,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-3" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-3" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of the UMAP embedding with the class CD4+ T naive highlighted, with the top gene features overlaid as vectors.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-3.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-3.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Scatter plot of the UMAP embedding with the class CD4+ T naive highlighted, with the top gene features overlaid as vectors." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (c) CD4+ T naive, UMAP feature vectors for fit 0.
@@ -2568,10 +2572,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-4" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-4" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Horizontal bar plot of the top gene features for the class CD4+ T naive.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-4-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-4.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-4.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Horizontal bar plot of the top gene features for the class CD4+ T naive." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-4-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (d) CD4+ T naive, UMAP feature lengths, mean over 16 fits.
@@ -2582,10 +2586,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-5" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-5" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of the UMAP embedding with the class CD8+ T naive highlighted, with the top gene features overlaid as vectors.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-5-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-5.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-5.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Scatter plot of the UMAP embedding with the class CD8+ T naive highlighted, with the top gene features overlaid as vectors." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-5-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (e) CD8+ T naive, UMAP feature vectors for fit 0.
@@ -2594,10 +2598,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-6" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-6" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Horizontal bar plot of the top gene features for the class CD8+ T naive.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-6-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-6.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-6.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Horizontal bar plot of the top gene features for the class CD8+ T naive." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-6-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (f) CD8+ T naive, UMAP feature lengths, mean over 16 fits.
@@ -2608,10 +2612,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-7" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-7" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of the UMAP embedding with the class CD14+ mono highlighted, with the top gene features overlaid as vectors.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-7-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-7.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-7.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Scatter plot of the UMAP embedding with the class CD14+ mono highlighted, with the top gene features overlaid as vectors." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-7-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (g) CD14+ mono, UMAP feature vectors for fit 0.
@@ -2620,10 +2624,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-8" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-8" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Horizontal bar plot of the top gene features for the class CD14+ mono.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-8-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-8.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-8.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Horizontal bar plot of the top gene features for the class CD14+ mono." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-8-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (h) CD14+ mono, UMAP feature lengths, mean over 16 fits.
@@ -2634,10 +2638,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-9" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-9" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of the UMAP embedding with the class CD4+ T activated highlighted, with the top gene features overlaid as vectors.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-9-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-9.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-9.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Scatter plot of the UMAP embedding with the class CD4+ T activated highlighted, with the top gene features overlaid as vectors." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-9-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (i) CD4+ T activated, UMAP feature vectors for fit 0.
@@ -2646,10 +2650,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-10" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-10" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Horizontal bar plot of the top gene features for the class CD4+ T activated.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-10-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-10.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-10.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Horizontal bar plot of the top gene features for the class CD4+ T activated." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-10-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (j) CD4+ T activated, UMAP feature lengths, mean over 16 fits.
@@ -2660,10 +2664,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-11" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-11" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of the UMAP embedding with the class Naive CD20+ B IGKC+ highlighted, with the top gene features overlaid as vectors.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-11-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-11.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-11.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Scatter plot of the UMAP embedding with the class Naive CD20+ B IGKC+ highlighted, with the top gene features overlaid as vectors." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-11-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (k) Naive CD20+ B IGKC+, UMAP feature vectors for fit 0.
@@ -2672,10 +2676,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-12" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-12" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Horizontal bar plot of the top gene features for the class Naive CD20+ B IGKC+.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-12-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-12.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-12.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Horizontal bar plot of the top gene features for the class Naive CD20+ B IGKC+." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-12-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (l) Naive CD20+ B IGKC+, UMAP feature lengths, mean over 16 fits.
@@ -2686,10 +2690,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-13" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-13" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of the UMAP embedding with the class Naive CD20+ B IGKC- highlighted, with the top gene features overlaid as vectors.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-13-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-13.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-13.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Scatter plot of the UMAP embedding with the class Naive CD20+ B IGKC- highlighted, with the top gene features overlaid as vectors." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-13-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (m) Naive CD20+ B IGKC-, UMAP feature vectors for fit 0.
@@ -2698,10 +2702,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-14" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-14" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Horizontal bar plot of the top gene features for the class Naive CD20+ B IGKC-.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-14-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-14.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-14.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Horizontal bar plot of the top gene features for the class Naive CD20+ B IGKC-." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-14-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (n) Naive CD20+ B IGKC-, UMAP feature lengths, mean over 16 fits.
@@ -2712,10 +2716,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-15" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-15" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of the UMAP embedding with the class Erythroblast highlighted, with the top gene features overlaid as vectors.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-15-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-15.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-15.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Scatter plot of the UMAP embedding with the class Erythroblast highlighted, with the top gene features overlaid as vectors." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-15-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (o) Erythroblast, UMAP feature vectors for fit 0.
@@ -2724,10 +2728,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-16" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-16" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Horizontal bar plot of the top gene features for the class Erythroblast.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-16-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-16.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-16.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Horizontal bar plot of the top gene features for the class Erythroblast." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-16-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (p) Erythroblast, UMAP feature lengths, mean over 16 fits.
@@ -2738,10 +2742,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-17" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-17" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of the UMAP embedding with the class Normoblast highlighted, with the top gene features overlaid as vectors.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-17-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-17.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-17.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Scatter plot of the UMAP embedding with the class Normoblast highlighted, with the top gene features overlaid as vectors." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-17-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (q) Normoblast, UMAP feature vectors for fit 0.
@@ -2750,10 +2754,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-18" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-18" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Horizontal bar plot of the top gene features for the class Normoblast.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-18-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-18.png" data-ref-parent="fig-top-gene-features-by-type-all" width="509" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-18.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Horizontal bar plot of the top gene features for the class Normoblast." width="509" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-18-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (r) Normoblast, UMAP feature lengths, mean over 16 fits.
@@ -2764,10 +2768,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-19" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-19" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of the UMAP embedding with the class NK highlighted, with the top gene features overlaid as vectors.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-19-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-19.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-19.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Scatter plot of the UMAP embedding with the class NK highlighted, with the top gene features overlaid as vectors." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-19-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (s) NK, UMAP feature vectors for fit 0.
@@ -2776,10 +2780,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-20" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-20" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Horizontal bar plot of the top gene features for the class NK.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-20-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-20.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-20.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Horizontal bar plot of the top gene features for the class NK." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-20-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (t) NK, UMAP feature lengths, mean over 16 fits.
@@ -2790,10 +2794,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-21" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-21" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of the UMAP embedding with the class Transitional B highlighted, with the top gene features overlaid as vectors.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-21-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-21.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-21.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Scatter plot of the UMAP embedding with the class Transitional B highlighted, with the top gene features overlaid as vectors." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-21-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (u) Transitional B, UMAP feature vectors for fit 0.
@@ -2802,10 +2806,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-22" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-22" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Horizontal bar plot of the top gene features for the class Transitional B.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-22-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-22.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-22.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Horizontal bar plot of the top gene features for the class Transitional B." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-22-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (v) Transitional B, UMAP feature lengths, mean over 16 fits.
@@ -2816,10 +2820,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-23" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-23" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Scatter plot of the UMAP embedding with the class CD8+ T CD57+ CD45RA+ highlighted, with the top gene features overlaid as vectors.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-23-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-23.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-23.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Scatter plot of the UMAP embedding with the class CD8+ T CD57+ CD45RA+ highlighted, with the top gene features overlaid as vectors." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-23-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (w) CD8+ T CD57+ CD45RA+, UMAP feature vectors for fit 0.
@@ -2828,10 +2832,10 @@ Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, 
 </div>
 </div>
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-top-gene-features-by-type-all" style="flex-basis: 50.0%;justify-content: flex-start;">
-<div id="fig-top-gene-features-by-type-all-24" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-top-gene-features-by-type-all-24" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Horizontal bar plot of the top gene features for the class CD8+ T CD57+ CD45RA+.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-top-gene-features-by-type-all-24-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-top-gene-features-by-type-all-output-24.png" data-ref-parent="fig-top-gene-features-by-type-all" width="510" height="367" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-top-gene-features-by-type-all-output-24.png" data-ref-parent="fig-top-gene-features-by-type-all" alt="Horizontal bar plot of the top gene features for the class CD8+ T CD57+ CD45RA+." width="510" height="367" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-top-gene-features-by-type-all-24-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (x) CD8+ T CD57+ CD45RA+, UMAP feature lengths, mean over 16 fits.
@@ -2869,10 +2873,10 @@ Figure&nbsp;5: The top gene features for each cell type. Note that the largest f
 <div aria-describedby="fig-dotplot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-dotplot" style="flex-basis: 100.0%;justify-content: flex-start;">
-<div id="fig-dotplot-1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-dotplot-1" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Dot plot from the differential expression analysis, showing the differential expression set of top gene features as well as the Jacobian set of top gene features, where both sets have a similar activation.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-dotplot-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-dotplot-output-1.png" data-ref-parent="fig-dotplot" width="1391" height="540" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-dotplot-output-1.png" data-ref-parent="fig-dotplot" alt="Dot plot from the differential expression analysis, showing the differential expression set of top gene features as well as the Jacobian set of top gene features, where both sets have a similar activation." width="1391" height="540" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-dotplot-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (a) The dot plot for the top differential expression features by cell type.
@@ -2883,10 +2887,10 @@ Figure&nbsp;5: The top gene features for each cell type. Note that the largest f
 </div>
 <div class="quarto-layout-row">
 <div class="cell-output cell-output-display quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-dotplot" style="flex-basis: 100.0%;justify-content: flex-start;">
-<div id="fig-dotplot-2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<div id="fig-dotplot-2" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Dot plot from the Jacobian analysis, showing the differential expression set of top gene features as well as the Jacobian set of top gene features, where only the Jacobian features have strong activations, highlighting the differences.">
 <figure class="quarto-float quarto-subfloat-fig figure">
 <div aria-describedby="fig-dotplot-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="index_v1.0_files/figure-html/fig-dotplot-output-2.png" data-ref-parent="fig-dotplot" width="1391" height="540" class="figure-img">
+<img src="index_1.02_files/figure-html/fig-dotplot-output-2.png" data-ref-parent="fig-dotplot" alt="Dot plot from the Jacobian analysis, showing the differential expression set of top gene features as well as the Jacobian set of top gene features, where only the Jacobian features have strong activations, highlighting the differences." width="1391" height="540" class="figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-dotplot-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 (b) The dot plot for the top Jacobian features by cell type.

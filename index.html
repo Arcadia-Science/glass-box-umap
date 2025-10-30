@@ -829,11 +829,19 @@ window.Quarto = {
     <ul class="dropdown-menu" aria-labelledby="nav-menu-iconify-qlementine-iconsversion-control-16-">    
         <li>
     <a class="dropdown-item" href="./index.html">
- <span class="dropdown-text">v1.01 (latest)</span></a>
+ <span class="dropdown-text">v1.03 (latest)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./index_v1.01.html">
+ <span class="dropdown-text">v1.01</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./index_v1.0.html">
  <span class="dropdown-text">v1.0</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./index_1.02.html">
+ <span class="dropdown-text">1.02</span></a>
   </li>  
     </ul>
   </li>
@@ -1614,7 +1622,7 @@ y(x) = J(x) \cdot x
 </section>
 <section id="umap-of-gene-expression-data" class="level2">
 <h2 class="anchored" data-anchor-id="umap-of-gene-expression-data">UMAP of gene expression data</h2>
-<p>Here we show the embeddings from the convetional, non-parametric UMAP from ScanPy (v1.11.4) as well as the PyTorch (v2.9.0) version of parametric UMAP. For visualizations we use the Arcadia Pycolor toolbox <span class="citation" data-cites="arcadia-pycolor">(<a href="#ref-arcadia-pycolor" role="doc-biblioref"><span>“Arcadia-pycolor,”</span> 2025</a>)</span> (v0.6.5).</p>
+<p>Here we show the embeddings from the conventional, non-parametric UMAP from ScanPy (v1.11.4) as well as the PyTorch (v2.9.0) version of parametric UMAP. For visualizations we use the Arcadia Pycolor toolbox <span class="citation" data-cites="arcadia-pycolor">(<a href="#ref-arcadia-pycolor" role="doc-biblioref"><span>“Arcadia-pycolor,”</span> 2025</a>)</span> (v0.6.5).</p>
 <div id="84ef251c" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Plotting methods</summary>
@@ -2277,7 +2285,7 @@ y(x) = J(x) \cdot x
 <span id="cb7-657"><a href="#cb7-657" aria-hidden="true" tabindex="-1"></a>setup_plotting_themes()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
-<p>Since the PyTorch (v2.9.0) UMAP implementation is slightly different than the conventional UMAP (v0.5.9.post2), we generate the embeddings using both approach and show them below in <a href="#fig-umap-original" class="quarto-xref">Figure&nbsp;1</a>.</p>
+<p>Since the PyTorch (v2.9.0) UMAP implementation is slightly different than the conventional UMAP (v0.5.9.post2), we generate the embeddings using both approaches and show them below in <a href="#fig-umap-original" class="quarto-xref">Figure&nbsp;1</a>.</p>
 <details class="code-fold">
 <summary>Conventional and parametric UMAP plots</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>adata_final.obsm[<span class="st">'X_parametric_umap_0'</span>] <span class="op">=</span> reducer.embeddings_[<span class="dv">0</span>]</span>
@@ -2496,7 +2504,7 @@ if (outputEl) {{
                         })                };            </script>        </div>
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-umap-plot-genes-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, showing that some cell types have regions with different top gene contributors, and some top gene contributors extend across type divisons. This plot only shows 84% of the points in the dataset, as the top features for the remaining points are more unique and would require a longer legend.
+Figure&nbsp;4: The PyTorch (v2.9.0) UMAP embedding colored by top gene feature, showing that some cell types have regions with different top gene contributors, and some top gene contributors extend across type divisions. This plot only shows 84% of the points in the dataset, as the top features for the remaining points are more unique and would require a longer legend.
 </figcaption>
 </figure>
 </div>

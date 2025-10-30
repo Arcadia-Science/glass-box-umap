@@ -1,27 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://Arcadia-Science.github.io/glass-box-umap/index_v1.0.html</loc>
-    <lastmod>2025-10-29T22:22:48.701Z</lastmod>
+    <loc>https://Arcadia-Science.github.io/glass-box-umap/index_v1.01.html</loc>
+    <lastmod>2025-10-30T02:36:25.527Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Arcadia-Science.github.io/glass-box-umap/index_1.02.html</loc>
+    <lastmod>2025-10-30T02:36:25.518Z</lastmod>
   </url>
   <url>
     <loc>https://Arcadia-Science.github.io/glass-box-umap/examples/demo.html</loc>
-    <lastmod>2025-10-29T22:22:48.665Z</lastmod>
+    <lastmod>2025-10-30T02:36:25.475Z</lastmod>
   </url>
   <url>
     <loc>https://Arcadia-Science.github.io/glass-box-umap/pages/FAQ.html</loc>
-    <lastmod>2025-10-29T22:22:50.371Z</lastmod>
+    <lastmod>2025-10-30T02:36:27.200Z</lastmod>
   </url>
   <url>
     <loc>https://Arcadia-Science.github.io/glass-box-umap/pages/CONTRIBUTING.html</loc>
-    <lastmod>2025-10-29T22:22:50.371Z</lastmod>
+    <lastmod>2025-10-30T02:36:27.200Z</lastmod>
   </url>
   <url>
     <loc>https://Arcadia-Science.github.io/glass-box-umap/pages/SETUP.html</loc>
-    <lastmod>2025-10-29T22:22:50.371Z</lastmod>
+    <lastmod>2025-10-30T02:36:27.200Z</lastmod>
   </url>
   <url>
     <loc>https://Arcadia-Science.github.io/glass-box-umap/index.html</loc>
-    <lastmod>2025-10-29T22:22:48.695Z</lastmod>
+    <lastmod>2025-10-30T02:36:25.512Z</lastmod>
+  </url>
+  <url>
+    <loc>https://Arcadia-Science.github.io/glass-box-umap/index_v1.0.html</loc>
+    <lastmod>2025-10-30T02:36:25.523Z</lastmod>
   </url>
 </urlset>
