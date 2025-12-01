@@ -1,0 +1,105 @@
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+strict = false
+vcs = "git"
+# The "pep440" style appends the git commit hash to the version number when there are commits
+# on `main` since the last tag.
+style = "pep440"
+# Append a flag to the version number if there are uncommitted changes.
+dirty = true
+
+[tool.poetry]
+name = "[PACKAGE_NAME]"
+# This version is a placeholder. It will be updated at build time by poetry-dynamic-versioning
+# from the latest git tag.
+version = "0.0.0"
+description = "[DESCRIPTION OF THE PACKAGE]"
+authors = ["[FIRST] [LAST] <[EMAIL]>"]
+readme = "README.md"
+license = "MIT"
+packages = [{ include = "[PACKAGE_NAME]" }]
+homepage = "https://github.com/Arcadia-Science/[PACKAGE-NAME]"
+repository = "https://github.com/Arcadia-Science/[PACKAGE-NAME]"
+documentation = "https://github.com/Arcadia-Science/[PACKAGE-NAME]/blob/main/README.md"
+
+[[tool.poetry.source]]
+name = "pypi"
+priority = "primary"
+
+[[tool.poetry.source]]
+name = "pypi_test"
+# Note: poetry only support the "legacy" API.
+url = "https://test.pypi.org/legacy/"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "3.5.0"
+pyright = "^1.1.367"
+pytest = "8.2.1"
+ruff = "0.4.4"
+
+[tool.poetry.group.build.dependencies]
+poetry-dynamic-versioning = { extras = ["plugin"], version = "^1.4.0" }
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "6.1.0"
+sphinx-copybutton = "0.5.2"
+furo = "2024.5.6"
+myst-parser = "3.0.1"
+sphinx-autoapi = "3.1.2"
+sphinx-tabs = "3.4.5"
+nbsphinx = "0.9.5"
+# Jupyterlab and matplotlib are needed for notebook rendering.
+jupyterlab = "4.2.5"
+matplotlib = "3.9.2"
+
+[tool.ruff]
+# The directories to consider when resolving first- vs. third-party imports.
+src = ["."]
+line-length = 100
+indent-width = 4
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore star and unused imports.
+"__init__.py" = ["F403", "F405"]
+
+[tool.ruff.lint]
+select = [
+    "B",  # flake8-bugbear
+    "E",  # pycodestyle error
+    "F",  # pyflakes
+    "I",  # isort
+    "UP", # pyupgrade
+    "W",  # pycodestyle warning
+]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+order-by-type = true
+no-lines-before = ["future", "standard-library"]
+
+[tool.pyright]
+typeCheckingMode = "basic"
+exclude = ["./.venv", "./dist"]
+
+# Pyright reports a lot of unknown-member errors for some packages.
+# If this is a problem, set this to `false`.
+reportUnknownMemberType = true
