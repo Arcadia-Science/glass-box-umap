@@ -13,18 +13,18 @@ style = "pep440"
 dirty = true
 
 [tool.poetry]
-name = "[PACKAGE_NAME]"
+name = "glass_box_umap"
 # This version is a placeholder. It will be updated at build time by poetry-dynamic-versioning
 # from the latest git tag.
 version = "0.0.0"
-description = "[DESCRIPTION OF THE PACKAGE]"
-authors = ["[FIRST] [LAST] <[EMAIL]>"]
+description = "This package augments UMAP by computing exact feature contributions to the UMAP embedding."
+authors = ["James Golden <james.golden@arcadiascience.com>"]
 readme = "README.md"
 license = "MIT"
-packages = [{ include = "[PACKAGE_NAME]" }]
-homepage = "https://github.com/Arcadia-Science/[PACKAGE-NAME]"
-repository = "https://github.com/Arcadia-Science/[PACKAGE-NAME]"
-documentation = "https://github.com/Arcadia-Science/[PACKAGE-NAME]/blob/main/README.md"
+packages = [{ include = "glass_box_umap" }]
+homepage = "https://github.com/Arcadia-Science/glass-box-umap"
+repository = "https://github.com/Arcadia-Science/glass-box-umap"
+documentation = "https://github.com/Arcadia-Science/glass-box-umap/blob/main/README.md"
 
 [[tool.poetry.source]]
 name = "pypi"

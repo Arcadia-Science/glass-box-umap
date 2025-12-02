@@ -1,28 +1,224 @@
-# Python package template
 
-This repo is a template for Python packages. It uses `poetry` for dependency management and packaging, `ruff` for formatting, `pyright` for type-checking, `pytest` for testing, and `sphinx` for documentation.
+# glass-box-umap
+
+This repo contains a Python package called `glass_box_umap`.
+
+This package augments UMAP by computing exact feature contributions to the UMAP embedding.
+
+## Installation
+
+The package is hosted on PyPI and can be installed using pip:
+
+```bash
+pip install glass-box-umap
+```
 
 ## Usage
 
-1. Create a new repo using this template on GitHub by clicking the "Use this template" button at the top of the page.
+Use the package to fit a UMAP embedding and compute the exact feature contributions. See examples.
 
-1. Clone the new repo and replace the placeholders from the template with the appropriate values for your new project. All placeholders are in all caps and are delimited by square brackets.
+## Development
 
-   To find all of the placeholders, you can use the following command:
+### Environment setup
 
-    ```bash
-    git grep "\[[A-Z _-]\{2,\}\]"
-    ```
+We use poetry for dependency management and build tooling. You can either install poetry globally or within a virtual environment in order to isolate poetry itself. We recommend the latter. First, create a new conda environment from the `dev.yml` environment file:
 
-    In VS Code, you can also use the "Find in Files" feature with the following regex pattern:
-    ```
-    \[([A-Z _-]{2,})\]
-    ```
+```bash
+conda env create -n glass-box-umap-dev -f envs/dev.yml
+conda activate glass-box-umap-dev
+```
 
-    Note that there is a distinction between the placeholders `[PACKAGE_NAME]` and `[PACKAGE-NAME]`. The former denotes places where the package name should be written in `kebab-case`, while the latter denotes places where it should be in `snake_case`. (If the package name is a single word, then this distinction is irrelevant.)
+Next, install dependencies, including the development, documentation, and build dependencies:
 
-1. Follow the instructions in the `README_TEMPLATE.md` file to set up a development environment.
+```bash
+poetry install --no-root --with dev,docs,build
+```
 
-1. Enable the GitHub Actions workflow that runs the tests by opening `.github/workflows/test.yml` and deleting the line `if: false`.
+If you have installed poetry globally, activate the poetry virtual environment:
 
-1. Finally, delete this `README.md` file and rename the `README_TEMPLATE.md` file to `README.md`.
+```bash
+poetry shell
+```
+
+Poetry detects and respects existing virtual environments, so if you are using poetry within a conda environment, this step is not needed.
+
+Finally, install the package itself in editable mode:
+
+```bash
+pip install -e .
+```
+
+### Formatting and linting
+
+If you have installed poetry globally, make sure to run `poetry shell` before running the commands below.
+
+To format the code, use the following command:
+
+```bash
+make format
+```
+
+To run the lint checks and type checking, use the following command:
+
+```bash
+make lint
+```
+
+### Pre-commit hooks
+
+We use pre-commit to run formatting and lint checks before each commit. To install the pre-commit hooks, use the following command:
+
+```bash
+pre-commit install
+```
+
+To run the pre-commit checks manually, use the following command:
+
+```bash
+make pre-commit
+```
+
+### Testing
+
+We use `pytest` for testing. The tests are found in the `glass_box_umap/tests/` subpackage. To run the tests, use the following command:
+
+```bash
+make test
+```
+
+### Managing dependencies
+
+We use poetry to manage dependencies. To add a new dependency, use the following command:
+
+```bash
+poetry add some-package
+```
+
+To add a new development dependency, use the following command:
+
+```bash
+poetry add -G dev some-dev-package
+```
+
+To update a dependency, use the following command:
+
+```bash
+poetry update some-package
+```
+
+Whenever you add or update a dependency, poetry will automatically update both `pyproject.toml` and the `poetry.lock` file. Make sure to commit the changes to these files to the repo.
+
+### Documentation
+
+We use Sphinx for documentation with the [`furo` theme](https://github.com/pradyunsg/furo). We also use some Sphinx extensions (described below) to make the process of writing documentation easier.
+
+To build the docs, first install `pandoc`. On macOS, this can be done using `brew`:
+
+```
+brew install pandoc
+```
+
+Then, build the docs using the following command:
+
+```bash
+make docs
+```
+
+Note: the `pandoc` dependency is only required by the `nbsphinx` extension. If this extension is removed, there is no need to install `pandoc`.
+
+#### sphinx-autoapi
+
+This extension generates API docs automatically from the docstrings in the source code. To do so, it requires that docstrings adhere to the Google or Numpy style. This style is described in the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html).
+
+#### napolean
+
+Rather than writing our docstrings in RST, we use this extension to convert Google and NumPy-style docstrings to RST at build time.
+
+#### myst-parser
+
+RST is complicated to write. This extension lets us write our docs in Markdown and then converts them to RST at build time.
+
+#### nbsphinx
+
+It is often convenient to write examples as Jupyter notebooks. This extension executes Jupyter notebooks and renders the results in the docs at build time. It requires `pandoc`, which can be installed using `brew install pandoc`.
+
+#### Removing unused Sphinx extensions
+
+To remove an unused extension, delete the corresponding line from the `extensions` list in `docs/conf.py` and delete the extension from the `[tool.poetry.group.docs.dependencies]` section in `pyproject.toml`.
+
+## Publishing the package on PyPI
+
+Publishing the package on PyPI requires that you have API tokens for the test and production PyPI servers. You can find these tokens in your PyPI account settings. Create a `.env` file by coping `.env.copy` and add your tokens to this file.
+
+We use git tags to define package versions. When you're ready to release a new version of the package, first create a new git tag. The name of the tag should correspond to the new version number, prepended with a "v". In the example below, the new version number is `0.1.0`, so the git tag is `v0.1.0`. We use semantic versioning of the form `MAJOR.MINOR.PATCH`. See [semver.org](https://semver.org/) for more information.
+
+```bash
+RELEASE_VERSION=0.1.0
+git tag -a v${RELEASE_VERSION} -m "Release version ${RELEASE_VERSION}"
+git push origin v${RELEASE_VERSION}
+```
+
+__Before creating the tag, make sure that your local git repository is on `main`, is up-to-date, and does not contain uncommitted changes!__
+
+If you need to delete a tag you've created, use the following command:
+
+```bash
+git tag -d v${RELEASE_VERSION}
+```
+
+If you already pushed the deleted tag to GitHub, you will also need to delete the tag from the remote repository:
+
+```bash
+git push origin :refs/tags/v${RELEASE_VERSION}
+```
+
+Once you've created the correct new tag, build the package:
+```bash
+make build
+```
+
+You should see an output that looks like this:
+```
+Building glass-box-umap (0.1.0)
+  - Building sdist
+  - Built glass-box-umap-0.1.0.tar.gz
+  - Building wheel
+```
+
+The build artifacts are written to the `dist/` directory.
+
+__Make sure that the version number in the output from `make build` matches the one from the git tag that you just created!__
+
+If it does not, first double-check that you created the git tag correctly. If the tag looks correct, there are two specific scenarios to check for:
+
+- If the version number is `0.0.0`, this indicates that Poetry cannot infer the correct version number. Check that you are in the correct conda environment and that you have installed the dev dependencies using `poetry install --no-root --with=dev`.
+
+- If there is additional metadata attached to the version number (_e.g._ `0.1.0.dev1+eb17e9c.dirty`), this means that your local repo is on a commit without a tag and/or that there are uncommitted changes in your local repo. Make sure that you are on the correct commit and commit or stash any uncommitted changes, then try the build command again.
+
+Next, check that you can publish the package to the PyPI test server:
+
+```bash
+make build-and-test-publish
+```
+
+The `build-and-test-publish` command calls `poetry build` to build the package and then `poetry publish` to upload the build artifacts to the test server.
+
+Check that you can install the new version of the package from the test server:
+
+```bash
+pip install --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ glass-box-umap==${RELEASE_VERSION}
+```
+
+(For accurate installation testing: dependencies are installed from main PyPI (to avoid unreliable TestPyPI mirrors), while your package (not yet on main PyPI) is installed from TestPyPI.)
+
+If everything looks good, build and publish the package to the prod PyPI server:
+
+```bash
+make build-and-publish
+```
+
+Finally, check that you can install the new version of the package from the prod PyPI server:
+
+```bash
+pip install glass-box-umap==${RELEASE_VERSION}
+```
