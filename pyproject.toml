@@ -17,7 +17,7 @@ name = "glass_box_umap"
 # This version is a placeholder. It will be updated at build time by poetry-dynamic-versioning
 # from the latest git tag.
 version = "0.0.0"
-description = "[DESCRIPTION OF THE PACKAGE]"
+description = "This package augments UMAP by computing exact feature contributions to the UMAP embedding."
 authors = ["James Golden <james.golden@arcadiascience.com>"]
 readme = "README.md"
 license = "MIT"

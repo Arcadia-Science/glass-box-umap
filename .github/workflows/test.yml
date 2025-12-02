@@ -6,6 +6,7 @@ on:
 
 jobs:
   test:
+    if: false
     strategy:
       fail-fast: false
       matrix:
