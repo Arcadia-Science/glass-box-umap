@@ -33,5 +33,3 @@ repos:
         entry: make typecheck
         language: system
         pass_filenames: false
-        # Typechecking is a bit slow, so we only run it when pushing (and not on every commit).
-        stages: [pre-push]
