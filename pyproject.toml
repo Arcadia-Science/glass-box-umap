@@ -13,7 +13,7 @@ style = "pep440"
 dirty = true
 
 [tool.poetry]
-name = "glass_box_umap"
+name = "glass-box-umap"
 # This version is a placeholder. It will be updated at build time by poetry-dynamic-versioning
 # from the latest git tag.
 version = "0.0.0"

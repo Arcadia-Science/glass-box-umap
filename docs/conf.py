@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath("../"))
 
 # -- Project information -----------------------------------------------------
 
-project = "[glass-box-umap]"
+project = "glass-box-umap"
 # copyright = "2024, Arcadia Science"
 author = "[FIRST] [LAST]"
 
@@ -107,7 +107,7 @@ autodoc_class_signature = "mixed"
 autoclass_content = "class"
 
 autoapi_type = "python"
-autoapi_dirs = ["../[glass_box_umap]"]
+autoapi_dirs = ["../glass_box_umap"]
 autoapi_keep_files = True
 
 autoapi_ignore = [
