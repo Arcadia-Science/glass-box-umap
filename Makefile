@@ -40,6 +40,11 @@ docs:
 	$(MAKE) -C docs/ clean-and-build-html
 	$(MAKE) -C docs/ view-html
 
+.PHONY: docs-live
+docs-live:
+	$(MAKE) -C docs/ clean-and-build-html
+	$(MAKE) -C docs/ live
+
 .PHONY: build-and-test-publish
 build-and-test-publish: build
 	uv publish \
