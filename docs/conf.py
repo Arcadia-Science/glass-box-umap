@@ -19,8 +19,6 @@ sys.path.insert(0, os.path.abspath("../src"))
 # -- Project information -----------------------------------------------------
 
 project = "glass-box-umap"
-# copyright = "2024, Arcadia Science"
-author = "[FIRST] [LAST]"
 
 # -- General configuration ---------------------------------------------------
 
