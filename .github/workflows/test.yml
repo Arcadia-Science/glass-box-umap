@@ -20,6 +20,9 @@ jobs:
         with:
           version: "0.5.6"
           enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          # The OS is already included in the key by the action.
+          cache-suffix: "python-${{ matrix.python-version }}"
 
       - name: Set up Python
         run: uv python install ${{ matrix.python-version }}
