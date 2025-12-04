@@ -12,7 +12,7 @@ authors = [
 ]
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.10,<3.14"
 # TODO: We'll eventually want to increase dependency resolution radius
 # TODO: We'll want to strictly prune these deps
 dependencies = [
