@@ -1,4 +1,4 @@
-name: Type Check
+name: typecheck
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
-        run: uv python install 3.13
+        run: uv python install  # Determines version from .python-version
 
       # --frozen ensures CI fails if uv.lock is out of sync with pyproject.toml
       - name: Install dependencies
