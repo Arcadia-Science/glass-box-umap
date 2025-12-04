@@ -19,6 +19,13 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
           cache-suffix: "typecheck"
+      - name: Set up Python
+        run: uv python install  # Determines version from .python-version
+
+      # --frozen ensures CI fails if uv.lock is out of sync with pyproject.toml
+      - name: Install dependencies
+        run: uv sync --frozen --group dev
+
       # ADD THIS STEP -----------------------------------------
       - name: 🔍 PROOF - Check Cache Size
         run: |
@@ -34,12 +41,5 @@ jobs:
           # Check the size of the specific 'wheels' folder where downloads live
           du -ah "$CACHE_DIR" | sort -rh | head -n 15
       # -------------------------------------------------------
-      - name: Set up Python
-        run: uv python install  # Determines version from .python-version
-
-      # --frozen ensures CI fails if uv.lock is out of sync with pyproject.toml
-      - name: Install dependencies
-        run: uv sync --frozen --group dev
-
       - name: Run type check
         run: uv run make typecheck
