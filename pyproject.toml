@@ -1,96 +1,77 @@
 [build-system]
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
-build-backend = "poetry_dynamic_versioning.backend"
+requires = ["uv_build>=0.6.6"]
+build-backend = "uv_build"
 
-[tool.poetry-dynamic-versioning]
-enable = true
-strict = false
-vcs = "git"
-# The "pep440" style appends the git commit hash to the version number when there are commits
-# on `main` since the last tag.
-style = "pep440"
-# Append a flag to the version number if there are uncommitted changes.
-dirty = true
-
-[tool.poetry]
+[project]
 name = "glass-box-umap"
-# This version is a placeholder. It will be updated at build time by poetry-dynamic-versioning
-# from the latest git tag.
 version = "0.0.0"
 description = "This package augments UMAP by computing exact feature contributions to the UMAP embedding."
-authors = ["James Golden <james.golden@arcadiascience.com>"]
+authors = [
+  {name = "James Golden", email = "james.golden@arcadiascience.com"},
+  {name = "Evan Kiefl", email = "kiefl.evan@gmail.com"},
+]
 readme = "README.md"
-license = "MIT"
-packages = [{ include = "glass_box_umap" }]
-homepage = "https://github.com/Arcadia-Science/glass-box-umap"
-repository = "https://github.com/Arcadia-Science/glass-box-umap"
-documentation = "https://github.com/Arcadia-Science/glass-box-umap/blob/main/README.md"
-
-[[tool.poetry.source]]
-name = "pypi"
-priority = "primary"
-
-[[tool.poetry.source]]
-name = "pypi_test"
-# Note: poetry only support the "legacy" API.
-url = "https://test.pypi.org/legacy/"
-
+license = {text = "MIT"}
+requires-python = ">=3.10,<4.0"
 # TODO: We'll eventually want to increase dependency resolution radius
-# TODO: Strict pruning of these deps is necessary
-[tool.poetry.dependencies]
-python = ">=3.10,<4.0"
-numpy = "^1.26.4"
-plotly = "^6.3.1"
-pandas = "^2.2.3"
-adjusttext = "^1.3.0"
-anndata = "^0.11.4"
-arcadia-pycolor = "^0.6.5"
-array-api-compat = "^1.12.0"
-colorspacious = "^1.1.2"
-crc32c = "^2.7.1"
-donfig = "^0.8.1"
-igraph = "^0.11.9"
-kaleido = "^0.2.1"
-legacy-api-wrap = "^1.4.1"
-leidenalg = "^0.10.2"
-lightning-utilities = "^0.15.2"
-numcodecs = "^0.13.1"
-scanpy = "^1.11.4"
-session-info2 = "^0.2.3"
-texttable = "^1.7.0"
-zarr = "^2.18.3"
-dill = "^0.4.0"
-einops = "^0.8.1"
+# TODO: We'll want to strictly prune these deps
+dependencies = [
+    "numpy>=1.26.4,<2",
+    "plotly>=6.3.1,<7",
+    "pandas>=2.2.3,<3",
+    "adjusttext>=1.3.0,<2",
+    "anndata>=0.11.4,<0.12",
+    "arcadia-pycolor>=0.6.5,<0.7",
+    "array-api-compat>=1.12.0,<2",
+    "colorspacious>=1.1.2,<2",
+    "crc32c>=2.7.1,<3",
+    "donfig>=0.8.1,<0.9",
+    "igraph>=0.11.9,<0.12",
+    "kaleido>=0.2.1,<0.3",
+    "legacy-api-wrap>=1.4.1,<2",
+    "leidenalg>=0.10.2,<0.11",
+    "lightning-utilities>=0.15.2,<0.16",
+    "numcodecs>=0.13.1,<0.14",
+    "scanpy>=1.11.4,<2",
+    "session-info2>=0.2.3,<0.3",
+    "texttable>=1.7.0,<2",
+    "zarr>=2.18.3,<3",
+    "dill>=0.4.0,<0.5",
+    "einops>=0.8.1,<0.9",
+]
 
 # https://github.com/python-poetry/poetry/issues/6409#issuecomment-2203773939
 #torchmetrics
 #pytorch-lightning
 #torch
 
-[tool.poetry.group.dev.dependencies]
-pre-commit = "3.5.0"
-pyright = "^1.1.367"
-pytest = "8.2.1"
-ruff = "0.4.4"
+[project.urls]
+Homepage = "https://github.com/Arcadia-Science/glass-box-umap"
+Repository = "https://github.com/Arcadia-Science/glass-box-umap"
+Documentation = "https://github.com/Arcadia-Science/glass-box-umap/blob/main/README.md"
 
-[tool.poetry.group.build.dependencies]
-poetry-dynamic-versioning = { extras = ["plugin"], version = "^1.4.0" }
-poetry = "==1.8.3"
-
-[tool.poetry.group.docs]
-optional = true
-
-[tool.poetry.group.docs.dependencies]
-sphinx = "6.1.0"
-sphinx-copybutton = "0.5.2"
-furo = "2024.5.6"
-myst-parser = "3.0.1"
-sphinx-autoapi = "3.1.2"
-sphinx-tabs = "3.4.5"
-nbsphinx = "0.9.5"
-# Jupyterlab and matplotlib are needed for notebook rendering.
-jupyterlab = "4.2.5"
-matplotlib = "3.9.2"
+[dependency-groups]
+dev = [
+    "pre-commit==3.5.0",
+    "pyright>=1.1.367,<2",
+    "pytest==8.2.1",
+    "ruff==0.4.4",
+]
+docs = [
+    "sphinx==8.1.3",
+    "sphinx-copybutton==0.5.2",
+    "furo==2024.8.6",
+    "myst-parser==4.0.1",
+    "sphinx-autoapi==3.6.0",
+    "sphinx-tabs==3.4.7",
+    "nbsphinx==0.9.7",
+    "sphinx-autobuild==2024.10.3",
+    "sphinx-togglebutton==0.3.2",
+    "astroid==3.3.11",
+    # Jupyterlab and matplotlib are needed for notebook rendering.
+    "jupyterlab==4.2.5",
+    "matplotlib==3.9.2",
+]
 
 [tool.ruff]
 # The directories to consider when resolving first- vs. third-party imports.
