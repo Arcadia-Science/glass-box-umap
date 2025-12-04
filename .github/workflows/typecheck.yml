@@ -18,6 +18,7 @@ jobs:
           version: "0.5.6"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          cache-suffix: "typecheck"
 
       - name: Set up Python
         run: uv python install  # Determines version from .python-version
