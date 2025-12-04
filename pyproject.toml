@@ -52,10 +52,10 @@ Documentation = "https://github.com/Arcadia-Science/glass-box-umap/blob/main/REA
 
 [dependency-groups]
 dev = [
-    "pre-commit==3.5.0",
-    "pyright>=1.1.367,<2",
-    "pytest==8.2.1",
-    "ruff==0.4.4",
+    "pre-commit==4.5.0",
+    "pyright==1.1.407",
+    "pytest==9.0.1",
+    "ruff==0.14.7",
 ]
 docs = [
     "sphinx==8.1.3",
