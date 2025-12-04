@@ -26,20 +26,5 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --group dev
 
-      # ADD THIS STEP -----------------------------------------
-      - name: 🔍 PROOF - Check Cache Size
-        run: |
-          # Dynamically find where uv is storing files
-          CACHE_DIR=$(uv cache dir)
-          echo "UV Cache is located at: $CACHE_DIR"
-
-          echo "=== Total Size ==="
-          du -sh "$CACHE_DIR"
-
-          echo ""
-          echo "=== Top 10 Largest Files/Folders ==="
-          # Check the size of the specific 'wheels' folder where downloads live
-          du -ah "$CACHE_DIR" | sort -rh | head -n 15
-      # -------------------------------------------------------
       - name: Run type check
         run: uv run make typecheck
