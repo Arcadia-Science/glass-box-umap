@@ -14,31 +14,15 @@ readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10,<3.14"
 # TODO: We'll eventually want to increase dependency resolution radius
-# TODO: We'll want to strictly prune these deps
 dependencies = [
     "numpy>=1.26.4,<2",
-    "plotly>=6.3.1,<7",
     "pandas>=2.2.3,<3",
-    "adjusttext>=1.3.0,<2",
-    "anndata>=0.11.4,<0.12",
-    "arcadia-pycolor>=0.6.5,<0.7",
-    "array-api-compat>=1.12.0,<2",
-    "colorspacious>=1.1.2,<2",
-    "crc32c>=2.7.1,<3",
-    "donfig>=0.8.1,<0.9",
-    "igraph>=0.11.9,<0.12",
-    "kaleido>=0.2.1,<0.3",
-    "legacy-api-wrap>=1.4.1,<2",
     "leidenalg>=0.10.2,<0.11",
     "lightning-utilities>=0.15.2,<0.16",
-    "numcodecs>=0.13.1,<0.14",
-    "scanpy>=1.11.4,<2",
-    "session-info2>=0.2.3,<0.3",
-    "texttable>=1.7.0,<2",
-    "zarr>=2.18.3,<3",
     "dill>=0.4.0,<0.5",
     "einops>=0.8.1,<0.9",
 ]
+
 
 # https://github.com/python-poetry/poetry/issues/6409#issuecomment-2203773939
 #torchmetrics
