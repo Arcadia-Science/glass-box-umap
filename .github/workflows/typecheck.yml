@@ -16,8 +16,11 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          # Cache invalidates if any of these glob patterns hit.
+          cache-dependency-glob: |
+            **/uv.lock
           cache-suffix: "typecheck"
+
       - name: Set up Python
         run: uv python install  # Determines version from .python-version
 
