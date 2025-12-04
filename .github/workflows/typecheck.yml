@@ -22,12 +22,17 @@ jobs:
       # ADD THIS STEP -----------------------------------------
       - name: 🔍 PROOF - Check Cache Size
         run: |
-          echo "=== Total Size of UV Cache ==="
-          du -sh /home/runner/.cache/uv
+          # Dynamically find where uv is storing files
+          CACHE_DIR=$(uv cache dir)
+          echo "UV Cache is located at: $CACHE_DIR"
+
+          echo "=== Total Size ==="
+          du -sh "$CACHE_DIR"
 
           echo ""
-          echo "=== Top 10 Largest Folders in Cache ==="
-          du -ah /home/runner/.cache/uv | sort -rh | head -n 10
+          echo "=== Top 10 Largest Files/Folders ==="
+          # Check the size of the specific 'wheels' folder where downloads live
+          du -ah "$CACHE_DIR" | sort -rh | head -n 15
       # -------------------------------------------------------
       - name: Set up Python
         run: uv python install  # Determines version from .python-version
