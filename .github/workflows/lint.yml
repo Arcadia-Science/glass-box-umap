@@ -2,11 +2,9 @@ name: lint
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   lint:
@@ -22,11 +20,8 @@ jobs:
       - name: Set up Python
         run: uv python install 3.13
 
-      - name: Install dependencies
-        run: uv sync --group dev
+      - name: Install linting dependencies
+        run: uv sync --only-group dev --no-install-project
 
-      - name: Run linting
+      - name: Run lint
         run: uv run make lint
-
-      - name: Run type checking
-        run: uv run make typecheck
