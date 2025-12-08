@@ -1,4 +1,4 @@
-# glass-box-umap
+# Glass Box UMAP
 
 This repo contains a Python package called `glass_box_umap`.
 
