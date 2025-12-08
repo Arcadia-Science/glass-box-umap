@@ -1,21 +1,22 @@
-
 # glass-box-umap
 
 This repo contains a Python package called `glass_box_umap`.
 
 This package augments UMAP by computing exact feature contributions to the UMAP embedding.
 
+The publication for Glass Box UMAP can be found [here](https://arcadia-science.github.io/glass-box-umap-notebook-pub/).
+
 ## Installation
 
-The package is hosted on PyPI and can be installed using pip:
-
 ```bash
+# pip
 pip install glass-box-umap
+
+# uv
+uv pip install glass-box-umap
 ```
 
-## Usage
-
-Use the package to fit a UMAP embedding and compute the exact feature contributions. See examples.
+Find complete installation instructions at `docs/install.md`.
 
 ## Development
 
