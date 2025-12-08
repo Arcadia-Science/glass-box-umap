@@ -28,6 +28,12 @@ We use [uv](https://docs.astral.sh/uv/) for dependency management and build tool
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
+Make sure uv is installed and available. Verify this by checking which version you have:
+
+```bash
+uv --version
+```
+
 Then install the project with development dependencies:
 
 ```bash
@@ -42,7 +48,7 @@ uv sync --group dev --group docs
 
 This creates a virtual environment in `.venv` and installs all dependencies. The package itself is automatically installed in editable mode (equivalent to `pip install -e .`).
 
-The easiest way to run code is to simply prefix commands with `uv run` (e.g., `uv run python main.py`). This executes the command inside the virtual environment automatically, so you don't need to activate it first.
+The easiest way to run code is to simply prefix commands with `uv run` (e.g., `uv run <YOUR_COMMAND>`). This executes the command inside the virtual environment automatically, so you don't need to activate it first.
 
 Alternatively, if you prefer a traditional workflow, or are running from a different directory, you can manually source the activation script:
 
@@ -121,7 +127,7 @@ brew install pandoc
 Then, build the docs using the following command:
 
 ```bash
-make docs
+uv run make docs
 ```
 
 Note: the `pandoc` dependency is only required by the `nbsphinx` extension. If this extension is removed, there is no need to install `pandoc`.
