@@ -33,24 +33,25 @@ clean:
 
 .PHONY: build
 build: clean
-	poetry build
+	uv build
 
 .PHONY: docs
 docs:
 	$(MAKE) -C docs/ clean-and-build-html
 	$(MAKE) -C docs/ view-html
 
-# Note: `poetry` does not appear to read the `POETRY_PYPI_TOKEN_<NAME>` environment variable,
-# so we need to pass it explicitly in these publishing commands.
+.PHONY: docs-live
+docs-live:
+	$(MAKE) -C docs/ clean-and-build-html
+	$(MAKE) -C docs/ live
+
 .PHONY: build-and-test-publish
 build-and-test-publish: build
-	poetry publish \
-		--repository pypi_test \
-		--username __token__ \
-		--password ${POETRY_PYPI_TOKEN_PYPI_TEST}
+	uv publish \
+		--publish-url https://test.pypi.org/legacy/ \
+		--token ${UV_PUBLISH_TOKEN_TEST}
 
 .PHONY: build-and-publish
 build-and-publish: build
-	poetry publish \
-		--username __token__ \
-		--password ${POETRY_PYPI_TOKEN_PYPI}
+	uv publish \
+		--token ${UV_PUBLISH_TOKEN}

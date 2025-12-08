@@ -14,13 +14,11 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath("./"))
-sys.path.insert(0, os.path.abspath("../"))
+sys.path.insert(0, os.path.abspath("../src"))
 
 # -- Project information -----------------------------------------------------
 
-project = "[glass-box-umap]"
-# copyright = "2024, Arcadia Science"
-author = "[FIRST] [LAST]"
+project = "glass-box-umap"
 
 # -- General configuration ---------------------------------------------------
 
@@ -107,7 +105,7 @@ autodoc_class_signature = "mixed"
 autoclass_content = "class"
 
 autoapi_type = "python"
-autoapi_dirs = ["../[glass_box_umap]"]
+autoapi_dirs = ["../src"]
 autoapi_keep_files = True
 
 autoapi_ignore = [

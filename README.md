@@ -1,56 +1,62 @@
-
-# glass-box-umap
+# Glass Box UMAP
 
 This repo contains a Python package called `glass_box_umap`.
 
 This package augments UMAP by computing exact feature contributions to the UMAP embedding.
 
+The publication for Glass Box UMAP can be found [here](https://arcadia-science.github.io/glass-box-umap-notebook-pub/).
+
 ## Installation
 
-The package is hosted on PyPI and can be installed using pip:
-
 ```bash
+# pip
 pip install glass-box-umap
+
+# uv
+uv pip install glass-box-umap
 ```
 
-## Usage
-
-Use the package to fit a UMAP embedding and compute the exact feature contributions. See examples.
+Find complete installation instructions at `docs/install.md`.
 
 ## Development
 
 ### Environment setup
 
-We use poetry for dependency management and build tooling. You can either install poetry globally or within a virtual environment in order to isolate poetry itself. We recommend the latter. First, create a new conda environment from the `dev.yml` environment file:
+We use [uv](https://docs.astral.sh/uv/) for dependency management and build tooling. First, install uv:
 
 ```bash
-conda env create -n glass-box-umap-dev -f envs/dev.yml
-conda activate glass-box-umap-dev
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Next, install dependencies, including the development, documentation, and build dependencies:
+Make sure uv is installed and available. Verify this by checking which version you have:
 
 ```bash
-poetry install --no-root --with dev,docs,build
+uv --version
 ```
 
-If you have installed poetry globally, activate the poetry virtual environment:
+Then install the project with development dependencies:
 
 ```bash
-poetry shell
+uv sync --group dev
 ```
 
-Poetry detects and respects existing virtual environments, so if you are using poetry within a conda environment, this step is not needed.
-
-Finally, install the package itself in editable mode:
+To also install documentation dependencies:
 
 ```bash
-pip install -e .
+uv sync --group dev --group docs
+```
+
+This creates a virtual environment in `.venv` and installs all dependencies. The package itself is automatically installed in editable mode (equivalent to `pip install -e .`).
+
+The easiest way to run code is to simply prefix commands with `uv run` (e.g., `uv run <YOUR_COMMAND>`). This executes the command inside the virtual environment automatically, so you don't need to activate it first.
+
+Alternatively, if you prefer a traditional workflow, or are running from a different directory, you can manually source the activation script:
+
+```bash
+source .venv/bin/activate
 ```
 
 ### Formatting and linting
-
-If you have installed poetry globally, make sure to run `poetry shell` before running the commands below.
 
 To format the code, use the following command:
 
@@ -88,25 +94,25 @@ make test
 
 ### Managing dependencies
 
-We use poetry to manage dependencies. To add a new dependency, use the following command:
+We use uv to manage dependencies. To add a new dependency:
 
 ```bash
-poetry add some-package
+uv add some-package
 ```
 
-To add a new development dependency, use the following command:
+To add a new development dependency:
 
 ```bash
-poetry add -G dev some-dev-package
+uv add --group dev some-dev-package
 ```
 
-To update a dependency, use the following command:
+To update a dependency:
 
 ```bash
-poetry update some-package
+uv lock --upgrade-package some-package
 ```
 
-Whenever you add or update a dependency, poetry will automatically update both `pyproject.toml` and the `poetry.lock` file. Make sure to commit the changes to these files to the repo.
+Whenever you add or update a dependency, uv will automatically update both `pyproject.toml` and `uv.lock`. Make sure to commit changes to these files.
 
 ### Documentation
 
@@ -121,7 +127,7 @@ brew install pandoc
 Then, build the docs using the following command:
 
 ```bash
-make docs
+uv run make docs
 ```
 
 Note: the `pandoc` dependency is only required by the `nbsphinx` extension. If this extension is removed, there is no need to install `pandoc`.
@@ -144,13 +150,17 @@ It is often convenient to write examples as Jupyter notebooks. This extension ex
 
 #### Removing unused Sphinx extensions
 
-To remove an unused extension, delete the corresponding line from the `extensions` list in `docs/conf.py` and delete the extension from the `[tool.poetry.group.docs.dependencies]` section in `pyproject.toml`.
+To remove an unused extension, delete the corresponding line from the `extensions` list in `docs/conf.py` and delete the extension from the `docs` dependency group in `pyproject.toml`.
 
 ## Publishing the package on PyPI
 
 Publishing the package on PyPI requires that you have API tokens for the test and production PyPI servers. You can find these tokens in your PyPI account settings. Create a `.env` file by coping `.env.copy` and add your tokens to this file.
 
-We use git tags to define package versions. When you're ready to release a new version of the package, first create a new git tag. The name of the tag should correspond to the new version number, prepended with a "v". In the example below, the new version number is `0.1.0`, so the git tag is `v0.1.0`. We use semantic versioning of the form `MAJOR.MINOR.PATCH`. See [semver.org](https://semver.org/) for more information.
+We use semantic versioning of the form `MAJOR.MINOR.PATCH`. See [semver.org](https://semver.org/) for more information. When you're ready to release a new version:
+
+1. Update the `version` field in `pyproject.toml` to the new version number
+2. Commit the change: `git commit -am "Bump version to X.Y.Z"`
+3. Create a git tag matching the version:
 
 ```bash
 RELEASE_VERSION=0.1.0
@@ -160,13 +170,13 @@ git push origin v${RELEASE_VERSION}
 
 __Before creating the tag, make sure that your local git repository is on `main`, is up-to-date, and does not contain uncommitted changes!__
 
-If you need to delete a tag you've created, use the following command:
+If you need to delete a tag you've created:
 
 ```bash
 git tag -d v${RELEASE_VERSION}
 ```
 
-If you already pushed the deleted tag to GitHub, you will also need to delete the tag from the remote repository:
+If you already pushed the deleted tag to GitHub, also delete it from the remote:
 
 ```bash
 git push origin :refs/tags/v${RELEASE_VERSION}
@@ -187,13 +197,9 @@ Building glass-box-umap (0.1.0)
 
 The build artifacts are written to the `dist/` directory.
 
-__Make sure that the version number in the output from `make build` matches the one from the git tag that you just created!__
+__Make sure that the version number in the output from `make build` matches the one in `pyproject.toml` and the git tag!__
 
-If it does not, first double-check that you created the git tag correctly. If the tag looks correct, there are two specific scenarios to check for:
-
-- If the version number is `0.0.0`, this indicates that Poetry cannot infer the correct version number. Check that you are in the correct conda environment and that you have installed the dev dependencies using `poetry install --no-root --with=dev`.
-
-- If there is additional metadata attached to the version number (_e.g._ `0.1.0.dev1+eb17e9c.dirty`), this means that your local repo is on a commit without a tag and/or that there are uncommitted changes in your local repo. Make sure that you are on the correct commit and commit or stash any uncommitted changes, then try the build command again.
+If it does not, double-check that you updated the `version` field in `pyproject.toml` before creating the tag.
 
 Next, check that you can publish the package to the PyPI test server:
 
@@ -201,7 +207,7 @@ Next, check that you can publish the package to the PyPI test server:
 make build-and-test-publish
 ```
 
-The `build-and-test-publish` command calls `poetry build` to build the package and then `poetry publish` to upload the build artifacts to the test server.
+The `build-and-test-publish` command calls `uv build` to build the package and then `uv publish` to upload the build artifacts to the test server.
 
 Check that you can install the new version of the package from the test server:
 
