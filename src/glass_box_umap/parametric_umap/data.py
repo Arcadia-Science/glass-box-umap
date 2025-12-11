@@ -1,15 +1,9 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 import torch
 from numpy.typing import NDArray
-from scipy.sparse import coo_matrix
+from scipy.sparse import coo_matrix, csr_matrix
 from torch import Tensor
 from torch.utils.data import Dataset
-
-if TYPE_CHECKING:
-    from scipy.sparse import csr_matrix
-
 
 GraphElements = tuple[
     coo_matrix,
@@ -21,7 +15,7 @@ GraphElements = tuple[
 ]
 
 
-def get_graph_elements(graph: "csr_matrix", n_epochs: int) -> GraphElements:
+def get_graph_elements(graph: csr_matrix, n_epochs: int) -> GraphElements:
     """Extract graph elements from a sparse UMAP graph for edge sampling.
 
     Converts a sparse graph representation into arrays of edge indices and weights

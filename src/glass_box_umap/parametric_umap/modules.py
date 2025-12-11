@@ -1,17 +1,13 @@
-from typing import TYPE_CHECKING
-
 import numpy as np
 import torch
 import torch.nn.functional as F
+from numpy.random import RandomState
 from numpy.typing import NDArray
 from pynndescent import NNDescent
+from scipy.sparse import csr_matrix
 from sklearn.utils import check_random_state
 from torch import Tensor
 from umap.umap_ import fuzzy_simplicial_set
-
-if TYPE_CHECKING:
-    from numpy.random import RandomState
-    from scipy.sparse import csr_matrix
 
 
 def convert_distance_to_probability(distances: Tensor, a: float = 1.0, b: float = 1.0) -> Tensor:

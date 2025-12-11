@@ -14,18 +14,10 @@ from torch.utils.data import DataLoader
 from umap import UMAP
 from umap.umap_ import find_ab_params
 
-from .data import MatchDataset, UMAPDataset
-from .model import DefaultDecoder, DefaultEncoder
-from .modules import get_umap_graph, umap_loss
-
-
-def _get_accelerator() -> str:
-    """Detect the best available accelerator."""
-    if torch.cuda.is_available():
-        return "cuda"
-    if torch.backends.mps.is_available():
-        return "mps"
-    return "cpu"
+from glass_box_umap.parametric_umap.data import MatchDataset, UMAPDataset
+from glass_box_umap.parametric_umap.model import DefaultDecoder, DefaultEncoder
+from glass_box_umap.parametric_umap.modules import get_umap_graph, umap_loss
+from glass_box_umap.utils import get_accelerator
 
 
 class PeriodicCheckpoint(pl.Callback):
@@ -205,7 +197,7 @@ class PUMAP:
         batch_size: int = 64,
         num_workers: int = 0,
         match_nonparametric_umap: bool = False,
-        nonparametric_embeddings: "NDArray[np.floating] | None" = None,
+        nonparametric_embeddings: NDArray[np.floating] | None = None,
         checkpoint_dir: Path | None = None,
         checkpoint_every_n_epochs: int = 5,
     ) -> None:
@@ -227,7 +219,7 @@ class PUMAP:
         self.checkpoint_dir = checkpoint_dir
         self.checkpoint_every_n_epochs = checkpoint_every_n_epochs
 
-        self._accelerator = _get_accelerator()
+        self._accelerator = get_accelerator()
         self.model: UMAPLightningModule
 
     def fit(self, X: Tensor) -> "PUMAP":

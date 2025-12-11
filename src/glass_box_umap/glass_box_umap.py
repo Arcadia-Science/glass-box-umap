@@ -5,7 +5,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch import nn
-from umap_pytorch.main import PUMAP
+from glass_box_umap.parametric_umap.main import PUMAP
+from glass_box_umap.utils import get_accelerator
 
 
 class LayerNormDetached(nn.Module):
@@ -137,7 +138,7 @@ class GlassBoxUMAP:
         self._jacobians: list[torch.Tensor] = []
         self._feature_contributions: list[np.ndarray] = []
         self._train_data: torch.Tensor | None = None
-        self._device = "cuda" if torch.cuda.is_available() else "cpu"
+        self._device = get_accelerator()
 
     def fit(
         self,
@@ -189,11 +190,9 @@ class GlassBoxUMAP:
                 min_dist=self.min_dist,
                 random_state=self.random_state + i,
                 lr=self.lr,
-                # Only 1 epoch if loading to initialize graph
                 epochs=0 if load_models else self.epochs,
                 batch_size=self.batch_size,
                 num_workers=8,
-                num_gpus=1,
             )
 
             model_file = model_path_pattern.format(i=i)
