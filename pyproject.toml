@@ -28,6 +28,9 @@ dependencies = [
     "einops>=0.8.1,<0.9",
     "torch>=2.5.1",
     "pytorch-lightning>=2.6.0",
+    "umap-learn>=0.5.7",
+    "pynndescent>=0.5.13",
+    "scikit-learn>=1.6.0",
 ]
 
 [[tool.uv.index]]
