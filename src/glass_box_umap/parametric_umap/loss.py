@@ -1,13 +1,6 @@
-import numpy as np
 import torch
 import torch.nn.functional as F
-from numpy.random import RandomState
-from numpy.typing import NDArray
-from pynndescent import NNDescent
-from scipy.sparse import csr_matrix
-from sklearn.utils import check_random_state
 from torch import Tensor
-from umap.umap_ import fuzzy_simplicial_set
 
 
 def convert_distance_to_probability(distances: Tensor, a: float = 1.0, b: float = 1.0) -> Tensor:
@@ -107,50 +100,3 @@ def umap_loss(
         probabilities_distance.to(device),
     )
     return torch.mean(ce_loss)
-
-
-def get_umap_graph(
-    X: NDArray[np.floating],
-    n_neighbors: int = 10,
-    metric: str = "cosine",
-    random_state: "RandomState | int | None" = None,
-) -> "csr_matrix":
-    """Build a UMAP graph from input data using nearest neighbor descent.
-
-    Constructs the fuzzy simplicial set representation used by UMAP, which
-    captures local neighborhood structure in the data.
-
-    Args:
-        X: Input data array of shape (n_samples, n_features).
-        n_neighbors: Number of neighbors to use for graph construction.
-        metric: Distance metric for neighbor search.
-        random_state: Random state for reproducibility.
-
-    Returns:
-        Sparse CSR matrix representing the UMAP graph with edge weights.
-    """
-    rng = check_random_state(random_state)
-    n_trees = 5 + int(round((X.shape[0]) ** 0.5 / 20.0))
-    n_iters = max(5, int(round(np.log2(X.shape[0]))))
-
-    nnd = NNDescent(
-        X,
-        n_neighbors=n_neighbors,
-        metric=metric,
-        n_trees=n_trees,
-        n_iters=n_iters,
-        max_candidates=60,
-        verbose=True,
-    )
-    knn_indices, knn_dists = nnd.neighbor_graph
-
-    umap_graph, _, _ = fuzzy_simplicial_set(
-        X=X,
-        n_neighbors=n_neighbors,
-        metric=metric,
-        random_state=rng,
-        knn_indices=knn_indices,
-        knn_dists=knn_dists,
-    )
-
-    return umap_graph

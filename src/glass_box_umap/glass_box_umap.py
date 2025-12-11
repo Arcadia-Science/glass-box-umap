@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch import nn
-from glass_box_umap.parametric_umap.main import PUMAP
-from glass_box_umap.utils import get_accelerator
+from .parametric_umap import PUMAP
+from .utils import get_accelerator
 
 
 class LayerNormDetached(nn.Module):
