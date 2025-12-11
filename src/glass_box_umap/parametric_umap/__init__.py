@@ -1,9 +1,9 @@
 from .api import (
-    PUMAP,
+    ParametricUMAP,
     load_pumap,
 )
 
 __all__ = [
-    "PUMAP",
+    "ParametricUMAP",
     "load_pumap",
 ]

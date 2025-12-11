@@ -8,7 +8,7 @@ import pandas as pd
 import torch
 from torch import nn
 
-from .parametric_umap import PUMAP
+from .parametric_umap import ParametricUMAP
 from .utils import get_accelerator
 
 
@@ -35,7 +35,7 @@ class LayerNormDetached(nn.Module):
         return self.scale * norm_x
 
 
-class deepReLUNet(nn.Module):
+class DeepReLUNet(nn.Module):
     """
     A deep neural network using PReLU activation and LayerNormDetached.
     """
@@ -189,14 +189,14 @@ class GlassBoxUMAP:
             set_global_seeds(2 * self.random_state + i)
 
             # Note: deepReLUNet is assumed to be available in scope
-            network = deepReLUNet(
+            network = DeepReLUNet(
                 input_size=self.input_size,
                 hidden_size=self.hidden_size,
                 output_size=self.n_components,
             )
 
             # Note: PUMAP is assumed to be available in scope
-            pumap_model = PUMAP(
+            pumap_model = ParametricUMAP(
                 encoder=network,
                 n_neighbors=self.n_neighbors,
                 min_dist=self.min_dist,

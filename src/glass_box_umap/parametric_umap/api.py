@@ -17,7 +17,7 @@ from .lightning import PeriodicCheckpoint, UMAPDataModule, UMAPLightningModule
 from .model import DefaultDecoder, DefaultEncoder
 
 
-class PUMAP:
+class ParametricUMAP:
     """Parametric UMAP for learning embeddings with neural networks.
 
     This class provides a scikit-learn-like interface for training parametric
@@ -78,7 +78,7 @@ class PUMAP:
         self._accelerator = get_accelerator()
         self.model: UMAPLightningModule
 
-    def fit(self, X: Tensor) -> PUMAP:
+    def fit(self, X: Tensor) -> ParametricUMAP:
         """Fit the parametric UMAP model to data.
 
         Args:
@@ -177,7 +177,7 @@ class PUMAP:
             dill.dump(self, f)
 
 
-def load_pumap(path: Path) -> PUMAP:
+def load_pumap(path: Path) -> ParametricUMAP:
     """Load a PUMAP model from disk.
 
     Args:
