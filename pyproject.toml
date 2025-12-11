@@ -71,6 +71,7 @@ docs = [
     # Jupyterlab and matplotlib are needed for notebook rendering.
     "jupyterlab==4.2.5",
     "matplotlib==3.9.2",
+    "sphinx-paramlinks>=0.6.0",
 ]
 
 [tool.ruff]

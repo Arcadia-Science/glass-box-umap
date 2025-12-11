@@ -1,3 +1,11 @@
+:::{admonition} Glass Box UMAP isn't live!
+:class: Danger
+
+These installation instructions will fail because Glass Box UMAP is not yet on PyPI!
+:::
+
+---
+
 # Installation
 
 Glass Box UMAP is available on the [Python Package Index (PyPI)](https://pypi.org/project/glass-box-umap/).
