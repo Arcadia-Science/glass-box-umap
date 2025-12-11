@@ -28,6 +28,7 @@ dependencies = [
     "einops>=0.8.1,<0.9",
     "torch>=2.5.1",
     "pytorch-lightning>=2.6.0",
+    "umap-pytorch",
 ]
 
 [[tool.uv.index]]
@@ -45,6 +46,7 @@ torch = [
     { index = "pytorch-cu121", marker = "sys_platform == 'linux'" },
     { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
 ]
+umap-pytorch = { git = "https://github.com/james-golden-arcadia/umap_pytorch.git" }
 
 [dependency-groups]
 dev = [
