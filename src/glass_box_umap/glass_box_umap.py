@@ -1,4 +1,6 @@
+from __future__ import annotations
 import os
+import random
 from typing import Any
 
 import numpy as np
@@ -61,11 +63,6 @@ class deepReLUNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the PReLU network."""
         return self.model(x)
-
-
-import random
-
-# You may also need: import pytorch_lightning as pl
 
 
 def set_global_seeds(seed: int):
@@ -162,7 +159,7 @@ class GlassBoxUMAP:
         load_n_fits: int = 1,
         save_models: bool = True,
         model_path_pattern: str = "models/umap_{i}.pth",
-    ) -> "GlassBoxUMAP":
+    ) -> GlassBoxUMAP:
         """Fits the Parametric UMAP model to the input features.
 
         Args:
@@ -287,7 +284,7 @@ class GlassBoxUMAP:
         centered_gene_expression: np.ndarray,
         pca_components: np.ndarray,
         jacobian_batch_size: int = 40,
-    ) -> "GlassBoxUMAP":
+    ) -> GlassBoxUMAP:
         """Computes the Jacobian and projects it to the original gene space.
 
         Args:
