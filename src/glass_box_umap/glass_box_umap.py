@@ -5,21 +5,23 @@ import numpy as np
 import pandas as pd
 import torch
 from torch import nn
+
 from .parametric_umap import PUMAP
 from .utils import get_accelerator
 
 
 class LayerNormDetached(nn.Module):
-    '''
+    """
     A LayerNorm implementation where the variance calculation is detached from the
     computation graph during evaluation, potentially stabilizing training.
-    '''
+    """
+
     def __init__(self, emb_dim: int):
         super().__init__()
         self.scale = nn.Parameter(torch.ones(emb_dim))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        '''Forward pass for LayerNormDetached.'''
+        """Forward pass for LayerNormDetached."""
         mean = x.mean(dim=-1, keepdim=True)
         # Detach variance calculation during evaluation
         if not self.training:
@@ -27,31 +29,44 @@ class LayerNormDetached(nn.Module):
         else:
             var = x.var(dim=-1, keepdim=True, unbiased=False)
 
-        norm_x = (x - mean) / torch.sqrt(var + 1e-12) # Added epsilon for stability
+        norm_x = (x - mean) / torch.sqrt(var + 1e-12)  # Added epsilon for stability
         return self.scale * norm_x
+
 
 class deepReLUNet(nn.Module):
     """
     A deep neural network using PReLU activation and LayerNormDetached.
     """
+
     def __init__(self, input_size: int = 50, hidden_size: int = 256, output_size: int = 2):
         super().__init__()
         self.model = nn.Sequential(
-            nn.Linear(input_size, hidden_size, bias=False), nn.PReLU(), LayerNormDetached(hidden_size),
-            nn.Linear(hidden_size, hidden_size, bias=False), nn.PReLU(), LayerNormDetached(hidden_size),
-            nn.Linear(hidden_size, hidden_size, bias=False), nn.PReLU(), LayerNormDetached(hidden_size),
-            nn.Linear(hidden_size, hidden_size, bias=False), nn.PReLU(), LayerNormDetached(hidden_size),
-            nn.Linear(hidden_size, hidden_size, bias=False), nn.PReLU(),
-            nn.Linear(hidden_size, output_size, bias=False)
+            nn.Linear(input_size, hidden_size, bias=False),
+            nn.PReLU(),
+            LayerNormDetached(hidden_size),
+            nn.Linear(hidden_size, hidden_size, bias=False),
+            nn.PReLU(),
+            LayerNormDetached(hidden_size),
+            nn.Linear(hidden_size, hidden_size, bias=False),
+            nn.PReLU(),
+            LayerNormDetached(hidden_size),
+            nn.Linear(hidden_size, hidden_size, bias=False),
+            nn.PReLU(),
+            LayerNormDetached(hidden_size),
+            nn.Linear(hidden_size, hidden_size, bias=False),
+            nn.PReLU(),
+            nn.Linear(hidden_size, output_size, bias=False),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the PReLU network."""
         return self.model(x)
 
+
 import random
 
 # You may also need: import pytorch_lightning as pl
+
 
 def set_global_seeds(seed: int):
     """Sets global seeds for reproducibility."""
@@ -205,9 +220,7 @@ class GlassBoxUMAP:
                         # We must "fit" with 1 epoch/step to initialize graph
                         pumap_model.fit(self._train_data)
 
-                        state_dict = torch.load(
-                            model_file, map_location=self._device
-                        )
+                        state_dict = torch.load(model_file, map_location=self._device)
                         pumap_model.encoder.load_state_dict(state_dict)
                         pumap_model.encoder.eval()
 
@@ -234,9 +247,7 @@ class GlassBoxUMAP:
 
         return self
 
-    def transform(
-        self, features: np.ndarray, fit_index: int = 0
-    ) -> np.ndarray:
+    def transform(self, features: np.ndarray, fit_index: int = 0) -> np.ndarray:
         """Transforms new data into the embedding space using a trained model.
 
         Args:
@@ -293,13 +304,9 @@ class GlassBoxUMAP:
             RuntimeError: If the model has not been fitted.
         """
         if not self._models:
-            raise RuntimeError(
-                "Model must be fitted before computing contributions."
-            )
+            raise RuntimeError("Model must be fitted before computing contributions.")
         if self._train_data is None:
-            raise RuntimeError(
-                "Internal training data not set. Please call fit() first."
-            )
+            raise RuntimeError("Internal training data not set. Please call fit() first.")
 
         self._feature_contributions = []
         self._jacobians = []
@@ -336,8 +343,7 @@ class GlassBoxUMAP:
 
             # 3. Weight by each cell's mean-centered gene expression
             feature_contributions = (
-                gene_space_jacobian.numpy()
-                * centered_gene_expression[:, np.newaxis, :]
+                gene_space_jacobian.numpy() * centered_gene_expression[:, np.newaxis, :]
             )
 
             # Cast to float16 for memory efficiency
@@ -402,9 +408,7 @@ class GlassBoxUMAP:
 
             # Final stats across runs
             mean_contributions = np.mean(run_means_array, axis=0)
-            sem_contributions = np.std(run_means_array, axis=0) / np.sqrt(
-                n_runs
-            )
+            sem_contributions = np.std(run_means_array, axis=0) / np.sqrt(n_runs)
 
             df = pd.DataFrame(
                 {
@@ -440,14 +444,10 @@ class GlassBoxUMAP:
             or not self._jacobians
             or self._train_data is None
         ):
-            raise RuntimeError(
-                "Must run fit() and compute_attributions() first."
-            )
+            raise RuntimeError("Must run fit() and compute_attributions() first.")
 
         # 1. Save population-level statistics
-        stats_df = self.get_feature_importance(
-            adata, groupby, adata.var_names.values
-        )
+        stats_df = self.get_feature_importance(adata, groupby, adata.var_names.values)
         stats_filename = f"{basename}_stats.csv"
         stats_df.to_csv(stats_filename, index=False)
 
@@ -457,18 +457,14 @@ class GlassBoxUMAP:
         for group in all_groups:
             is_group_mask = (adata.obs[groupby] == group).values
             # Using the first run [0] for plotting data
-            mean_vector_dict[group] = np.mean(
-                self._feature_contributions[0][is_group_mask], axis=0
-            )
+            mean_vector_dict[group] = np.mean(self._feature_contributions[0][is_group_mask], axis=0)
 
         jacobxall_first_run = self._feature_contributions[0]
         jacobian_magnitude = np.linalg.norm(jacobxall_first_run, axis=1)
 
         jacobian_0 = self._jacobians[0]
         pca_data_0 = self._train_data.squeeze().detach().cpu().numpy()
-        reconstruction_0 = np.einsum(
-            "ijk,ik->ij", jacobian_0.numpy(), pca_data_0
-        )
+        reconstruction_0 = np.einsum("ijk,ik->ij", jacobian_0.numpy(), pca_data_0)
 
         plot_data_filename = f"{basename}_plot_data.npz"
         np.savez_compressed(
@@ -483,9 +479,7 @@ class GlassBoxUMAP:
         )
 
         # 3. Save interactive plot data
-        interactive_df = self._prepare_plotly_df(
-            adata, groupby=groupby, fit_index=0, top_n_genes=8
-        )
+        interactive_df = self._prepare_plotly_df(adata, groupby=groupby, fit_index=0, top_n_genes=8)
         interactive_filename = f"{basename}_interactive.csv"
         interactive_df.to_csv(interactive_filename, index=False)
 
@@ -518,9 +512,7 @@ class GlassBoxUMAP:
         genes = adata.var.index.values
 
         # Sort indices descending
-        top_gene_indices = np.argsort(gene_dist_sq, axis=1)[:, ::-1][
-            :, :top_n_genes
-        ]
+        top_gene_indices = np.argsort(gene_dist_sq, axis=1)[:, ::-1][:, :top_n_genes]
 
         for i in range(top_n_genes):
             df[f"gene_{i}"] = genes[top_gene_indices[:, i]]
