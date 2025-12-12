@@ -111,8 +111,8 @@ no-lines-before = ["future", "standard-library"]
 
 [tool.pyright]
 typeCheckingMode = "basic"
-exclude = ["./.venv", "./dist"]
+exclude = ["./.venv", "./dist", "./docs"]
 
 # Pyright reports a lot of unknown-member errors for some packages.
 # If this is a problem, set this to `false`.
-reportUnknownMemberType = true
+reportUnknownMemberType = false
