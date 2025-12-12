@@ -15,10 +15,6 @@ from .graph import get_umap_graph
 from .lightning import UMAPDataModule, UMAPLightningModule
 from .model import DefaultEncoder
 
-_decoder_not_implemented_str = (
-    "Decoding is not yet implemented. To request this feature, please file an issue."
-)
-
 
 class ParametricUMAP:
     """Parametric UMAP for learning embeddings with neural networks.
@@ -28,7 +24,6 @@ class ParametricUMAP:
 
     Args:
         encoder: Custom encoder network. If None, uses DefaultEncoder.
-        decoder: Custom decoder network. Not implemented.
         n_neighbors: Number of neighbors for UMAP graph construction.
         min_dist: UMAP min_dist parameter controlling embedding spread.
         metric: Distance metric for neighbor search.
@@ -46,7 +41,6 @@ class ParametricUMAP:
     def __init__(
         self,
         encoder: nn.Module | None = None,
-        decoder: nn.Module | None = None,
         n_neighbors: int = 10,
         min_dist: float = 0.1,
         metric: str = "euclidean",
@@ -60,7 +54,6 @@ class ParametricUMAP:
         checkpoint_every_n_epochs: int = 5,
     ) -> None:
         self.encoder = encoder
-        self.decoder = decoder
         self.n_neighbors = n_neighbors
         self.min_dist = min_dist
         self.metric = metric
@@ -72,9 +65,6 @@ class ParametricUMAP:
         self.num_workers = num_workers
         self.checkpoint_dir = checkpoint_dir
         self.checkpoint_every_n_epochs = checkpoint_every_n_epochs
-
-        if self.decoder is not None:
-            raise NotImplementedError(_decoder_not_implemented_str)
 
         self._accelerator = get_accelerator()
         self.model: UMAPLightningModule
@@ -159,7 +149,9 @@ class ParametricUMAP:
         Returns:
             Numpy array of reconstructed data.
         """
-        raise NotImplementedError(_decoder_not_implemented_str)
+        raise NotImplementedError(
+            "Decoding is not yet implemented. To request this feature, please file an issue."
+        )
 
     def save(self, path: Path) -> None:
         """Save the PUMAP model to disk.
