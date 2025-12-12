@@ -1,4 +1,4 @@
-from .api import (
+from .core import (
     ParametricUMAP,
     load_pumap,
 )

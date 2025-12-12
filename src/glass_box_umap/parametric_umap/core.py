@@ -7,13 +7,14 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 from numpy.typing import NDArray
+from pytorch_lightning.callbacks import ModelCheckpoint
 from torch import Tensor, nn
 from torch.nn.functional import binary_cross_entropy_with_logits
 
 from ..utils import get_accelerator
 from .data import UMAPDataset
 from .graph import get_umap_graph
-from .lightning import PeriodicCheckpoint, UMAPDataModule, UMAPLightningModule
+from .lightning import UMAPDataModule, UMAPLightningModule
 from .model import DefaultDecoder, DefaultEncoder
 
 
@@ -89,10 +90,12 @@ class ParametricUMAP:
         """
         callbacks: list[pl.Callback] = []
         if self.checkpoint_dir is not None:
+            self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
             callbacks.append(
-                PeriodicCheckpoint(
-                    save_dir=self.checkpoint_dir,
+                ModelCheckpoint(
+                    dirpath=self.checkpoint_dir,
                     every_n_epochs=self.checkpoint_every_n_epochs,
+                    filename="checkpoint_epoch_{epoch:03d}",
                 )
             )
 

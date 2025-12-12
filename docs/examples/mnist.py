@@ -16,7 +16,7 @@ import numpy as np
 import seaborn as sns
 import torch
 import typer
-from glass_box_umap.glass_box_umap import GlassBoxUMAP
+from glass_box_umap import GlassBoxUMAP
 from sklearn.datasets import fetch_openml
 from sklearn.decomposition import PCA
 
