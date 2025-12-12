@@ -58,7 +58,6 @@ def umap_loss(
     b: float,
     batch_size: int,
     negative_sample_rate: int = 5,
-    device: str = "cuda",
 ) -> Tensor:
     """Compute UMAP loss with negative sampling.
 
@@ -72,14 +71,15 @@ def umap_loss(
         b: UMAP hyperparameter for probability conversion.
         batch_size: Number of positive pairs in the batch.
         negative_sample_rate: Number of negative samples per positive pair.
-        device: Device to place probability tensors on.
 
     Returns:
         Scalar loss tensor.
     """
+    device = embedding_to.device
+
     embedding_neg_to = embedding_to.repeat(negative_sample_rate, 1)
     repeat_neg = embedding_from.repeat(negative_sample_rate, 1)
-    embedding_neg_from = repeat_neg[torch.randperm(repeat_neg.shape[0])]
+    embedding_neg_from = repeat_neg[torch.randperm(repeat_neg.shape[0], device=device)]
 
     distance_embedding = torch.cat(
         (
@@ -91,12 +91,15 @@ def umap_loss(
 
     probabilities_distance = convert_distance_to_probability(distance_embedding, a, b)
     probabilities_graph = torch.cat(
-        (torch.ones(batch_size), torch.zeros(batch_size * negative_sample_rate)),
+        (
+            torch.ones(batch_size, device=device),
+            torch.zeros(batch_size * negative_sample_rate, device=device),
+        ),
         dim=0,
     )
 
     _, _, ce_loss = compute_cross_entropy(
-        probabilities_graph.to(device),
-        probabilities_distance.to(device),
+        probabilities_graph,
+        probabilities_distance,
     )
-    return torch.mean(ce_loss)
+    return ce_loss.mean()
