@@ -104,6 +104,8 @@ class ParametricUMAP:
             devices=1,
             max_epochs=self.epochs,
             callbacks=callbacks if callbacks else None,
+            enable_checkpointing=self.checkpoint_dir is not None,
+            logger=self.checkpoint_dir is not None,
         )
 
         dims = tuple(X.shape[1:])
