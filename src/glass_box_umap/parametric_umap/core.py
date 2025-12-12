@@ -1,5 +1,4 @@
 from __future__ import annotations
-from collections.abc import Callable
 from pathlib import Path
 
 import dill
@@ -9,13 +8,16 @@ import torch
 from numpy.typing import NDArray
 from pytorch_lightning.callbacks import ModelCheckpoint
 from torch import Tensor, nn
-from torch.nn.functional import binary_cross_entropy_with_logits
 
 from ..utils import get_accelerator
 from .data import UMAPDataset
 from .graph import get_umap_graph
 from .lightning import UMAPDataModule, UMAPLightningModule
-from .model import DefaultDecoder, DefaultEncoder
+from .model import DefaultEncoder
+
+_decoder_not_implemented_str = (
+    "Decoding is not yet implemented. To request this feature, please file an issue."
+)
 
 
 class ParametricUMAP:
@@ -26,12 +28,11 @@ class ParametricUMAP:
 
     Args:
         encoder: Custom encoder network. If None, uses DefaultEncoder.
-        decoder: Custom decoder network, True for DefaultDecoder, None for no decoder.
+        decoder: Custom decoder network. Not implemented.
         n_neighbors: Number of neighbors for UMAP graph construction.
         min_dist: UMAP min_dist parameter controlling embedding spread.
         metric: Distance metric for neighbor search.
         n_components: Dimensionality of the embedding space.
-        beta: Weight for reconstruction loss when using a decoder.
         reconstruction_loss: Loss function for reconstruction.
         random_state: Random seed for reproducibility.
         lr: Learning rate for training.
@@ -45,13 +46,11 @@ class ParametricUMAP:
     def __init__(
         self,
         encoder: nn.Module | None = None,
-        decoder: nn.Module | bool | None = None,
+        decoder: nn.Module | None = None,
         n_neighbors: int = 10,
         min_dist: float = 0.1,
         metric: str = "euclidean",
         n_components: int = 2,
-        beta: float = 1.0,
-        reconstruction_loss: Callable[[Tensor, Tensor], Tensor] = binary_cross_entropy_with_logits,
         random_state: int | None = None,
         lr: float = 1e-3,
         epochs: int = 10,
@@ -66,8 +65,6 @@ class ParametricUMAP:
         self.min_dist = min_dist
         self.metric = metric
         self.n_components = n_components
-        self.beta = beta
-        self.reconstruction_loss = reconstruction_loss
         self.random_state = random_state
         self.lr = lr
         self.epochs = epochs
@@ -75,6 +72,9 @@ class ParametricUMAP:
         self.num_workers = num_workers
         self.checkpoint_dir = checkpoint_dir
         self.checkpoint_every_n_epochs = checkpoint_every_n_epochs
+
+        if self.decoder is not None:
+            raise NotImplementedError(_decoder_not_implemented_str)
 
         self._accelerator = get_accelerator()
         self.model: UMAPLightningModule
@@ -107,27 +107,16 @@ class ParametricUMAP:
         )
 
         dims = tuple(X.shape[1:])
-        encoder = (
-            self.encoder if self.encoder is not None else DefaultEncoder(dims, self.n_components)
-        )
 
-        decoder: nn.Module | None
-        if self.decoder is None:
-            decoder = None
-        elif isinstance(self.decoder, nn.Module):
-            decoder = self.decoder
-        elif self.decoder is True:
-            decoder = DefaultDecoder(dims, self.n_components)
+        if self.encoder is None:
+            encoder = DefaultEncoder(dims, self.n_components)
         else:
-            decoder = None
+            encoder = self.encoder
 
         self.model = UMAPLightningModule(
             self.lr,
             encoder,
-            decoder,
-            beta=self.beta,
             min_dist=self.min_dist,
-            reconstruction_loss=self.reconstruction_loss,
         )
         graph = get_umap_graph(
             X.numpy(),
@@ -168,7 +157,7 @@ class ParametricUMAP:
         Returns:
             Numpy array of reconstructed data.
         """
-        return self.model.decoder(Z).detach().cpu().numpy()
+        raise NotImplementedError(_decoder_not_implemented_str)
 
     def save(self, path: Path) -> None:
         """Save the PUMAP model to disk.

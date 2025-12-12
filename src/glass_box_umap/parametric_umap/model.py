@@ -67,6 +67,9 @@ class DefaultDecoder(nn.Module):
     Args:
         dims: Shape of output data (excluding batch dimension).
         n_components: Dimensionality of the input embedding space.
+
+    Notes:
+        - Currently not used in the codebase.
     """
 
     def __init__(self, dims: tuple[int, ...], n_components: int) -> None:
