@@ -56,7 +56,6 @@ def umap_loss(
     embedding_from: Tensor,
     a: float,
     b: float,
-    batch_size: int,
     negative_sample_rate: int = 5,
 ) -> Tensor:
     """Compute UMAP loss with negative sampling.
@@ -69,12 +68,12 @@ def umap_loss(
         embedding_from: Embeddings of source vertices, shape (batch_size, n_components).
         a: UMAP hyperparameter for probability conversion.
         b: UMAP hyperparameter for probability conversion.
-        batch_size: Number of positive pairs in the batch.
         negative_sample_rate: Number of negative samples per positive pair.
 
     Returns:
         Scalar loss tensor.
     """
+    batch_size = embedding_to.shape[0]
     device = embedding_to.device
 
     embedding_neg_to = embedding_to.repeat(negative_sample_rate, 1)

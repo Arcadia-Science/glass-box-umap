@@ -56,7 +56,6 @@ class UMAPLightningModule(pl.LightningModule):
             embedding_from,
             self._a,
             self._b,
-            edges_to_exp.shape[0],
             negative_sample_rate=5,
         )
         self.log("umap_loss", encoder_loss, prog_bar=True)
