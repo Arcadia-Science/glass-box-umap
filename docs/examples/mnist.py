@@ -20,6 +20,8 @@ from glass_box_umap import GlassBoxUMAP
 from sklearn.datasets import fetch_openml
 from sklearn.decomposition import PCA
 
+from glass_box_umap.utils import get_accelerator
+
 app = typer.Typer(pretty_exceptions_enable=False)
 
 
@@ -28,6 +30,7 @@ def load_and_preprocess_mnist(n_pcs: int, subset: int = 4000) -> tuple[np.ndarra
     print("Fetching MNIST...")
     mnist = fetch_openml("mnist_784", version=1)
     data_values = mnist.data.values[:subset, :]
+    # data_values = (data_values.T - data_values.mean(axis=1).T).T
     target_values = mnist.target.values[:subset]
 
     pca = PCA(n_components=n_pcs)
@@ -42,10 +45,10 @@ def load_and_preprocess_mnist(n_pcs: int, subset: int = 4000) -> tuple[np.ndarra
 def main(
     output_dir: Path = typer.Option(Path("output"), help="Directory for all output files"),
     n_fits: int = typer.Option(1, help="Number of UMAP fits"),
-    n_pcs: int = typer.Option(25, help="Number of PCA components"),
-    epochs: int = typer.Option(100, help="Number of training epochs"),
+    n_pcs: int = typer.Option(100, help="Number of PCA components"),
+    epochs: int = typer.Option(50, help="Number of training epochs"),
     random_state: int = typer.Option(42, help="Random seed"),
-    hidden_size: int = typer.Option(512, help="Hidden layer size"),
+    hidden_size: int = typer.Option(512*2, help="Hidden layer size"),
     train: bool = typer.Option(True, help="Train model (False to load from disk)"),
 ) -> None:
     """Train GlassBoxUMAP on MNIST and save outputs."""
@@ -53,7 +56,16 @@ def main(
     model_path_pattern = str(output_dir / "models" / "umap_{i}.pth")
     (output_dir / "models").mkdir(parents=True, exist_ok=True)
 
-    X_pca_centered, y_target, pca_model = load_and_preprocess_mnist(n_pcs)
+    accelerator = get_accelerator()
+
+    if accelerator in ("cuda", "mps"):
+        subset = 20000
+        batch_size = 192
+    else:
+        subset = 4000
+        batch_size = 4096
+
+    X_pca_centered, y_target, pca_model = load_and_preprocess_mnist(n_pcs, subset=subset)
 
     print("Initializing GlassBoxUMAP...")
     reducer = GlassBoxUMAP(
@@ -62,6 +74,9 @@ def main(
         random_state=random_state,
         input_size=n_pcs,
         hidden_size=hidden_size,
+        min_dist=0.1,
+        lr=4e-4,
+        batch_size=batch_size
     )
 
     print("Fitting GlassBoxUMAP...")
