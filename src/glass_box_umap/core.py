@@ -143,7 +143,6 @@ class GlassBoxUMAP:
             if load_models:
                 if i < load_n_fits:
                     try:
-                        pumap_model.device = self._device
                         pumap_model.encoder.to(self._device)
                         # We must "fit" with 1 epoch/step to initialize graph
                         pumap_model.fit(self._train_data)
