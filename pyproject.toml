@@ -109,6 +109,11 @@ line-ending = "auto"
 order-by-type = true
 no-lines-before = ["future", "standard-library"]
 
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:The 'train_dataloader' does not have many workers:UserWarning",
+]
+
 [tool.pyright]
 typeCheckingMode = "basic"
 exclude = ["./.venv", "./dist", "./docs"]

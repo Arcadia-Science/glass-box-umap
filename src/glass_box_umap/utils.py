@@ -1,6 +1,5 @@
 from __future__ import annotations
 import random
-from typing import Literal
 
 import numpy as np
 import torch
@@ -21,10 +20,10 @@ def set_global_seeds(seed: int):
     torch.backends.cudnn.benchmark = False
 
 
-def get_accelerator() -> Literal["cuda", "mps", "cpu"]:
-    """Detect the best available accelerator."""
+def get_default_device() -> torch.device:
+    """Detect the best available device."""
     if torch.cuda.is_available():
-        return "cuda"
+        return torch.device("cuda")
     if torch.backends.mps.is_available():
-        return "mps"
-    return "cpu"
+        return torch.device("mps")
+    return torch.device("cpu")

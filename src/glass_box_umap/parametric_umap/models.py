@@ -36,13 +36,13 @@ class DefaultEncoder(nn.Module):
     hidden layers to the embedding space.
 
     Args:
-        dims: Shape of input data (excluding batch dimension).
+        input_dims: Shape of input data (excluding batch dimension).
         n_components: Dimensionality of the output embedding space.
     """
 
-    def __init__(self, dims: tuple[int, ...], n_components: int = 2) -> None:
+    def __init__(self, input_dims: tuple[int, ...], n_components: int = 2) -> None:
         super().__init__()
-        input_dim = math.prod(dims)
+        input_dim = math.prod(input_dims)
         self.encoder = nn.Sequential(
             nn.Flatten(),
             nn.Linear(input_dim, 200),
