@@ -31,10 +31,13 @@ class ConvEncoder(nn.Module):
         self,
         input_dims: tuple[int, ...],
         n_components: int = 2,
-        hidden_dims: list[int] = [512, 512],
+        hidden_dims: list[int] | None = None,
     ) -> None:
         super().__init__()
         in_channels = input_dims[0]
+
+        if hidden_dims is None:
+            hidden_dims = [512, 512]
 
         self.conv_layers = nn.Sequential(
             nn.Conv2d(in_channels=in_channels, out_channels=64, kernel_size=3, stride=2, padding=1),
