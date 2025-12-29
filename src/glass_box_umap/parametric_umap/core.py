@@ -33,6 +33,7 @@ class ParametricUMAP:
     epochs: int = 10
     batch_size: int = 64
     negative_sample_rate: int = 5
+    repulsion_strength: float = 3.0
     num_workers: int = 0
     checkpoint_dir: Path | None = None
     checkpoint_every_n_epochs: int = 5

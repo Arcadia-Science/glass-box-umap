@@ -33,6 +33,7 @@ class UMAPLightningModule(pl.LightningModule):
         input_dims: tuple[int, ...],
         min_dist: float = 0.1,
         negative_sample_rate: int = 5,
+        repulsion_strength: float = 3.0,
     ) -> None:
         super().__init__()
         self.save_hyperparameters(ignore=['encoder'])
@@ -41,7 +42,8 @@ class UMAPLightningModule(pl.LightningModule):
         self.encoder = encoder
         self.input_dims = input_dims
         self.negative_sample_rate = negative_sample_rate
-        
+        self.repulsion_strength = repulsion_strength
+
         self._a, self._b = find_ab_params(1.0, min_dist)
 
     def configure_optimizers(self) -> Optimizer:
