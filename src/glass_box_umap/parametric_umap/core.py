@@ -41,12 +41,11 @@ class ParametricUMAP:
     _model: UMAPLightningModule | None = field(init=False, default=None)
     _device: torch.device = field(init=False, default_factory=get_default_device)
 
-    def to(self, device: str | torch.device) -> ParametricUMAP:
-        """Move the model (if initialized) and update the target device."""
-        self._device = torch.device(device)
-        if self._model is not None:
-            self._model.to(self._device)
-        return self
+    @property
+    def _fitted_model(self) -> UMAPLightningModule:
+        if self._model is None:
+            raise RuntimeError("Model has not been trained. Call `fit` first.")
+        return self._model
 
     def _build_model(self, input_dims: tuple[int, ...]) -> UMAPLightningModule:
         """Lazy builder for the underlying Lightning Module."""
@@ -67,6 +66,13 @@ class ParametricUMAP:
         ).to(self._device)
 
         return model
+
+    def to(self, device: str | torch.device) -> ParametricUMAP:
+        """Move the model (if initialized) and update the target device."""
+        self._device = torch.device(device)
+        if self._model is not None:
+            self._model.to(self._device)
+        return self
 
     def fit(self, X: Tensor) -> ParametricUMAP:
         if self.random_state is not None:
@@ -122,13 +128,10 @@ class ParametricUMAP:
 
     @torch.no_grad()
     def transform(self, X: Tensor, batch_size: int | None = None) -> NDArray[np.floating]:
-        if self._model is None:
-            raise RuntimeError("Model has not been trained. Call `fit` first.")
+        self._fitted_model.eval()
 
-        self._model.eval()
-
-        if next(self._model.parameters()).device != self._device:
-            self._model.to(self._device)
+        if next(self._fitted_model.parameters()).device != self._device:
+            self._fitted_model.to(self._device)
 
         if batch_size is None:
             batch_size = self.batch_size
@@ -137,7 +140,7 @@ class ParametricUMAP:
         for i in range(0, len(X), batch_size):
             batch = X[i : i + batch_size]
             batch = batch.to(self._device)
-            embedding = self._model.encoder(batch)
+            embedding = self._fitted_model.encoder(batch)
             results.append(embedding.detach().cpu())
 
         return torch.cat(results).numpy()
@@ -147,17 +150,14 @@ class ParametricUMAP:
         return self.transform(X)
 
     def save(self, path: Path) -> None:
-        if self._model is None:
-            raise RuntimeError("Cannot save an untrained model.")
-
         attrs = asdict(self)
         del attrs["_model"]
         del attrs["_device"]
 
         state = {
             "attrs": attrs,
-            "state_dict": self._model.state_dict(),
-            "input_dims": self._model.input_dims,
+            "state_dict": self._fitted_model.state_dict(),
+            "input_dims": self._fitted_model.input_dims,
         }
 
         torch.save(state, path)
