@@ -31,7 +31,7 @@ class ParametricUMAP:
     # Train config
     lr: float = 1e-3
     epochs: int = 10
-    batch_size: int = 64
+    batch_size: int = 512
     negative_sample_rate: int = 5
     repulsion_strength: float = 3.0
     num_workers: int = 0
@@ -63,6 +63,7 @@ class ParametricUMAP:
             input_dims=input_dims,
             min_dist=self.min_dist,
             negative_sample_rate=self.negative_sample_rate,
+            repulsion_strength=self.repulsion_strength,
         ).to(self._device)
 
         return model
@@ -120,7 +121,7 @@ class ParametricUMAP:
         return self
 
     @torch.no_grad()
-    def transform(self, X: Tensor) -> NDArray[np.floating]:
+    def transform(self, X: Tensor, batch_size: int | None = None) -> NDArray[np.floating]:
         if self._model is None:
             raise RuntimeError("Model has not been trained. Call `fit` first.")
 
@@ -129,7 +130,21 @@ class ParametricUMAP:
         if next(self._model.parameters()).device != self._device:
             self._model.to(self._device)
 
-        return self._model.encoder(X.to(self._device)).detach().cpu().numpy()
+        if batch_size is None:
+            batch_size = self.batch_size
+
+        results = []
+        for i in range(0, len(X), batch_size):
+            batch = X[i : i + batch_size]
+            batch = batch.to(self._device)
+            embedding = self._model.encoder(batch)
+            results.append(embedding.detach().cpu())
+
+        return torch.cat(results).numpy()
+
+    def fit_transform(self, X: Tensor) -> NDArray[np.floating]:
+        self.fit(X)
+        return self.transform(X)
 
     def save(self, path: Path) -> None:
         if self._model is None:

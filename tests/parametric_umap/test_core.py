@@ -76,3 +76,24 @@ def test_reproducibility(mnist_images):
     model_c.fit(mnist_images)
     emb_c = model_c.transform(mnist_images)
     assert not np.allclose(emb_a, emb_c)
+
+
+def test_batched_transform(mnist_images: Tensor):
+    """Ensure batched transform produces identical results to standard transform."""
+    mnist_images = mnist_images
+    n_samples = len(mnist_images)
+
+    model = ParametricUMAP(epochs=1, n_components=2)
+    model.fit(mnist_images)
+
+    emb_single_batch = model.transform(mnist_images, batch_size=10000)
+    emb_multi_batch = model.transform(mnist_images, batch_size=17)
+
+    assert emb_multi_batch.shape == (n_samples, 2)
+
+    np.testing.assert_array_almost_equal(
+        emb_single_batch,
+        emb_multi_batch,
+        decimal=4,
+        err_msg="Batched inference results diverged from standard inference",
+    )
