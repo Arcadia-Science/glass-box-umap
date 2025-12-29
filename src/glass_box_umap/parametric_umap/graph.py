@@ -1,3 +1,5 @@
+from typing import cast
+
 import numpy as np
 from numpy.random import RandomState
 from numpy.typing import NDArray
@@ -49,15 +51,20 @@ def get_umap_graph(
         max_candidates=60,
         verbose=True,
     )
+
+    assert nnd.neighbor_graph is not None
     knn_indices, knn_dists = nnd.neighbor_graph
 
-    umap_graph, _, _ = fuzzy_simplicial_set(
-        X=X,
-        n_neighbors=n_neighbors,
-        metric=metric,
-        random_state=rng,
-        knn_indices=knn_indices,
-        knn_dists=knn_dists,
+    umap_graph = cast(
+        csr_matrix,
+        fuzzy_simplicial_set(
+            X=X,
+            n_neighbors=n_neighbors,
+            metric=metric,
+            random_state=rng,
+            knn_indices=knn_indices,
+            knn_dists=knn_dists,
+        )[0],
     )
 
     return umap_graph
@@ -82,14 +89,15 @@ def get_graph_elements(graph: csr_matrix, n_epochs: int) -> GraphElements:
             - weight: Edge weights
             - n_vertices: Total number of vertices in the graph
     """
-    graph_coo = graph.tocoo()
+    graph_coo = cast(coo_matrix, graph.tocoo())
     graph_coo.sum_duplicates()
-    n_vertices = graph_coo.shape[1]
+
+    n_vertices = graph_coo.get_shape()[0]
 
     graph_coo.data[graph_coo.data < (graph_coo.data.max() / float(n_epochs))] = 0.0
     graph_coo.eliminate_zeros()
 
-    epochs_per_sample = n_epochs * graph_coo.data
+    epochs_per_sample = (n_epochs * graph_coo.data).astype(np.float32)
     head = graph_coo.row
     tail = graph_coo.col
     weight = graph_coo.data
