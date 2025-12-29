@@ -4,10 +4,11 @@ from typing import Any
 
 from torch import nn
 
-from .models import DefaultEncoder
+from .models import ConvEncoder, DefaultEncoder
 
 _ENCODER_REGISTRY: dict[str, type[nn.Module]] = {
     "default": DefaultEncoder,
+    "default_conv": ConvEncoder,
 }
 
 
