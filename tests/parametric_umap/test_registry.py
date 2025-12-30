@@ -150,4 +150,4 @@ def test_create_encoder_various_input_dims(input_dims: tuple[int, ...]):
     output = encoder(x)
 
     assert output.shape == (batch_size, n_components)
-    assert encoder.encoder[1].in_features == math.prod(input_dims)
+    assert encoder.encoder[1].in_features == math.prod(input_dims)  # type: ignore
