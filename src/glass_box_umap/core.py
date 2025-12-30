@@ -1,51 +1,17 @@
 from __future__ import annotations
-import math
 from dataclasses import dataclass, field
 
 import numpy as np
 import torch
 from numpy.typing import NDArray
-from torch import nn
 
-from glass_box_umap.components import LayerNormDetached
+from glass_box_umap.components import DeepPReLUNet
 from glass_box_umap.parametric_umap.registry import register_encoder
 
 from .parametric_umap import ParametricUMAP
 
 GLASSBOX_ENCODER_NAME = "glassbox_encoder"
-
-
-@register_encoder(GLASSBOX_ENCODER_NAME)
-class DeepPReLUNet(nn.Module):
-    """A network with PReLU activation and LayerNormDetached."""
-
-    def __init__(
-        self,
-        input_dims: tuple[int, ...],
-        n_components: int = 2,
-        hidden_size: int = 256,
-        n_hidden_layers: int = 5,
-    ):
-        super().__init__()
-
-        input_size = math.prod(input_dims)
-        self.flatten = nn.Flatten()
-
-        layers = []
-        for i in range(n_hidden_layers):
-            in_dim = input_size if i == 0 else hidden_size
-
-            layers.append(nn.Linear(in_dim, hidden_size, bias=False))
-            layers.append(nn.PReLU())
-
-            if i < n_hidden_layers - 1:
-                layers.append(LayerNormDetached(hidden_size))
-
-        layers.append(nn.Linear(hidden_size, n_components, bias=False))
-        self.model = nn.Sequential(*layers)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.model(self.flatten(x))
+register_encoder(GLASSBOX_ENCODER_NAME)(DeepPReLUNet)
 
 
 @dataclass
@@ -54,16 +20,13 @@ class GlassBoxUMAP(ParametricUMAP):
 
     encoder_name: str = field(default=GLASSBOX_ENCODER_NAME, init=False)
 
-    _feature_contributions: NDArray[np.float16] | None = field(init=False, default=None)
-    _jacobians: torch.Tensor | None = field(init=False, default=None)
-
     def compute_attributions(
         self,
         X: torch.Tensor,
         raw_features: NDArray[np.floating],
         projector: NDArray[np.floating] | None = None,
-        batch_size: int = 40,
-    ) -> None:
+        batch_size: int | None = None,
+    ) -> tuple[NDArray[np.float16], torch.Tensor]:
         """Computes Jacobian of the learned embedding w.r.t input features.
 
         Optionally projects back to a raw feature space.
@@ -84,6 +47,9 @@ class GlassBoxUMAP(ParametricUMAP):
         self._fitted_model.to(self._device)
         encoder = self._fitted_model.encoder
 
+        if batch_size is None:
+            batch_size = self.batch_size
+
         jacobians_input = self._compute_batch_jacobian(encoder, X, batch_size)
         if projector is not None:
             proj_tensor = torch.tensor(projector, dtype=torch.float32).T
@@ -95,8 +61,7 @@ class GlassBoxUMAP(ParametricUMAP):
             np.float16
         )
 
-        self._jacobians = jacobians_input
-        self._feature_contributions = feature_contributions
+        return feature_contributions, jacobians_input
 
     def _compute_batch_jacobian(
         self,
