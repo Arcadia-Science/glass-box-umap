@@ -23,25 +23,27 @@ from sklearn.decomposition import PCA
 app = typer.Typer(pretty_exceptions_enable=False)
 
 
-def load_and_preprocess_mnist(n_pcs: int, subset: int = 4000) -> tuple[np.ndarray, np.ndarray, PCA]:
+def load_and_preprocess_mnist(
+    n_pcs: int, subset: int = 4000
+) -> tuple[torch.Tensor, np.ndarray, np.ndarray, PCA]:
     """Fetches MNIST data and performs PCA preprocessing."""
     print("Fetching MNIST...")
     mnist = fetch_openml("mnist_784", version=1)
-    data_values = mnist.data.values[:subset, :]
+    data_raw = mnist.data.values[:subset, :].astype(np.float32)
     target_values = mnist.target.values[:subset]
 
-    pca = PCA(n_components=n_pcs)
-    pca.fit(data_values)
+    data_centered = data_raw - data_raw.mean(axis=0)
 
-    mnist_pca = pca.transform(data_values)
-    mnist_pca_centered = (mnist_pca.T - mnist_pca.mean(axis=1)).T
-    return mnist_pca_centered, target_values, pca
+    pca = PCA(n_components=n_pcs)
+    pca.fit(data_raw)
+    data_pca = pca.transform(data_raw).astype(np.float32)
+
+    return torch.from_numpy(data_pca), target_values, data_centered, pca
 
 
 @app.command()
 def main(
     output_dir: Path = typer.Option(Path("output"), help="Directory for all output files"),
-    n_fits: int = typer.Option(1, help="Number of UMAP fits"),
     n_pcs: int = typer.Option(25, help="Number of PCA components"),
     epochs: int = typer.Option(100, help="Number of training epochs"),
     random_state: int = typer.Option(42, help="Random seed"),
@@ -50,50 +52,35 @@ def main(
 ) -> None:
     """Train GlassBoxUMAP on MNIST and save outputs."""
     output_dir.mkdir(parents=True, exist_ok=True)
-    model_path_pattern = str(output_dir / "models" / "umap_{i}.pth")
-    (output_dir / "models").mkdir(parents=True, exist_ok=True)
+    model_path = output_dir / "model.pt"
 
-    X_pca_centered, y_target, pca_model = load_and_preprocess_mnist(n_pcs)
+    X_pca, y_target, X_centered, pca_model = load_and_preprocess_mnist(n_pcs)
 
-    print("Initializing GlassBoxUMAP...")
-    reducer = GlassBoxUMAP(
-        n_fits=n_fits,
-        epochs=epochs if train else 0,
-        random_state=random_state,
-        input_size=n_pcs,
-        hidden_size=hidden_size,
+    if train:
+        print("Initializing GlassBoxUMAP...")
+        reducer = GlassBoxUMAP(
+            epochs=epochs,
+            random_state=random_state,
+            encoder_kwargs={"hidden_size": hidden_size},
+        )
+
+        print("Fitting GlassBoxUMAP...")
+        reducer.fit(X_pca)
+        reducer.save(model_path)
+        print(f"Saved model to {model_path}")
+    else:
+        print(f"Loading model from {model_path}...")
+        reducer = GlassBoxUMAP.load(model_path)
+
+    print("Computing attributions...")
+    feature_contributions, jacobians = reducer.compute_attributions(
+        X=X_pca,
+        raw_features=X_centered,
+        projector=pca_model.components_.T,
     )
-
-    print("Fitting GlassBoxUMAP...")
-    reducer.fit(
-        X_pca_centered,
-        load_models=not train,
-        load_n_fits=n_fits,
-        save_models=train,
-        model_path_pattern=model_path_pattern,
-    )
-
-    print("Running manual Jacobian check...")
-    model = reducer._models[0]
-    encoder = model.encoder
-    device = reducer._device
-    encoder.eval().to(device)
-
-    sample_tensor = torch.tensor(X_pca_centered[:1, :].squeeze(), dtype=torch.float32).to(device)
-
-    jac_batch = torch.autograd.functional.jacobian(
-        encoder, sample_tensor, vectorize=True, strategy="reverse-mode"
-    )
-
-    jacobian_np = jac_batch.T.detach().cpu().numpy().T
-    reconstruction = jacobian_np @ X_pca_centered[0, :]
-    print("Jacobian Reconstruction:", reconstruction)
-
-    forward_pass = encoder(torch.tensor(X_pca_centered[0, :], dtype=torch.float32).to(device))
-    print("Forward Pass:", forward_pass)
 
     print("Plotting embedding...")
-    embedding = reducer._embeddings[0]
+    embedding = reducer.transform(X_pca)
 
     sns.set_style("whitegrid")
     ax = sns.scatterplot(x=embedding[:, 0], y=embedding[:, 1], hue=y_target, s=3)
@@ -104,12 +91,11 @@ def main(
     fig.savefig(embedding_path, bbox_inches="tight")
     print(f"Saved embedding plot to {embedding_path}")
 
-    print("Plotting linear operator...")
+    print("Plotting linear operator for first sample...")
     plt.figure()
 
-    linear_operator = (pca_model.components_.T @ jac_batch.T.detach().cpu().numpy())[:, 0].reshape(
-        [28, 28]
-    )
+    jacobian_pixel = jacobians[0].numpy() @ pca_model.components_
+    linear_operator = jacobian_pixel[0, :].reshape([28, 28])
 
     plt.imshow(linear_operator, cmap="RdBu")
     linear_op_path = output_dir / "linear_operator.png"

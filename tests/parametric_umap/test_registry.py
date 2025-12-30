@@ -1,4 +1,7 @@
+import math
+
 import pytest
+import torch
 from glass_box_umap.parametric_umap.registry import (
     _ENCODER_REGISTRY,
     create_encoder,
@@ -133,10 +136,6 @@ def test_default_encoder_registered():
     ],
 )
 def test_create_encoder_various_input_dims(input_dims: tuple[int, ...]):
-    import math
-
-    import torch
-
     n_components = 2
     encoder = create_encoder(
         name="default",
