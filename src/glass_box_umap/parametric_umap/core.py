@@ -1,4 +1,6 @@
 from __future__ import annotations
+import tempfile
+from contextlib import ExitStack
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -8,6 +10,7 @@ import pytorch_lightning as pl
 import torch
 from numpy.typing import NDArray
 from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import TensorBoardLogger
 from torch import Tensor
 
 from ..utils import device_to_lightning_acceleration_config, get_default_device
@@ -36,7 +39,6 @@ class ParametricUMAP:
     repulsion_strength: float = 3.0
     num_workers: int = 0
     checkpoint_dir: Path | None = None
-    checkpoint_every_n_epochs: int = 5
 
     _model: UMAPLightningModule | None = field(init=False, default=None)
     _device: torch.device = field(init=False, default_factory=get_default_device)
@@ -78,49 +80,55 @@ class ParametricUMAP:
         if self.random_state is not None:
             pl.seed_everything(self.random_state, workers=True)
 
-        callbacks: list[pl.Callback] = []
-        if self.checkpoint_dir is not None:
-            self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
-            callbacks.append(
-                ModelCheckpoint(
-                    dirpath=self.checkpoint_dir,
-                    every_n_epochs=self.checkpoint_every_n_epochs,
-                    filename="checkpoint_epoch_{epoch:03d}",
-                )
+        with ExitStack() as stack:
+            if self.checkpoint_dir is not None:
+                self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+                ckpt_dir = self.checkpoint_dir
+            else:
+                ckpt_dir = Path(stack.enter_context(tempfile.TemporaryDirectory()))
+
+            best_checkpoint = ModelCheckpoint(
+                dirpath=ckpt_dir,
+                monitor="umap_loss",
+                mode="min",
+                save_top_k=1,
+                save_on_train_epoch_end=True,
+                filename="best",
             )
 
-        accelerator, devices = device_to_lightning_acceleration_config(self._device)
+            logger = TensorBoardLogger(save_dir=ckpt_dir, name="logs")
 
-        # NOTE: Advanced training configuration (DDP, half-precision, etc.) is not
-        # currently exposed to the user. To address this, we could expose a
-        # `trainer_kwargs` to `fit` or `__init__`. Alternatively, we could provide a
-        # backdoor for power users with a `trainer: pl.Trainer` arg in `fit` for
-        # complete control/overriding.
-        trainer = pl.Trainer(
-            accelerator=accelerator,
-            devices=devices,
-            max_epochs=self.epochs,
-            callbacks=callbacks or None,
-            enable_checkpointing=self.checkpoint_dir is not None,
-            logger=self.checkpoint_dir is not None,
-        )
+            accelerator, devices = device_to_lightning_acceleration_config(self._device)
 
-        input_dims = tuple(X.shape[1:])
-        self._model = self._build_model(input_dims)
+            trainer = pl.Trainer(
+                accelerator=accelerator,
+                devices=devices,
+                max_epochs=self.epochs,
+                callbacks=[best_checkpoint],
+                enable_checkpointing=True,
+                logger=logger,
+                log_every_n_steps=1,
+            )
 
-        graph = get_umap_graph(
-            X.detach().cpu().numpy(),
-            n_neighbors=self.n_neighbors,
-            metric=self.metric,
-            random_state=self.random_state,
-        )
-        datamodule = UMAPDataModule(
-            UMAPDataset(X.detach().cpu().numpy(), graph),
-            self.batch_size,
-            self.num_workers,
-        )
+            input_dims = tuple(X.shape[1:])
+            self._model = self._build_model(input_dims)
 
-        trainer.fit(model=self._model, datamodule=datamodule)
+            graph = get_umap_graph(
+                X.detach().cpu().numpy(),
+                n_neighbors=self.n_neighbors,
+                metric=self.metric,
+                random_state=self.random_state,
+            )
+            datamodule = UMAPDataModule(
+                UMAPDataset(X.detach().cpu().numpy(), graph),
+                self.batch_size,
+                self.num_workers,
+            )
+
+            trainer.fit(model=self._model, datamodule=datamodule)
+
+            best_ckpt = torch.load(best_checkpoint.best_model_path, map_location="cpu")
+            self._model.load_state_dict(best_ckpt["state_dict"])
 
         self._model.to(self._device)
 
@@ -151,6 +159,8 @@ class ParametricUMAP:
 
     def save(self, path: Path) -> None:
         attrs = asdict(self)
+
+        # Delete all private attributes.
         del attrs["_model"]
         del attrs["_device"]
 
