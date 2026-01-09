@@ -31,6 +31,7 @@ dependencies = [
     "umap-learn>=0.5.7",
     "pynndescent>=0.5.13",
     "scikit-learn>=1.6.0",
+    "tensorboard>=2.20.0",
 ]
 
 [[tool.uv.index]]
