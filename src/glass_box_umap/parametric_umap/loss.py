@@ -70,7 +70,7 @@ def umap_loss(
         a: UMAP hyperparameter for probability conversion.
         b: UMAP hyperparameter for probability conversion.
         negative_sample_rate: Number of negative samples per positive pair.
-        repulsion_strength: FIXME(james) This needs to be implemented.
+        repulsion_strength: FIXME.
 
     Returns:
         Scalar loss tensor.
@@ -102,5 +102,6 @@ def umap_loss(
     _, _, ce_loss = compute_cross_entropy(
         probabilities_graph,
         probabilities_distance,
+        repulsion_strength,
     )
     return ce_loss.mean()
