@@ -3,7 +3,7 @@ import math
 import torch
 from torch import Tensor, nn
 
-DEFAULT_HIDDEN_DIMS = [200, 200, 200]
+DEFAULT_HIDDEN_DIMS = [100, 100, 100]
 
 
 def _compute_conv_output_size(
