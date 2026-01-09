@@ -34,6 +34,7 @@ class DeepPReLUNet(nn.Module):
         n_components: int = 2,
         hidden_size: int = 256,
         n_hidden_layers: int = 5,
+        dropout_rate: float = 0.1,
     ):
         super().__init__()
 
@@ -49,6 +50,8 @@ class DeepPReLUNet(nn.Module):
 
             if i < n_hidden_layers - 1:
                 layers.append(LayerNormDetached(hidden_size))
+
+            layers.append(nn.Dropout(dropout_rate))
 
         layers.append(nn.Linear(hidden_size, n_components, bias=False))
         self.model = nn.Sequential(*layers)
