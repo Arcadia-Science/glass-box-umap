@@ -79,9 +79,9 @@ docs = [
 [tool.ruff]
 # The directories to consider when resolving first- vs. third-party imports.
 src = ["."]
+include = ["src/**/*.py", "**/*.ipynb"]
 line-length = 100
 indent-width = 4
-extend-include = ["*.ipynb"]
 
 [tool.ruff.lint.per-file-ignores]
 # Ignore star and unused imports.

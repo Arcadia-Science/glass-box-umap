@@ -36,7 +36,7 @@ class UMAPLightningModule(pl.LightningModule):
         repulsion_strength: float = 3.0,
     ) -> None:
         super().__init__()
-        self.save_hyperparameters(ignore=['encoder'])
+        self.save_hyperparameters(ignore=["encoder"])
 
         self.lr = lr
         self.encoder = encoder
