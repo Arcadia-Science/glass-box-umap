@@ -1,184 +1,184 @@
 from __future__ import annotations
+import tempfile
+from contextlib import ExitStack
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import Any
 
-import dill
 import numpy as np
 import pytorch_lightning as pl
 import torch
 from numpy.typing import NDArray
 from pytorch_lightning.callbacks import ModelCheckpoint
-from torch import Tensor, nn
+from pytorch_lightning.loggers import TensorBoardLogger
+from torch import Tensor
 
-from ..utils import get_accelerator
+from ..utils import device_to_lightning_acceleration_config, get_default_device
 from .data import UMAPDataset
 from .graph import get_umap_graph
 from .lightning import UMAPDataModule, UMAPLightningModule
-from .model import DefaultEncoder
-
-_decoder_not_implemented_str = (
-    "Decoding is not yet implemented. To request this feature, please file an issue."
-)
+from .registry import create_encoder
 
 
+@dataclass
 class ParametricUMAP:
-    """Parametric UMAP for learning embeddings with neural networks.
+    # UMAP config
+    n_neighbors: int = 10
+    min_dist: float = 0.1
+    metric: str = "euclidean"
+    n_components: int = 2
+    random_state: int | None = None
+    encoder_name: str = "default"
+    encoder_kwargs: dict[str, Any] = field(default_factory=dict)
 
-    This class provides a scikit-learn-like interface for training parametric
-    UMAP models using PyTorch and PyTorch Lightning.
+    # Train config
+    lr: float = 1e-3
+    epochs: int = 10
+    batch_size: int = 512
+    negative_sample_rate: int = 5
+    repulsion_strength: float = 3.0
+    num_workers: int = 0
+    checkpoint_dir: Path | None = None
 
-    Args:
-        encoder: Custom encoder network. If None, uses DefaultEncoder.
-        decoder: Custom decoder network. Not implemented.
-        n_neighbors: Number of neighbors for UMAP graph construction.
-        min_dist: UMAP min_dist parameter controlling embedding spread.
-        metric: Distance metric for neighbor search.
-        n_components: Dimensionality of the embedding space.
-        reconstruction_loss: Loss function for reconstruction.
-        random_state: Random seed for reproducibility.
-        lr: Learning rate for training.
-        epochs: Number of training epochs.
-        batch_size: Training batch size.
-        num_workers: Number of data loading workers.
-        checkpoint_dir: Directory to save periodic checkpoints. None disables checkpointing.
-        checkpoint_every_n_epochs: Save checkpoint every N epochs.
-    """
+    _model: UMAPLightningModule | None = field(init=False, default=None)
+    _device: torch.device = field(init=False, default_factory=get_default_device)
 
-    def __init__(
-        self,
-        encoder: nn.Module | None = None,
-        decoder: nn.Module | None = None,
-        n_neighbors: int = 10,
-        min_dist: float = 0.1,
-        metric: str = "euclidean",
-        n_components: int = 2,
-        random_state: int | None = None,
-        lr: float = 1e-3,
-        epochs: int = 10,
-        batch_size: int = 64,
-        num_workers: int = 0,
-        checkpoint_dir: Path | None = None,
-        checkpoint_every_n_epochs: int = 5,
-    ) -> None:
-        self.encoder = encoder
-        self.decoder = decoder
-        self.n_neighbors = n_neighbors
-        self.min_dist = min_dist
-        self.metric = metric
-        self.n_components = n_components
-        self.random_state = random_state
-        self.lr = lr
-        self.epochs = epochs
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-        self.checkpoint_dir = checkpoint_dir
-        self.checkpoint_every_n_epochs = checkpoint_every_n_epochs
+    @property
+    def _fitted_model(self) -> UMAPLightningModule:
+        if self._model is None:
+            raise RuntimeError("Model has not been trained. Call `fit` first.")
+        return self._model
 
-        if self.decoder is not None:
-            raise NotImplementedError(_decoder_not_implemented_str)
+    def _build_model(self, input_dims: tuple[int, ...]) -> UMAPLightningModule:
+        """Lazy builder for the underlying Lightning Module."""
+        encoder = create_encoder(
+            name=self.encoder_name,
+            input_dims=input_dims,
+            n_components=self.n_components,
+            encoder_kwargs=self.encoder_kwargs,
+        )
 
-        self._accelerator = get_accelerator()
-        self.model: UMAPLightningModule
+        model = UMAPLightningModule(
+            lr=self.lr,
+            encoder=encoder,
+            input_dims=input_dims,
+            min_dist=self.min_dist,
+            negative_sample_rate=self.negative_sample_rate,
+            repulsion_strength=self.repulsion_strength,
+        ).to(self._device)
+
+        return model
+
+    def to(self, device: str | torch.device) -> ParametricUMAP:
+        """Move the model (if initialized) and update the target device."""
+        self._device = torch.device(device)
+        if self._model is not None:
+            self._model.to(self._device)
+        return self
 
     def fit(self, X: Tensor) -> ParametricUMAP:
-        """Fit the parametric UMAP model to data.
+        if self.random_state is not None:
+            pl.seed_everything(self.random_state, workers=True)
 
-        Args:
-            X: Input data tensor of shape (n_samples, ...).
+        with ExitStack() as stack:
+            if self.checkpoint_dir is not None:
+                self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+                ckpt_dir = self.checkpoint_dir
+            else:
+                ckpt_dir = Path(stack.enter_context(tempfile.TemporaryDirectory()))
 
-        Returns:
-            Self, for method chaining.
-        """
-        callbacks: list[pl.Callback] = []
-        if self.checkpoint_dir is not None:
-            self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
-            callbacks.append(
-                ModelCheckpoint(
-                    dirpath=self.checkpoint_dir,
-                    every_n_epochs=self.checkpoint_every_n_epochs,
-                    filename="checkpoint_epoch_{epoch:03d}",
-                )
+            best_checkpoint = ModelCheckpoint(
+                dirpath=ckpt_dir,
+                monitor="umap_loss",
+                mode="min",
+                save_top_k=1,
+                save_on_train_epoch_end=True,
+                filename="best",
             )
 
-        trainer = pl.Trainer(
-            accelerator=self._accelerator,
-            devices=1,
-            max_epochs=self.epochs,
-            callbacks=callbacks if callbacks else None,
-            enable_checkpointing=self.checkpoint_dir is not None,
-            logger=self.checkpoint_dir is not None,
-        )
+            logger = TensorBoardLogger(save_dir=ckpt_dir, name="logs")
 
-        dims = tuple(X.shape[1:])
+            accelerator, devices = device_to_lightning_acceleration_config(self._device)
 
-        if self.encoder is None:
-            encoder = DefaultEncoder(dims, self.n_components)
-        else:
-            encoder = self.encoder
+            trainer = pl.Trainer(
+                accelerator=accelerator,
+                devices=devices,
+                max_epochs=self.epochs,
+                callbacks=[best_checkpoint],
+                enable_checkpointing=True,
+                logger=logger,
+                log_every_n_steps=1,
+            )
 
-        self.model = UMAPLightningModule(
-            self.lr,
-            encoder,
-            min_dist=self.min_dist,
-        )
-        graph = get_umap_graph(
-            X.numpy(),
-            n_neighbors=self.n_neighbors,
-            metric=self.metric,
-            random_state=self.random_state,
-        )
-        datamodule = UMAPDataModule(
-            UMAPDataset(X.numpy(), graph),
-            self.batch_size,
-            self.num_workers,
-        )
-        trainer.fit(model=self.model, datamodule=datamodule)
+            input_dims = tuple(X.shape[1:])
+            self._model = self._build_model(input_dims)
+
+            graph = get_umap_graph(
+                X.detach().cpu().numpy(),
+                n_neighbors=self.n_neighbors,
+                metric=self.metric,
+                random_state=self.random_state,
+            )
+            datamodule = UMAPDataModule(
+                UMAPDataset(X.detach().cpu().numpy(), graph),
+                self.batch_size,
+                self.num_workers,
+            )
+
+            trainer.fit(model=self._model, datamodule=datamodule)
+
+            best_ckpt = torch.load(best_checkpoint.best_model_path, map_location="cpu")
+            self._model.load_state_dict(best_ckpt["state_dict"])
+
+        self._model.to(self._device)
 
         return self
 
     @torch.no_grad()
-    def transform(self, X: Tensor) -> NDArray[np.floating]:
-        """Transform data to the embedding space.
+    def transform(self, X: Tensor, batch_size: int | None = None) -> NDArray[np.floating]:
+        self._fitted_model.eval()
 
-        Args:
-            X: Input data tensor of shape (n_samples, ...).
+        if next(self._fitted_model.parameters()).device != self._device:
+            self._fitted_model.to(self._device)
 
-        Returns:
-            Numpy array of embeddings with shape (n_samples, n_components).
-        """
-        return self.model.encoder(X).detach().cpu().numpy()
+        if batch_size is None:
+            batch_size = self.batch_size
 
-    @torch.no_grad()
-    def inverse_transform(self, Z: Tensor) -> NDArray[np.floating]:
-        """Reconstruct data from embeddings.
+        results = []
+        for i in range(0, len(X), batch_size):
+            batch = X[i : i + batch_size]
+            batch = batch.to(self._device)
+            embedding = self._fitted_model.encoder(batch)
+            results.append(embedding.detach().cpu())
 
-        Requires the model to have been trained with a decoder.
+        return torch.cat(results).numpy()
 
-        Args:
-            Z: Embedding tensor of shape (n_samples, n_components).
-
-        Returns:
-            Numpy array of reconstructed data.
-        """
-        raise NotImplementedError(_decoder_not_implemented_str)
+    def fit_transform(self, X: Tensor) -> NDArray[np.floating]:
+        self.fit(X)
+        return self.transform(X)
 
     def save(self, path: Path) -> None:
-        """Save the PUMAP model to disk.
+        attrs = asdict(self)
 
-        Args:
-            path: File path for saving the model.
-        """
-        with path.open("wb") as f:
-            dill.dump(self, f)
+        # Delete all private attributes.
+        del attrs["_model"]
+        del attrs["_device"]
 
+        state = {
+            "attrs": attrs,
+            "state_dict": self._fitted_model.state_dict(),
+            "input_dims": self._fitted_model.input_dims,
+        }
 
-def load_pumap(path: Path) -> ParametricUMAP:
-    """Load a PUMAP model from disk.
+        torch.save(state, path)
 
-    Args:
-        path: Path to the saved model file.
+    @classmethod
+    def load(cls, path: Path) -> ParametricUMAP:
+        checkpoint = torch.load(path, map_location="cpu")
 
-    Returns:
-        The loaded PUMAP model.
-    """
-    with path.open("rb") as f:
-        return dill.load(f)
+        instance = cls(**checkpoint["attrs"])
+        instance._model = instance._build_model(checkpoint["input_dims"])
+        instance._model.load_state_dict(checkpoint["state_dict"])
+        instance._model.to(instance._device)
+
+        return instance

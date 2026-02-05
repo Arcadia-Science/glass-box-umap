@@ -1,30 +1,53 @@
 from __future__ import annotations
-import random
-from typing import Literal
+from typing import cast
 
-import numpy as np
 import torch
+from pytorch_lightning.accelerators import Accelerator
 
 
-def set_global_seeds(seed: int):
-    """Sets global seeds for reproducibility."""
-    np.random.seed(seed)
-    random.seed(seed)
-    torch.manual_seed(seed)
+def get_default_device() -> torch.device:
+    """Detect the best available device."""
     if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-    # Optional: For the Pytorch Lightning trainer
-    # pl.seed_everything(seed)
-
-    # You might also want deterministic algorithms
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-
-
-def get_accelerator() -> Literal["cuda", "mps", "cpu"]:
-    """Detect the best available accelerator."""
-    if torch.cuda.is_available():
-        return "cuda"
+        return torch.device("cuda")
     if torch.backends.mps.is_available():
-        return "mps"
-    return "cpu"
+        return torch.device("mps")
+    return torch.device("cpu")
+
+
+def device_to_lightning_acceleration_config(
+    device: torch.device,
+) -> tuple[str | Accelerator, int | list[int] | str]:
+    """Translates a PyTorch device into Lightning `accelerator` and `devices` arguments.
+
+    Notes:
+        - If you want multi-device acceleration, don't use this function (it's not
+          supported).
+
+    Behaviors:
+        1. "cuda:n": Restricts training to ONLY that specific GPU
+           (returns `devices=[n]`).
+        2. "cuda": Defaults to `devices=1` (the first available GPU).
+        3. "cpu"/"mps"/others: Defaults to "auto", allowing Lightning to manage
+           platform-specific optimizations.
+
+    Args:
+        device: The target torch.device.
+
+    Returns:
+        A tuple of (accelerator, devices) ready to be unpacked into pl.Trainer.
+    """
+    accelerator = device.type
+    index = cast(int | None, device.index)
+
+    # Default to "auto" for CPU, MPS, or other accelerators.
+    devices: int | list[int] | str = "auto"
+
+    if accelerator == "cuda":
+        if index is not None:
+            # Use specified GPU index.
+            devices = [index]
+        else:
+            # Use single-device behavior.
+            devices = 1
+
+    return accelerator, devices

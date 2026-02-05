@@ -57,6 +57,7 @@ def umap_loss(
     a: float,
     b: float,
     negative_sample_rate: int = 5,
+    repulsion_strength: float = 3.0,
 ) -> Tensor:
     """Compute UMAP loss with negative sampling.
 
@@ -69,6 +70,7 @@ def umap_loss(
         a: UMAP hyperparameter for probability conversion.
         b: UMAP hyperparameter for probability conversion.
         negative_sample_rate: Number of negative samples per positive pair.
+        repulsion_strength: FIXME.
 
     Returns:
         Scalar loss tensor.
@@ -100,5 +102,6 @@ def umap_loss(
     _, _, ce_loss = compute_cross_entropy(
         probabilities_graph,
         probabilities_distance,
+        repulsion_strength,
     )
     return ce_loss.mean()

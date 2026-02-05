@@ -31,6 +31,7 @@ dependencies = [
     "umap-learn>=0.5.7",
     "pynndescent>=0.5.13",
     "scikit-learn>=1.6.0",
+    "tensorboard>=2.20.0",
 ]
 
 [[tool.uv.index]]
@@ -78,9 +79,9 @@ docs = [
 [tool.ruff]
 # The directories to consider when resolving first- vs. third-party imports.
 src = ["."]
+include = ["src/**/*.py", "tests/**/*.py", "**/*.ipynb"]
 line-length = 100
 indent-width = 4
-extend-include = ["*.ipynb"]
 
 [tool.ruff.lint.per-file-ignores]
 # Ignore star and unused imports.
@@ -109,10 +110,15 @@ line-ending = "auto"
 order-by-type = true
 no-lines-before = ["future", "standard-library"]
 
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:The 'train_dataloader' does not have many workers:UserWarning",
+]
+
 [tool.pyright]
 typeCheckingMode = "basic"
-exclude = ["./.venv", "./dist"]
+exclude = ["./.venv", "./dist", "./docs"]
 
 # Pyright reports a lot of unknown-member errors for some packages.
 # If this is a problem, set this to `false`.
-reportUnknownMemberType = true
+reportUnknownMemberType = false
