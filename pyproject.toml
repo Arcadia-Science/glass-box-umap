@@ -113,6 +113,7 @@ no-lines-before = ["future", "standard-library"]
 [tool.pytest.ini_options]
 filterwarnings = [
     "ignore:The 'train_dataloader' does not have many workers:UserWarning",
+    "ignore:Checkpoint directory .* exists and is not empty:UserWarning",
 ]
 
 [tool.pyright]
