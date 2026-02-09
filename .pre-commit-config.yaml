@@ -33,3 +33,9 @@ repos:
         entry: make typecheck
         language: system
         pass_filenames: false
+
+      - id: test
+        name: Test
+        entry: make test
+        language: system
+        pass_filenames: false
