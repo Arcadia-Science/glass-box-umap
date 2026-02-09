@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import cast
 
 import torch
-from pytorch_lightning.accelerators import Accelerator
+from pytorch_lightning.accelerators import Accelerator, AcceleratorRegistry
 
 
 def get_default_device() -> torch.device:
@@ -38,6 +38,13 @@ def device_to_lightning_acceleration_config(
     """
     accelerator = device.type
     index = cast(int | None, device.index)
+
+    # Fall back to CPU if Lightning says the accelerator isn't available.
+    if (
+        accelerator in AcceleratorRegistry
+        and not AcceleratorRegistry[accelerator]["accelerator"].is_available()
+    ):
+        accelerator = "cpu"
 
     # Default to "auto" for CPU, MPS, or other accelerators.
     devices: int | list[int] | str = "auto"
