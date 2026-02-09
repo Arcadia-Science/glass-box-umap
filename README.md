@@ -1,3 +1,6 @@
+> [!WARNING]
+> This repo is public but under intense reconstruction and is **not ready for users**. Please check back soon!
+
 # Glass Box UMAP
 
 This repo contains a Python package called `glass_box_umap`.
