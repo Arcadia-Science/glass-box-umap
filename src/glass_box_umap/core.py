@@ -23,25 +23,17 @@ class GlassBoxUMAP(ParametricUMAP):
     def compute_attributions(
         self,
         X: torch.Tensor,
-        raw_features: NDArray[np.floating],
-        projector: NDArray[np.floating] | None = None,
         batch_size: int | None = None,
     ) -> tuple[NDArray[np.float16], torch.Tensor]:
         """Computes Jacobian of the learned embedding w.r.t input features.
 
-        Optionally projects back to a raw feature space.
+        Projects gradients back to raw feature space if PCA preprocessing was used.
+        Uses Gradient x Input method with mean-centered features.
 
         Args:
             X:
-                The input data provided to the UMAP model (e.g. PCA scores). Shape:
-                (n_samples, n_input_dims)
-            raw_features:
-                The original high-dim features (centered/scaled). Shape: (n_samples,
-                n_raw_features). Used to weight the gradients (Gradient * Input).
-            projector:
-                Linear mapping from Raw -> Input. (e.g. PCA Loadings). Shape:
-                (n_raw_features, n_input_dims). If None, assumes Raw == Input (Identity
-                mapping).
+                The input data (same format as passed to fit/transform).
+                Shape: (n_samples, n_input_dims)
         """
         self._fitted_model.eval()
         self._fitted_model.to(self._device)
@@ -50,14 +42,23 @@ class GlassBoxUMAP(ParametricUMAP):
         if batch_size is None:
             batch_size = self.batch_size
 
-        jacobians_input = self._compute_batch_jacobian(encoder, X, batch_size)
-        if projector is not None:
-            proj_tensor = torch.tensor(projector, dtype=torch.float32).T
+        X_centered = X.detach().cpu().numpy() - self._mean
+
+        if self._pca is not None:
+            X_processed = self._pca.transform(X_centered)
+        else:
+            X_processed = X_centered
+
+        X_encoder = torch.from_numpy(X_processed.astype(np.float32))
+        jacobians_input = self._compute_batch_jacobian(encoder, X_encoder, batch_size)
+
+        if self._pca is not None:
+            proj_tensor = torch.tensor(self._pca.components_, dtype=torch.float32)
             jacobians_raw = torch.einsum("bij,jk->bik", jacobians_input, proj_tensor)
         else:
             jacobians_raw = jacobians_input
 
-        feature_contributions = (jacobians_raw.numpy() * raw_features[:, np.newaxis, :]).astype(
+        feature_contributions = (jacobians_raw.numpy() * X_centered[:, np.newaxis, :]).astype(
             np.float16
         )
 

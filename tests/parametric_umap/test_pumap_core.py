@@ -53,7 +53,7 @@ def test_fresh_refit():
     assert output.shape == (100, 3)
 
     # Inference fails on the original data due to shape mismatch.
-    with pytest.raises(RuntimeError, match="shapes cannot be multiplied"):
+    with pytest.raises(ValueError, match="could not be broadcast"):
         model.transform(data)
 
 
@@ -141,6 +141,25 @@ def test_pca_roundtrip_serialization(mnist_images: Tensor, tmp_path: Path):
         model._pca.components_,
         loaded_model._pca.components_,
     )
+
+    embedding_after = loaded_model.transform(mnist_images)
+    np.testing.assert_array_almost_equal(embedding_before, embedding_after, decimal=4)
+
+
+def test_mean_roundtrip_serialization(mnist_images: Tensor, tmp_path: Path):
+    """Ensure mean is preserved through save/load."""
+    model = ParametricUMAP(epochs=1, n_components=2)
+    model.fit(mnist_images)
+    embedding_before = model.transform(mnist_images)
+
+    save_path = tmp_path / "model.pt"
+    model.save(save_path)
+
+    loaded_model = ParametricUMAP.load(save_path)
+
+    assert model._mean is not None
+    assert loaded_model._mean is not None
+    np.testing.assert_array_almost_equal(model._mean, loaded_model._mean)
 
     embedding_after = loaded_model.transform(mnist_images)
     np.testing.assert_array_almost_equal(embedding_before, embedding_after, decimal=4)

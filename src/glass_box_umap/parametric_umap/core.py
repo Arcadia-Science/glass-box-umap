@@ -46,6 +46,7 @@ class ParametricUMAP:
 
     _model: UMAPLightningModule | None = field(init=False, default=None)
     _pca: PCA | None = field(init=False, default=None)
+    _mean: NDArray[np.floating] | None = field(init=False, default=None)
     _device: torch.device = field(init=False, default_factory=get_default_device)
 
     @property
@@ -85,10 +86,17 @@ class ParametricUMAP:
         if self.random_state is not None:
             pl.seed_everything(self.random_state, workers=True)
 
+        X_np = X.detach().cpu().numpy()
+        self._mean = X_np.mean(axis=0)
+        X_centered = X_np - self._mean
+
         if self.pca_components is not None:
             self._pca = PCA(n_components=self.pca_components, random_state=self.random_state)
-            X_np = self._pca.fit_transform(X.detach().cpu().numpy())
-            X = torch.from_numpy(X_np.astype(np.float32))
+            X_processed = self._pca.fit_transform(X_centered)
+        else:
+            X_processed = X_centered
+
+        X = torch.from_numpy(X_processed.astype(np.float32))
 
         with ExitStack() as stack:
             if self.checkpoint_dir is not None:
@@ -151,9 +159,14 @@ class ParametricUMAP:
         if next(self._fitted_model.parameters()).device != self._device:
             self._fitted_model.to(self._device)
 
+        X_centered = X.detach().cpu().numpy() - self._mean
+
         if self._pca is not None:
-            X_np = self._pca.transform(X.detach().cpu().numpy())
-            X = torch.from_numpy(X_np.astype(np.float32))
+            X_processed = self._pca.transform(X_centered)
+        else:
+            X_processed = X_centered
+
+        X = torch.from_numpy(X_processed.astype(np.float32))
 
         if batch_size is None:
             batch_size = self.batch_size
@@ -176,6 +189,7 @@ class ParametricUMAP:
 
         del attrs["_model"]
         del attrs["_pca"]
+        del attrs["_mean"]
         del attrs["_device"]
 
         state = {
@@ -183,6 +197,7 @@ class ParametricUMAP:
             "state_dict": self._fitted_model.state_dict(),
             "input_dims": self._fitted_model.input_dims,
             "pca": self._pca,
+            "mean": self._mean,
         }
 
         torch.save(state, path)
@@ -196,5 +211,6 @@ class ParametricUMAP:
         instance._model.load_state_dict(checkpoint["state_dict"])
         instance._model.to(instance._device)
         instance._pca = checkpoint.get("pca")
+        instance._mean = checkpoint.get("mean")
 
         return instance
