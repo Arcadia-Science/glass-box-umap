@@ -97,3 +97,50 @@ def test_batched_transform(mnist_images: Tensor):
         decimal=4,
         err_msg="Batched inference results diverged from standard inference",
     )
+
+
+def test_pca_preprocessing(mnist_images: Tensor):
+    """Ensure PCA preprocessing reduces input dimensions before training."""
+    n_pcs = 20
+    model = ParametricUMAP(pca_components=n_pcs, epochs=1, n_components=2)
+    model.fit(mnist_images)
+
+    assert model._pca is not None
+    assert model._pca.n_components == n_pcs
+    assert model._fitted_model.input_dims == (n_pcs,)
+
+    embedding = model.transform(mnist_images)
+    assert embedding.shape == (len(mnist_images), 2)
+
+
+def test_pca_disabled_by_default(mnist_images: Tensor):
+    """Ensure PCA is not applied when pca_components is None."""
+    model = ParametricUMAP(epochs=1, n_components=2)
+    model.fit(mnist_images)
+
+    assert model._pca is None
+    assert model._fitted_model.input_dims == (mnist_images.shape[1],)
+
+
+def test_pca_roundtrip_serialization(mnist_images: Tensor, tmp_path: Path):
+    """Ensure PCA state is preserved through save/load."""
+    n_pcs = 15
+    model = ParametricUMAP(pca_components=n_pcs, epochs=1, n_components=2)
+    model.fit(mnist_images)
+    embedding_before = model.transform(mnist_images)
+
+    save_path = tmp_path / "model_with_pca.pt"
+    model.save(save_path)
+
+    loaded_model = ParametricUMAP.load(save_path)
+
+    assert model._pca is not None
+    assert loaded_model._pca is not None
+    assert loaded_model.pca_components == n_pcs
+    np.testing.assert_array_almost_equal(
+        model._pca.components_,
+        loaded_model._pca.components_,
+    )
+
+    embedding_after = loaded_model.transform(mnist_images)
+    np.testing.assert_array_almost_equal(embedding_before, embedding_after, decimal=4)
