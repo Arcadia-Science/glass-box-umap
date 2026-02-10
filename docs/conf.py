@@ -67,7 +67,21 @@ nbsphinx_prolog = """"""
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = "furo"
+
+GOOGLE_FONTS_URL = (
+    "https://fonts.googleapis.com/css2?"
+    "family=Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800&"
+    "family=Merriweather:ital,wght@0,300..900;1,300..900&"
+    "display=swap"
+)
 html_logo = "_assets/logo.png"
+html_theme_options = {
+    "light_css_variables": {
+        "font-stack": '"Atkinson Hyperlegible Next", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        "font-stack--monospace": 'Menlo, ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", monospace',
+        "font-stack--headings": "Merriweather, Georgia, serif",
+    },
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -126,6 +140,7 @@ autoapi_ignore = ignore_regex
 
 # Related custom CSS
 html_css_files = [
+    GOOGLE_FONTS_URL,
     "css/label.css",
     "css/sphinx-togglebutton.css",
 ]
