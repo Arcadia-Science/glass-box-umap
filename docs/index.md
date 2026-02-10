@@ -1,16 +1,26 @@
-# glass-box-umap
+# Glass Box UMAP
 
-This is the root page for your documentation. The source file is `docs/index.md`, and it is in this file that every page of documentation is either directly or indirectly referenced.
-
+Glass Box UMAP augments UMAP by computing exact feature contributions to the UMAP embedding.
 
 ```{eval-rst}
 .. toctree::
    :hidden:
-   :maxdepth: 3
+   :caption: Getting Started
 
-   self
-   install
+   getting_started/install
+   getting_started/quickstart
+
+.. toctree::
+   :hidden:
+   :caption: Contents
+
    examples/index
    autoapi/index
-   license/index
+
+.. toctree::
+   :hidden:
+   :caption: Meta
+
+   meta/contributing
+   meta/license
 ```

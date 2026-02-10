@@ -37,6 +37,8 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "myst_parser",
+    "sphinx_togglebutton",
+    "custom_skip_members",
 ]
 
 
@@ -85,8 +87,7 @@ napolean_attr_annotations = True
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
-    "attrs": ("https://www.attrs.org/en/stable/", None),
-    "numba": ("https://numba.readthedocs.io/en/stable/", None),
+    "torch": ("https://pytorch.org/docs/stable/", None),
 }
 
 # -- sphinx-tabs options
@@ -98,9 +99,10 @@ copybutton_exclude = ".linenos, .gp, .go"
 # -- myst options
 myst_enable_extensions = ["colon_fence"]
 
+togglebutton_hint = "Click to expand"
+
 # -- autoapi configuration ---------------------------------------------------
 
-# autodoc_typehints = "signature"  # autoapi respects this
 autodoc_typehints = "both"  # autoapi respects this
 autodoc_typehints_description_target = "documented_params"  # autoapi respects this
 autodoc_class_signature = "mixed"
@@ -108,13 +110,22 @@ autoclass_content = "class"
 
 autoapi_type = "python"
 autoapi_dirs = ["../src"]
+autoapi_template_dir = "_templates/autoapi"
 autoapi_keep_files = True
-
-autoapi_ignore = [
-    "*/tests/*",
+autoapi_options = [
+    "members",
+    "show-inheritance",
+    "show-module-summary",
+    "imported-members",
+    "undoc-members",
 ]
+
+from include_exclude import ignore_regex
+
+autoapi_ignore = ignore_regex
 
 # Related custom CSS
 html_css_files = [
     "css/label.css",
+    "css/sphinx-togglebutton.css",
 ]

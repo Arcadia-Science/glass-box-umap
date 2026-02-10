@@ -1,0 +1,7 @@
+.toggle-hidden dl.py.class,
+.toggle-hidden dl.py.function,
+.toggle-hidden dl.py.method,
+.toggle-hidden dl.py.attribute,
+.toggle-hidden dl.py.data {
+    display: none !important;
+}
