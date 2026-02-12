@@ -79,6 +79,7 @@ html_theme_options = {
     "light_css_variables": {
         "font-stack": '"Atkinson Hyperlegible Next", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
         "font-stack--monospace": 'Menlo, ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", monospace',
+        # Furo doesn't have separate variables for h1 vs h2+; h2+ overridden in css/headings.css
         "font-stack--headings": "Merriweather, Georgia, serif",
     },
 }
@@ -111,7 +112,7 @@ sphinx_tabs_disable_tab_closing = True
 copybutton_exclude = ".linenos, .gp, .go"
 
 # -- myst options
-myst_enable_extensions = ["colon_fence"]
+myst_enable_extensions = ["colon_fence", "dollarmath", "amsmath"]
 
 togglebutton_hint = "Click to expand"
 
@@ -143,4 +144,6 @@ html_css_files = [
     GOOGLE_FONTS_URL,
     "css/label.css",
     "css/sphinx-togglebutton.css",
+    "css/headings.css",
+    "css/cards.css",
 ]
