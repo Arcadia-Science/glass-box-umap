@@ -21,7 +21,7 @@ from .lightning import UMAPDataModule, UMAPLightningModule
 from .registry import create_encoder
 
 
-def _to_numpy(X: np.ndarray | Tensor) -> np.ndarray:
+def _to_numpy(X: NDArray[np.floating] | Tensor) -> NDArray[np.floating]:
     if isinstance(X, Tensor):
         return X.detach().cpu().numpy()
     return X
@@ -88,12 +88,13 @@ class ParametricUMAP:
             self._model.to(self._device)
         return self
 
-    def fit(self, X: np.ndarray | Tensor) -> Self:
+    def fit(self, X: NDArray[np.floating] | Tensor) -> Self:
         if self.random_state is not None:
             pl.seed_everything(self.random_state, workers=True)
 
         X_np = _to_numpy(X)
         self._mean = X_np.mean(axis=0)
+        assert self._mean is not None
         X_centered = X_np - self._mean
 
         if self.pca_components is not None:
@@ -160,13 +161,14 @@ class ParametricUMAP:
 
     @torch.no_grad()
     def transform(
-        self, X: np.ndarray | Tensor, batch_size: int | None = None
+        self, X: NDArray[np.floating] | Tensor, batch_size: int | None = None
     ) -> NDArray[np.floating]:
         self._fitted_model.eval()
 
         if next(self._fitted_model.parameters()).device != self._device:
             self._fitted_model.to(self._device)
 
+        assert self._mean is not None
         X_centered = _to_numpy(X) - self._mean
 
         if self._pca is not None:
@@ -188,7 +190,7 @@ class ParametricUMAP:
 
         return torch.cat(results).numpy()
 
-    def fit_transform(self, X: np.ndarray | Tensor) -> NDArray[np.floating]:
+    def fit_transform(self, X: NDArray[np.floating] | Tensor) -> NDArray[np.floating]:
         self.fit(X)
         return self.transform(X)
 

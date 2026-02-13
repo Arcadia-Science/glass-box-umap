@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import torch
+from numpy.typing import NDArray
 import typer
 from glass_box_umap import GlassBoxUMAP
 from sklearn.datasets import fetch_openml
@@ -22,7 +23,7 @@ from sklearn.datasets import fetch_openml
 app = typer.Typer(pretty_exceptions_enable=False)
 
 
-def load_mnist(subset: int = 4000) -> tuple[torch.Tensor, np.ndarray]:
+def load_mnist(subset: int = 4000) -> tuple[torch.Tensor, NDArray[np.str_]]:
     """Fetches MNIST data."""
     print("Fetching MNIST...")
     mnist = fetch_openml("mnist_784", version=1)

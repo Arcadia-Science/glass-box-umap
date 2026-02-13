@@ -39,6 +39,7 @@ extensions = [
     "myst_parser",
     "sphinx_togglebutton",
     "custom_skip_members",
+    "resolve_type_aliases",
 ]
 
 
@@ -108,6 +109,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
+    "typing_extensions": ("https://typing-extensions.readthedocs.io/en/latest/", None),
 }
 
 # -- sphinx-tabs options
@@ -124,7 +126,9 @@ togglebutton_hint = "Click to expand"
 # -- autoapi configuration ---------------------------------------------------
 
 autodoc_typehints = "both"  # autoapi respects this
+autodoc_typehints_format = "short"  # autoapi respects this
 autodoc_typehints_description_target = "documented_params"  # autoapi respects this
+python_use_unqualified_type_names = True
 autodoc_class_signature = "mixed"
 autoclass_content = "class"
 

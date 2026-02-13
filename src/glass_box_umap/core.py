@@ -22,7 +22,7 @@ class GlassBoxUMAP(ParametricUMAP):
 
     def compute_attributions(
         self,
-        X: np.ndarray | torch.Tensor,
+        X: NDArray[np.floating] | torch.Tensor,
         batch_size: int | None = None,
     ) -> tuple[NDArray[np.float16], torch.Tensor]:
         """Computes Jacobian of the learned embedding w.r.t input features.
@@ -42,6 +42,7 @@ class GlassBoxUMAP(ParametricUMAP):
         if batch_size is None:
             batch_size = self.batch_size
 
+        assert self._mean is not None
         X_centered = _to_numpy(X) - self._mean
 
         if self._pca is not None:
