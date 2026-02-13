@@ -4,8 +4,8 @@
 :orphan:
 
 {% endif %}
-{{ obj.name }}
-{{ "=" * obj.name|length }}
+``{{ obj.name }}``
+{{ "=" * (obj.name|length + 4) }}
 
 .. py:module:: {{ obj.name }}
 

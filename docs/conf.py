@@ -49,7 +49,7 @@ templates_path = ["_templates"]
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 # NOTE: Don't use this for excluding python files, use `autoapi_ignore` below
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints", "**README.md"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints", "**README.md", "autoapi/index.rst"]
 
 # -- Global options ----------------------------------------------------------
 
