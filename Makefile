@@ -12,8 +12,8 @@ lint:
 
 .PHONY: format
 format:
-	ruff check --fix .
 	ruff format .
+	ruff check --fix .
 
 .PHONY: typecheck
 typecheck:

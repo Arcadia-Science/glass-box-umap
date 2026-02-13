@@ -9,6 +9,7 @@ from glass_box_umap.components import DeepPReLUNet
 from glass_box_umap.parametric_umap.registry import register_encoder
 
 from .parametric_umap import ParametricUMAP
+from .parametric_umap.core import _to_numpy
 
 GLASSBOX_ENCODER_NAME = "glassbox_encoder"
 register_encoder(GLASSBOX_ENCODER_NAME)(DeepPReLUNet)
@@ -22,7 +23,7 @@ class GlassBoxUMAP(ParametricUMAP):
 
     def compute_attributions(
         self,
-        X: torch.Tensor,
+        X: np.ndarray | torch.Tensor,
         batch_size: int | None = None,
     ) -> tuple[NDArray[np.float16], torch.Tensor]:
         """Computes Jacobian of the learned embedding w.r.t input features.
@@ -42,7 +43,7 @@ class GlassBoxUMAP(ParametricUMAP):
         if batch_size is None:
             batch_size = self.batch_size
 
-        X_centered = X.detach().cpu().numpy() - self._mean
+        X_centered = _to_numpy(X) - self._mean
 
         if self._pca is not None:
             X_processed = self._pca.transform(X_centered)
