@@ -1,4 +1,3 @@
-from __future__ import annotations
 import tempfile
 from contextlib import ExitStack
 from dataclasses import asdict, dataclass, field
@@ -13,6 +12,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from sklearn.decomposition import PCA
 from torch import Tensor
+from typing_extensions import Self
 
 from ..utils import device_to_lightning_acceleration_config, get_default_device
 from .data import UMAPDataset
@@ -81,14 +81,14 @@ class ParametricUMAP:
 
         return model
 
-    def to(self, device: str | torch.device) -> ParametricUMAP:
+    def to(self, device: str | torch.device) -> Self:
         """Move the model (if initialized) and update the target device."""
         self._device = torch.device(device)
         if self._model is not None:
             self._model.to(self._device)
         return self
 
-    def fit(self, X: np.ndarray | Tensor) -> ParametricUMAP:
+    def fit(self, X: np.ndarray | Tensor) -> Self:
         if self.random_state is not None:
             pl.seed_everything(self.random_state, workers=True)
 
@@ -211,7 +211,7 @@ class ParametricUMAP:
         torch.save(state, path)
 
     @classmethod
-    def load(cls, path: Path) -> ParametricUMAP:
+    def load(cls, path: Path) -> Self:
         checkpoint = torch.load(path, map_location="cpu", weights_only=False)
 
         instance = cls(**checkpoint["attrs"])
