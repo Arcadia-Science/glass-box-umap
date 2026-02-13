@@ -62,6 +62,11 @@ smartquotes_action = "qe"
 nbsphinx_epilog = """"""
 nbsphinx_prolog = """"""
 
+nbsphinx_allow_errors = True
+nbsphinx_input_prompt = "%.0s"
+nbsphinx_output_prompt = "%.0s"
+nbsphinx_prompt_width = "0"
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for

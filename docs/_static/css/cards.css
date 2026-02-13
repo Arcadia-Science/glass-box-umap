@@ -5,3 +5,11 @@
     margin-bottom: 1rem;
     background: #eef3f9;
 }
+
+div.nbinput.container div.input_area div[class*=highlight] > pre {
+    padding: 15px !important;
+}
+
+div.nbinput.container {
+    margin-bottom: 1rem;
+}
