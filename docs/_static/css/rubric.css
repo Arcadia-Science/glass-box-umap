@@ -15,3 +15,20 @@ dl.py .rubric {
     margin-top: 1.5em;
     margin-bottom: 0.75em;
 }
+
+p.param-sig {
+    font-family: var(--font-stack--monospace);
+    font-size: var(--api-font-size);
+    font-weight: 700;
+}
+
+p.param-desc {
+    margin-left: 1.5em;
+    margin-top: 0;
+}
+
+dd.return-type p {
+    font-family: var(--font-stack--monospace);
+    font-size: var(--api-font-size);
+    font-weight: 700;
+}
