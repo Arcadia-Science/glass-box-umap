@@ -40,6 +40,7 @@ extensions = [
     "sphinx_togglebutton",
     "custom_skip_members",
     "resolve_type_aliases",
+    "process_signatures",
 ]
 
 

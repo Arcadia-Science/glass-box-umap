@@ -29,7 +29,33 @@ def _to_numpy(X: NDArray[np.floating] | Tensor) -> NDArray[np.floating]:
 
 @dataclass
 class ParametricUMAP:
-    # UMAP config
+    """Parametric UMAP model.
+
+    Attributes:
+        n_neighbors: Number of nearest neighbors used to construct the
+            high-dimensional graph.
+        min_dist: Minimum distance between points in the low-dimensional
+            embedding.
+        metric: Distance metric used for computing nearest neighbors.
+        n_components: Dimensionality of the learned embedding.
+        random_state: Random seed for reproducibility. If ``None``, no seed
+            is set.
+        encoder_name: Name of the registered encoder architecture.
+        encoder_kwargs: Additional keyword arguments passed to the encoder
+            constructor.
+        pca_components: Number of PCA components for input preprocessing.
+            If ``None``, no PCA is applied.
+        lr: Learning rate for the optimizer.
+        epochs: Number of training epochs.
+        batch_size: Batch size for training and (default) inference.
+        negative_sample_rate: Number of negative samples per positive edge
+            in the UMAP loss.
+        repulsion_strength: Weighting of the repulsive term in the UMAP loss.
+        num_workers: Number of data loading workers.
+        checkpoint_dir: Directory for saving training checkpoints. If ``None``,
+            a temporary directory is used.
+    """
+
     n_neighbors: int = 10
     min_dist: float = 0.1
     metric: str = "euclidean"

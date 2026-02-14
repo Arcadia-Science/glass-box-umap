@@ -16,7 +16,31 @@ register_encoder(GLASSBOX_ENCODER_NAME)(DeepPReLUNet)
 
 @dataclass
 class GlassBoxUMAP(ParametricUMAP):
-    """Glass Box UMAP main class."""
+    """Glass Box UMAP model.
+
+    Attributes:
+        n_neighbors: Number of nearest neighbors used to construct the
+            high-dimensional graph.
+        min_dist: Minimum distance between points in the low-dimensional
+            embedding.
+        metric: Distance metric used for computing nearest neighbors.
+        n_components: Dimensionality of the learned embedding.
+        random_state: Random seed for reproducibility. If ``None``, no seed
+            is set.
+        encoder_kwargs: Additional keyword arguments passed to the encoder
+            constructor.
+        pca_components: Number of PCA components for input preprocessing.
+            If ``None``, no PCA is applied.
+        lr: Learning rate for the optimizer.
+        epochs: Number of training epochs.
+        batch_size: Batch size for training and (default) inference.
+        negative_sample_rate: Number of negative samples per positive edge
+            in the UMAP loss.
+        repulsion_strength: Weighting of the repulsive term in the UMAP loss.
+        num_workers: Number of data loading workers.
+        checkpoint_dir: Directory for saving training checkpoints. If ``None``,
+            a temporary directory is used.
+    """
 
     encoder_name: str = field(default=GLASSBOX_ENCODER_NAME, init=False)
 

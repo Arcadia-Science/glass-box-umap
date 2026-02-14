@@ -1,7 +1,12 @@
 from docutils import nodes
 
 
-FALLBACK_ROLES = ("data", "attribute", "obj")
+FALLBACK_ROLES = ("class", "data", "attribute", "obj")
+
+INTERNAL_MODULE_ALIASES = {
+    "pathlib._local.Path": "pathlib.Path",
+    "pathlib._local.PurePath": "pathlib.PurePath",
+}
 
 
 def _resolve_type_aliases(app, env, node, contnode):
@@ -10,11 +15,15 @@ def _resolve_type_aliases(app, env, node, contnode):
     Sphinx resolves type annotations as :class:, but some types (e.g.
     numpy.typing.NDArray) are registered as :data: in intersphinx inventories.
     This handler catches the mismatch and retries with the correct role.
+
+    Also normalizes internal CPython module paths (e.g. pathlib._local.Path)
+    to their public API equivalents (pathlib.Path).
     """
     if node.get("refdomain") != "py" or node.get("reftype") != "class":
         return None
 
     target = node["reftarget"]
+    target = INTERNAL_MODULE_ALIASES.get(target, target)
     named_inv = getattr(env, "intersphinx_named_inventory", {})
 
     for _proj_name, proj_inv in named_inv.items():
