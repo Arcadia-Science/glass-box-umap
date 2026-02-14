@@ -1,31 +1,6 @@
-import dataclasses
-
 from docutils import nodes
 from sphinx import addnodes
 from sphinx.application import Sphinx
-
-
-def process_signature(app, what, name, obj, options, signature, return_annotation):
-    if what != "class":
-        return None
-
-    if not dataclasses.is_dataclass(obj):
-        return None
-
-    if signature is None or "<factory>" not in signature:
-        return None
-
-    factory_fields = [
-        f
-        for f in dataclasses.fields(obj)
-        if f.default_factory is not dataclasses.MISSING and f.init
-    ]
-
-    for f in factory_fields:
-        factory_name = getattr(f.default_factory, "__name__", repr(f.default_factory))
-        signature = signature.replace("<factory>", f"{factory_name}()", 1)
-
-    return (signature, return_annotation)
 
 
 def _inline_attr_types(doctree):
@@ -132,12 +107,11 @@ def _restructure_class_sections(doctree):
         insert_items = []
 
         if docstring_paras:
-            insert_items.append(nodes.rubric("", "Description:"))
             insert_items.extend(docstring_paras)
 
         if base_link_nodes:
             insert_items.append(nodes.rubric("", "Base Classes:"))
-            new_para = nodes.paragraph()
+            new_para = nodes.paragraph(classes=["base-classes"])
             new_para.extend(base_link_nodes)
             insert_items.append(new_para)
 
@@ -182,5 +156,4 @@ def process_doctree(app, doctree, docname):
 
 
 def setup(app: Sphinx):
-    app.connect("autodoc-process-signature", process_signature)
     app.connect("doctree-resolved", process_doctree)

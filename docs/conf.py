@@ -39,8 +39,9 @@ extensions = [
     "myst_parser",
     "sphinx_togglebutton",
     "custom_skip_members",
-    "resolve_type_aliases",
-    "process_signatures",
+    "resolve_missing_references",
+    "fix_dataclass_defaults",
+    "restructure_class_layout",
 ]
 
 
@@ -126,6 +127,7 @@ togglebutton_hint = "Click to expand"
 
 # -- autoapi configuration ---------------------------------------------------
 
+add_module_names = False
 autodoc_typehints = "both"  # autoapi respects this
 autodoc_typehints_format = "short"  # autoapi respects this
 autodoc_typehints_description_target = "documented_params"  # autoapi respects this
