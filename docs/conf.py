@@ -156,4 +156,5 @@ html_css_files = [
     "css/sphinx-togglebutton.css",
     "css/headings.css",
     "css/cards.css",
+    "css/rubric.css",
 ]

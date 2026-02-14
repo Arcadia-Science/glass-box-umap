@@ -87,6 +87,67 @@ def _inline_attr_types(doctree):
             type_field_list.parent.remove(type_field_list)
 
 
+def _restructure_class_sections(doctree):
+    for desc_node in doctree.traverse(addnodes.desc):
+        if desc_node.get("objtype") != "class":
+            continue
+
+        contents = list(desc_node.traverse(addnodes.desc_content))
+        if not contents:
+            continue
+        content = contents[0]
+
+        bases_para = None
+        for child in content.children:
+            if isinstance(child, nodes.paragraph) and child.astext().startswith("Bases:"):
+                bases_para = child
+                break
+
+        base_link_nodes = []
+        if bases_para is not None:
+            base_link_nodes = [
+                child.deepcopy()
+                for child in bases_para.children
+                if not (isinstance(child, nodes.Text) and child.astext().startswith("Bases:"))
+            ]
+            content.remove(bases_para)
+
+        docstring_paras = []
+        for child in list(content.children):
+            if isinstance(child, addnodes.desc) and child.get("objtype") == "attribute":
+                break
+            if isinstance(child, nodes.rubric):
+                break
+            if isinstance(child, nodes.paragraph):
+                docstring_paras.append(child)
+
+        for para in docstring_paras:
+            content.remove(para)
+
+        has_attrs = any(
+            isinstance(c, addnodes.desc) and c.get("objtype") == "attribute"
+            for c in content.children
+        )
+
+        insert_items = []
+
+        if docstring_paras:
+            insert_items.append(nodes.rubric("", "Description:"))
+            insert_items.extend(docstring_paras)
+
+        if base_link_nodes:
+            insert_items.append(nodes.rubric("", "Base Classes:"))
+            new_para = nodes.paragraph()
+            new_para.extend(base_link_nodes)
+            insert_items.append(new_para)
+
+        if has_attrs:
+            insert_items.append(nodes.rubric("", "Attributes:"))
+
+        for j, item in enumerate(insert_items):
+            content.insert(j, item)
+
+
 def _remove_attrs_from_toc(app, doctree, docname):
     attr_ids = set()
     for desc in doctree.traverse(addnodes.desc):
@@ -116,6 +177,7 @@ def _remove_attrs_from_toc(app, doctree, docname):
 
 def process_doctree(app, doctree, docname):
     _inline_attr_types(doctree)
+    _restructure_class_sections(doctree)
     _remove_attrs_from_toc(app, doctree, docname)
 
 

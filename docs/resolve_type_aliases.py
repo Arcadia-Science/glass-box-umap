@@ -1,4 +1,5 @@
 from docutils import nodes
+from sphinx.util.nodes import make_refnode
 
 
 FALLBACK_ROLES = ("class", "data", "attribute", "obj")
@@ -10,32 +11,48 @@ INTERNAL_MODULE_ALIASES = {
 
 
 def _resolve_type_aliases(app, env, node, contnode):
-    """Retry failed :class: lookups as :data: for type aliases like NDArray.
+    """Resolve missing Python domain references.
 
-    Sphinx resolves type annotations as :class:, but some types (e.g.
-    numpy.typing.NDArray) are registered as :data: in intersphinx inventories.
-    This handler catches the mismatch and retries with the correct role.
-
-    Also normalizes internal CPython module paths (e.g. pathlib._local.Path)
-    to their public API equivalents (pathlib.Path).
+    Handles three cases:
+    1. Internal CPython module paths (e.g. pathlib._local.Path → pathlib.Path).
+    2. Intersphinx role mismatches (e.g. NDArray registered as :data: not :class:).
+    3. Re-exported objects (e.g. a.b.Foo documented as a.Foo).
     """
-    if node.get("refdomain") != "py" or node.get("reftype") != "class":
+    if node.get("refdomain") != "py":
         return None
 
     target = node["reftarget"]
     target = INTERNAL_MODULE_ALIASES.get(target, target)
-    named_inv = getattr(env, "intersphinx_named_inventory", {})
 
-    for _proj_name, proj_inv in named_inv.items():
-        for role in FALLBACK_ROLES:
-            key = f"py:{role}"
-            if key in proj_inv and target in proj_inv[key]:
-                _proj, _version, uri, _dispname = proj_inv[key][target]
-                short_name = target.rsplit(".", 1)[-1]
-                newnode = nodes.reference(
-                    short_name, short_name, internal=False, refuri=uri
+    if node.get("reftype") == "class":
+        named_inv = getattr(env, "intersphinx_named_inventory", {})
+        for _proj_name, proj_inv in named_inv.items():
+            for role in FALLBACK_ROLES:
+                key = f"py:{role}"
+                if key in proj_inv and target in proj_inv[key]:
+                    _proj, _version, uri, _dispname = proj_inv[key][target]
+                    short_name = target.rsplit(".", 1)[-1]
+                    newnode = nodes.reference(
+                        short_name, short_name, internal=False, refuri=uri
+                    )
+                    return newnode
+
+    parts = target.split(".")
+    if len(parts) >= 3:
+        py_domain = env.get_domain("py")
+        short_name = parts[-1]
+        for i in range(len(parts) - 2, 0, -1):
+            candidate = ".".join(parts[:i] + [parts[-1]])
+            entry = py_domain.objects.get(candidate)
+            if entry is not None:
+                return make_refnode(
+                    app.builder,
+                    node.get("refdoc", ""),
+                    entry.docname,
+                    entry.node_id,
+                    nodes.Text(short_name),
+                    short_name,
                 )
-                return newnode
 
     return None
 
