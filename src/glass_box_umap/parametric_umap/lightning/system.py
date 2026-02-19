@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
 from torch import Tensor, nn
-from torch.optim import AdamW
+from torch.optim import Adam, AdamW
 from torch.optim.optimizer import Optimizer
 from umap.umap_ import find_ab_params
 

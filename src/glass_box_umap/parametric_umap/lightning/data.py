@@ -30,5 +30,6 @@ class UMAPDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             shuffle=True,
+            drop_last=True,
             persistent_workers=self.num_workers > 0,
         )

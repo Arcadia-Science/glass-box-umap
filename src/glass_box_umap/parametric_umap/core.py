@@ -108,33 +108,42 @@ class ParametricUMAP:
                 enable_checkpointing=True,
                 logger=logger,
                 log_every_n_steps=1,
+                gradient_clip_val=4.0,
+                gradient_clip_algorithm="value",
             )
 
             input_dims = tuple(X.shape[1:])
             self._model = self._build_model(input_dims)
 
             graph = get_umap_graph(
-                X.detach().cpu().numpy(),
+                X,
+                # X.detach().cpu().numpy(),
                 n_neighbors=self.n_neighbors,
                 metric=self.metric,
                 random_state=self.random_state,
             )
+            
+            # X = X.reshape([-1, 28, 28]).squeeze().unsqueeze(1)
             datamodule = UMAPDataModule(
-                UMAPDataset(X.detach().cpu().numpy(), graph),
+                UMAPDataset(
+                    X,graph),
+                    # X.detach().cpu().numpy(), graph),
                 self.batch_size,
                 self.num_workers,
             )
 
             trainer.fit(model=self._model, datamodule=datamodule)
 
-            best_ckpt = torch.load(best_checkpoint.best_model_path, map_location="cpu")
-            self._model.load_state_dict(best_ckpt["state_dict"])
+            # best_ckpt = torch.load(best_checkpoint.best_model_path, map_location="cpu")
+            # self._model.load_state_dict(best_ckpt["state_dict"])
 
         self._model.to(self._device)
 
         return self
 
     @torch.no_grad()
+
+
     def transform(self, X: Tensor, batch_size: int | None = None) -> NDArray[np.floating]:
         self._fitted_model.eval()
 
@@ -145,13 +154,39 @@ class ParametricUMAP:
             batch_size = self.batch_size
 
         results = []
-        for i in range(0, len(X), batch_size):
-            batch = X[i : i + batch_size]
-            batch = batch.to(self._device)
-            embedding = self._fitted_model.encoder(batch)
-            results.append(embedding.detach().cpu())
+        print(X.shape)
+        # for i in range(0, len(X), batch_size):
+        #     batch = X[i : i + batch_size,:]
+        #     batch = torch.tensor([batch]).to(self._device)
+        #     embedding = self._fitted_model.encoder(batch)
+        #     results.append(embedding.detach().cpu())
 
-        return torch.cat(results).numpy()
+        if not isinstance(X, torch.Tensor):        
+            batch = torch.tensor([X]).to(self._device).squeeze()
+        else:
+            batch = X.to(self._device).squeeze()
+        print(batch.shape)
+        results = [self._fitted_model.encoder(batch)]
+            # results.append(embedding.detach().cpu())
+        return torch.cat(results).detach().cpu().numpy()
+    
+    # def transform(self, X: Tensor, batch_size: int | None = None) -> NDArray[np.floating]:
+    #     self._fitted_model.eval()
+
+    #     if next(self._fitted_model.parameters()).device != self._device:
+    #         self._fitted_model.to(self._device)
+
+    #     if batch_size is None:
+    #         batch_size = self.batch_size
+
+    #     results = []
+    #     for i in range(0, len(X), batch_size):
+    #         batch = X[i : i + batch_size]
+    #         batch = batch.to(self._device)
+    #         embedding = self._fitted_model.encoder(batch)
+    #         results.append(embedding.detach().cpu())
+
+    #     return torch.cat(results).numpy()
 
     def fit_transform(self, X: Tensor) -> NDArray[np.floating]:
         self.fit(X)

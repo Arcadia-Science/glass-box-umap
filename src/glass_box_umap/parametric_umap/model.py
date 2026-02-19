@@ -15,16 +15,20 @@ class ConvEncoder(nn.Module):
     def __init__(self, n_components: int = 2) -> None:
         super().__init__()
         self.encoder = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, stride=2, padding=1),
-            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=2, padding=1),
+            # FIX: Explicitly set in_channels=1 for MNIST
+            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, stride=2, padding=1, bias=False),            
+            nn.ReLU(),
+            # FIX: in_channels must match the previous layer's out_channels (64)
+            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=2, padding=1, bias=False),            
+            nn.ReLU(),
             nn.Flatten(),
-            nn.Linear(6272, 512),
+            # 128 channels * 7 * 7 spatial = 6272
+            nn.Linear(6272, 512, bias=False),
             nn.ReLU(),
-            nn.Linear(512, 512),
+            nn.Linear(512, 512, bias=False),
             nn.ReLU(),
-            nn.Linear(512, n_components),
+            nn.Linear(512, n_components, bias=False),
         )
-
     def forward(self, x: Tensor) -> Tensor:
         return self.encoder(x)
 

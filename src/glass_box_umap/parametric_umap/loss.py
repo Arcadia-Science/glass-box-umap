@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 
-def convert_distance_to_probability(distances: Tensor, a: float = 1.0, b: float = 1.0) -> Tensor:
+def convert_distance_to_probability(distances: Tensor, a: float = 1.577, b: float = 0.895) -> Tensor:
     """Convert distances to probabilities using UMAP's distance-to-probability function.
 
     Uses the formula: -log(1 + a * d^(2*b)) which creates a smooth decay from

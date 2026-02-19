@@ -21,7 +21,7 @@ GraphElements = tuple[
 def get_umap_graph(
     X: NDArray[np.floating],
     n_neighbors: int = 10,
-    metric: str = "cosine",
+    metric: str = "euclidean",
     random_state: RandomState | int | None = None,
 ) -> csr_matrix:
     """Build a UMAP graph from input data using nearest neighbor descent.
@@ -41,7 +41,7 @@ def get_umap_graph(
     rng = check_random_state(random_state)
     n_trees = 5 + int(round((X.shape[0]) ** 0.5 / 20.0))
     n_iters = max(5, int(round(np.log2(X.shape[0]))))
-
+    
     nnd = NNDescent(
         X,
         n_neighbors=n_neighbors,
