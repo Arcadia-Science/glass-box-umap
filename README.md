@@ -22,3 +22,7 @@ All resources are hosted at [https://glass-box-umap.readthedocs.io](https://glas
 1. [**Installation**](https://glass-box-umap.readthedocs.io/en/latest/getting_started/install.html)
 1. [Quickstart](https://glass-box-umap.readthedocs.io/en/latest/getting_started/quickstart.html)
 1. [Citation](https://glass-box-umap.readthedocs.io/en/latest/meta/citation.html)
+
+# About
+
+Glass Box UMAP is part of [Arcadia Science's](https://www.arcadiascience.com/) commitment to open, reproducible research tools.
