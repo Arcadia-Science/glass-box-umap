@@ -11,6 +11,7 @@ import torch
 from numpy.typing import NDArray
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
+from sklearn.decomposition import PCA
 from torch import Tensor
 
 from ..utils import device_to_lightning_acceleration_config, get_default_device
@@ -31,6 +32,9 @@ class ParametricUMAP:
     encoder_name: str = "default"
     encoder_kwargs: dict[str, Any] = field(default_factory=dict)
 
+    # Preprocessing
+    pca_components: int | None = None
+
     # Train config
     lr: float = 1e-3
     epochs: int = 10
@@ -41,6 +45,8 @@ class ParametricUMAP:
     checkpoint_dir: Path | None = None
 
     _model: UMAPLightningModule | None = field(init=False, default=None)
+    _pca: PCA | None = field(init=False, default=None)
+    _mean: NDArray[np.floating] | None = field(init=False, default=None)
     _device: torch.device = field(init=False, default_factory=get_default_device)
 
     @property
@@ -79,6 +85,18 @@ class ParametricUMAP:
     def fit(self, X: Tensor) -> ParametricUMAP:
         if self.random_state is not None:
             pl.seed_everything(self.random_state, workers=True)
+
+        X_np = X.detach().cpu().numpy()
+        self._mean = X_np.mean(axis=0)
+        X_centered = X_np - self._mean
+
+        if self.pca_components is not None:
+            self._pca = PCA(n_components=self.pca_components, random_state=self.random_state)
+            X_processed = self._pca.fit_transform(X_centered)
+        else:
+            X_processed = X_centered
+
+        X = torch.from_numpy(X_processed.astype(np.float32))
 
         with ExitStack() as stack:
             if self.checkpoint_dir is not None:
@@ -141,6 +159,15 @@ class ParametricUMAP:
         if next(self._fitted_model.parameters()).device != self._device:
             self._fitted_model.to(self._device)
 
+        X_centered = X.detach().cpu().numpy() - self._mean
+
+        if self._pca is not None:
+            X_processed = self._pca.transform(X_centered)
+        else:
+            X_processed = X_centered
+
+        X = torch.from_numpy(X_processed.astype(np.float32))
+
         if batch_size is None:
             batch_size = self.batch_size
 
@@ -160,25 +187,30 @@ class ParametricUMAP:
     def save(self, path: Path) -> None:
         attrs = asdict(self)
 
-        # Delete all private attributes.
         del attrs["_model"]
+        del attrs["_pca"]
+        del attrs["_mean"]
         del attrs["_device"]
 
         state = {
             "attrs": attrs,
             "state_dict": self._fitted_model.state_dict(),
             "input_dims": self._fitted_model.input_dims,
+            "pca": self._pca,
+            "mean": self._mean,
         }
 
         torch.save(state, path)
 
     @classmethod
     def load(cls, path: Path) -> ParametricUMAP:
-        checkpoint = torch.load(path, map_location="cpu")
+        checkpoint = torch.load(path, map_location="cpu", weights_only=False)
 
         instance = cls(**checkpoint["attrs"])
         instance._model = instance._build_model(checkpoint["input_dims"])
         instance._model.load_state_dict(checkpoint["state_dict"])
         instance._model.to(instance._device)
+        instance._pca = checkpoint.get("pca")
+        instance._mean = checkpoint.get("mean")
 
         return instance
