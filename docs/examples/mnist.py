@@ -15,9 +15,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import torch
-from numpy.typing import NDArray
 import typer
 from glass_box_umap import GlassBoxUMAP
+from numpy.typing import NDArray
 from sklearn.datasets import fetch_openml
 
 app = typer.Typer(pretty_exceptions_enable=False)
