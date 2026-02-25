@@ -1,4 +1,3 @@
-from __future__ import annotations
 import tempfile
 from contextlib import ExitStack
 from dataclasses import asdict, dataclass, field
@@ -13,6 +12,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from sklearn.decomposition import PCA
 from torch import Tensor
+from typing_extensions import Self
 
 from ..utils import device_to_lightning_acceleration_config, get_default_device
 from .data import UMAPDataset
@@ -21,9 +21,41 @@ from .lightning import UMAPDataModule, UMAPLightningModule
 from .registry import create_encoder
 
 
+def _to_numpy(X: NDArray[np.floating] | Tensor) -> NDArray[np.floating]:
+    if isinstance(X, Tensor):
+        return X.detach().cpu().numpy()
+    return X
+
+
 @dataclass
 class ParametricUMAP:
-    # UMAP config
+    """Parametric UMAP model.
+
+    Attributes:
+        n_neighbors: Number of nearest neighbors used to construct the
+            high-dimensional graph.
+        min_dist: Minimum distance between points in the low-dimensional
+            embedding.
+        metric: Distance metric used for computing nearest neighbors.
+        n_components: Dimensionality of the learned embedding.
+        random_state: Random seed for reproducibility. If ``None``, no seed
+            is set.
+        encoder_name: Name of the registered encoder architecture.
+        encoder_kwargs: Additional keyword arguments passed to the encoder
+            constructor.
+        pca_components: Number of PCA components for input preprocessing.
+            If ``None``, no PCA is applied.
+        lr: Learning rate for the optimizer.
+        epochs: Number of training epochs.
+        batch_size: Batch size for training and (default) inference.
+        negative_sample_rate: Number of negative samples per positive edge
+            in the UMAP loss.
+        repulsion_strength: Weighting of the repulsive term in the UMAP loss.
+        num_workers: Number of data loading workers.
+        checkpoint_dir: Directory for saving training checkpoints. If ``None``,
+            a temporary directory is used.
+    """
+
     n_neighbors: int = 10
     min_dist: float = 0.1
     metric: str = "euclidean"
@@ -75,19 +107,20 @@ class ParametricUMAP:
 
         return model
 
-    def to(self, device: str | torch.device) -> ParametricUMAP:
+    def to(self, device: str | torch.device) -> Self:
         """Move the model (if initialized) and update the target device."""
         self._device = torch.device(device)
         if self._model is not None:
             self._model.to(self._device)
         return self
 
-    def fit(self, X: Tensor) -> ParametricUMAP:
+    def fit(self, X: NDArray[np.floating] | Tensor) -> Self:
         if self.random_state is not None:
             pl.seed_everything(self.random_state, workers=True)
 
-        X_np = X.detach().cpu().numpy()
+        X_np = _to_numpy(X)
         self._mean = X_np.mean(axis=0)
+        assert self._mean is not None
         X_centered = X_np - self._mean
 
         if self.pca_components is not None:
@@ -153,13 +186,16 @@ class ParametricUMAP:
         return self
 
     @torch.no_grad()
-    def transform(self, X: Tensor, batch_size: int | None = None) -> NDArray[np.floating]:
+    def transform(
+        self, X: NDArray[np.floating] | Tensor, batch_size: int | None = None
+    ) -> NDArray[np.floating]:
         self._fitted_model.eval()
 
         if next(self._fitted_model.parameters()).device != self._device:
             self._fitted_model.to(self._device)
 
-        X_centered = X.detach().cpu().numpy() - self._mean
+        assert self._mean is not None
+        X_centered = _to_numpy(X) - self._mean
 
         if self._pca is not None:
             X_processed = self._pca.transform(X_centered)
@@ -180,7 +216,7 @@ class ParametricUMAP:
 
         return torch.cat(results).numpy()
 
-    def fit_transform(self, X: Tensor) -> NDArray[np.floating]:
+    def fit_transform(self, X: NDArray[np.floating] | Tensor) -> NDArray[np.floating]:
         self.fit(X)
         return self.transform(X)
 
@@ -203,7 +239,7 @@ class ParametricUMAP:
         torch.save(state, path)
 
     @classmethod
-    def load(cls, path: Path) -> ParametricUMAP:
+    def load(cls, path: Path) -> Self:
         checkpoint = torch.load(path, map_location="cpu", weights_only=False)
 
         instance = cls(**checkpoint["attrs"])

@@ -1,4 +1,3 @@
-from __future__ import annotations
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -9,6 +8,7 @@ from glass_box_umap.components import DeepPReLUNet
 from glass_box_umap.parametric_umap.registry import register_encoder
 
 from .parametric_umap import ParametricUMAP
+from .parametric_umap.core import _to_numpy
 
 GLASSBOX_ENCODER_NAME = "glassbox_encoder"
 register_encoder(GLASSBOX_ENCODER_NAME)(DeepPReLUNet)
@@ -16,13 +16,37 @@ register_encoder(GLASSBOX_ENCODER_NAME)(DeepPReLUNet)
 
 @dataclass
 class GlassBoxUMAP(ParametricUMAP):
-    """Glass Box UMAP main class."""
+    """Glass Box UMAP model.
+
+    Attributes:
+        n_neighbors: Number of nearest neighbors used to construct the
+            high-dimensional graph.
+        min_dist: Minimum distance between points in the low-dimensional
+            embedding.
+        metric: Distance metric used for computing nearest neighbors.
+        n_components: Dimensionality of the learned embedding.
+        random_state: Random seed for reproducibility. If ``None``, no seed
+            is set.
+        encoder_kwargs: Additional keyword arguments passed to the encoder
+            constructor.
+        pca_components: Number of PCA components for input preprocessing.
+            If ``None``, no PCA is applied.
+        lr: Learning rate for the optimizer.
+        epochs: Number of training epochs.
+        batch_size: Batch size for training and (default) inference.
+        negative_sample_rate: Number of negative samples per positive edge
+            in the UMAP loss.
+        repulsion_strength: Weighting of the repulsive term in the UMAP loss.
+        num_workers: Number of data loading workers.
+        checkpoint_dir: Directory for saving training checkpoints. If ``None``,
+            a temporary directory is used.
+    """
 
     encoder_name: str = field(default=GLASSBOX_ENCODER_NAME, init=False)
 
     def compute_attributions(
         self,
-        X: torch.Tensor,
+        X: NDArray[np.floating] | torch.Tensor,
         batch_size: int | None = None,
     ) -> tuple[NDArray[np.float16], torch.Tensor]:
         """Computes Jacobian of the learned embedding w.r.t input features.
@@ -42,7 +66,8 @@ class GlassBoxUMAP(ParametricUMAP):
         if batch_size is None:
             batch_size = self.batch_size
 
-        X_centered = X.detach().cpu().numpy() - self._mean
+        assert self._mean is not None
+        X_centered = _to_numpy(X) - self._mean
 
         if self._pca is not None:
             X_processed = self._pca.transform(X_centered)
