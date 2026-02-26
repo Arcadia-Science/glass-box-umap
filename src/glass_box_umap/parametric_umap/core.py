@@ -39,6 +39,7 @@ class ParametricUMAP:
     repulsion_strength: float = 3.0
     num_workers: int = 0
     checkpoint_dir: Path | None = None
+    best_ckpt: bool = False
 
     _model: UMAPLightningModule | None = field(init=False, default=None)
     _device: torch.device = field(init=False, default_factory=get_default_device)
@@ -134,9 +135,10 @@ class ParametricUMAP:
             )
 
             trainer.fit(model=self._model, datamodule=datamodule)
-
-            best_ckpt = torch.load(best_checkpoint.best_model_path, map_location="cpu")
-            self._model.load_state_dict(best_ckpt["state_dict"])
+            
+            if self.best_ckpt:
+                best_ckpt = torch.load(best_checkpoint.best_model_path, map_location="cpu")
+                self._model.load_state_dict(best_ckpt["state_dict"])
 
         self._model.to(self._device)
 
