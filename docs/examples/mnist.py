@@ -17,28 +17,20 @@ import seaborn as sns
 import torch
 import typer
 from glass_box_umap import GlassBoxUMAP
+from numpy.typing import NDArray
 from sklearn.datasets import fetch_openml
-from sklearn.decomposition import PCA
 
 app = typer.Typer(pretty_exceptions_enable=False)
 
 
-def load_and_preprocess_mnist(
-    n_pcs: int, subset: int = 4000
-) -> tuple[torch.Tensor, np.ndarray, np.ndarray, PCA]:
-    """Fetches MNIST data and performs PCA preprocessing."""
+def load_mnist(subset: int = 4000) -> tuple[torch.Tensor, NDArray[np.str_]]:
+    """Fetches MNIST data."""
     print("Fetching MNIST...")
     mnist = fetch_openml("mnist_784", version=1)
     data_raw = mnist.data.values[:subset, :].astype(np.float32)
     target_values = mnist.target.values[:subset]
 
-    data_centered = data_raw - data_raw.mean(axis=0)
-
-    pca = PCA(n_components=n_pcs)
-    pca.fit(data_raw)
-    data_pca = pca.transform(data_raw).astype(np.float32)
-
-    return torch.from_numpy(data_pca), target_values, data_centered, pca
+    return torch.from_numpy(data_raw), target_values
 
 
 @app.command()
@@ -54,18 +46,19 @@ def main(
     output_dir.mkdir(parents=True, exist_ok=True)
     model_path = output_dir / "model.pt"
 
-    X_pca, y_target, X_centered, pca_model = load_and_preprocess_mnist(n_pcs)
+    X_raw, y_target = load_mnist()
 
     if train:
         print("Initializing GlassBoxUMAP...")
         reducer = GlassBoxUMAP(
+            pca_components=n_pcs,
             epochs=epochs,
             random_state=random_state,
             encoder_kwargs={"hidden_size": hidden_size},
         )
 
         print("Fitting GlassBoxUMAP...")
-        reducer.fit(X_pca)
+        reducer.fit(X_raw)
         reducer.save(model_path)
         print(f"Saved model to {model_path}")
     else:
@@ -73,14 +66,10 @@ def main(
         reducer = GlassBoxUMAP.load(model_path)
 
     print("Computing attributions...")
-    feature_contributions, jacobians = reducer.compute_attributions(
-        X=X_pca,
-        raw_features=X_centered,
-        projector=pca_model.components_.T,
-    )
+    feature_contributions, jacobians = reducer.compute_attributions(X=X_raw)
 
     print("Plotting embedding...")
-    embedding = reducer.transform(X_pca)
+    embedding = reducer.transform(X_raw)
 
     sns.set_style("whitegrid")
     ax = sns.scatterplot(x=embedding[:, 0], y=embedding[:, 1], hue=y_target, s=3)
@@ -94,7 +83,7 @@ def main(
     print("Plotting linear operator for first sample...")
     plt.figure()
 
-    jacobian_pixel = jacobians[0].numpy() @ pca_model.components_
+    jacobian_pixel = jacobians[0].numpy() @ reducer._pca.components_
     linear_operator = jacobian_pixel[0, :].reshape([28, 28])
 
     plt.imshow(linear_operator, cmap="RdBu")
