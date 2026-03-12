@@ -97,6 +97,12 @@ def get_graph_elements(graph: csr_matrix, n_epochs: int) -> GraphElements:
     graph_coo.data[graph_coo.data < (graph_coo.data.max() / float(n_epochs))] = 0.0
     graph_coo.eliminate_zeros()
 
+    # print("Graph len 0: ", len(graph_coo.data))
+    # graph_cutoff_sorted = np.percentile(graph_coo.data, 90)
+    # graph_coo.data[graph_coo.data < graph_cutoff_sorted]=0
+    # graph_coo.eliminate_zeros()
+    # print("Graph len 1: ", len(graph_coo.data))
+
     epochs_per_sample = (n_epochs * graph_coo.data).astype(np.float32)
     head = graph_coo.row
     tail = graph_coo.col

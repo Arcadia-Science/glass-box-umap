@@ -30,7 +30,7 @@ plt.scatter(output[:, 0], output[:, 1], c=colors, s=5)
 plt.savefig("umap_original.png")
 plt.close()
 
-for epoch in [1, 5, 10, 50, 100, 200, 500]:
+for epoch in [4]:#1, 5, 10, 50, 100, 200, 500]:
     reducer = ParametricUMAP(
         epochs=epoch,
         lr=1e-3,
@@ -52,5 +52,5 @@ for epoch in [1, 5, 10, 50, 100, 200, 500]:
     output = reducer.transform(X)
 
     plt.scatter(output[:, 0], output[:, 1], c=colors, s=5)
-    plt.savefig(f"umap_glassbox_{epoch}.png")
+    plt.savefig(f"feb_26_pr_umap_glassbox_{epoch}.png")
     plt.close()

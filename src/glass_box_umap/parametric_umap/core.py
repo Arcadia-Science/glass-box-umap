@@ -168,16 +168,37 @@ class ParametricUMAP:
 
             if isinstance(X, torch.Tensor):                        
                 X = X.detach().cpu().squeeze()
+            
+            if len(X.shape)>2:
+                conv_flag=True
+                # X = X.reshape([-1,784])
+                graph = get_umap_graph(
+                    X.reshape([-1,784]),
+                    n_neighbors=self.n_neighbors,
+                    metric=self.metric,
+                    random_state=self.random_state,
+                )
+            else:
+                conv_flag=False
+                graph = get_umap_graph(
+                    X,
+                    n_neighbors=self.n_neighbors,
+                    metric=self.metric,
+                    random_state=self.random_state,
+                )
 
-            graph = get_umap_graph(
-                X,
-                n_neighbors=self.n_neighbors,
-                metric=self.metric,
-                random_state=self.random_state,
-            )
+            # graph = get_umap_graph(
+            #     X,
+            #     n_neighbors=self.n_neighbors,
+            #     metric=self.metric,
+            #     random_state=self.random_state,
+            # )
 
             if isinstance(X, torch.Tensor):                        
                 X = X.detach().cpu().numpy()
+            if conv_flag:
+                X = torch.tensor(X.squeeze()).unsqueeze(1).detach().cpu().numpy() #reshape([-1,28,28]).unsqueeze(1)
+                print("Shape: ", X.shape)
             datamodule = UMAPDataModule(
                 # UMAPDataset(X.detach().cpu().numpy(), graph),
                 UMAPDataset(X, graph),
@@ -226,7 +247,7 @@ class ParametricUMAP:
 
         return torch.cat(results).numpy()
 
-    def fit_transform(self, X: NDArray[np.floating] | Tensor) -> NDArray[np.floating]:
+    def fit_transform(self, X: Tensor) -> NDArray[np.floating]:
         self.fit(X)
         return self.transform(X)
 

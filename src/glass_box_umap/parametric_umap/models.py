@@ -44,10 +44,10 @@ class ConvEncoder(nn.Module):
             hidden_dims = [512, 512]
 
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=64, kernel_size=3, stride=2, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=2, padding=1),
-            nn.ReLU(),
+            nn.Conv2d(in_channels=in_channels, out_channels=64, kernel_size=3, stride=2, padding=1,bias=False),
+            nn.PReLU(),
+            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=2, padding=1,bias=False),
+            nn.PReLU(),
             nn.Flatten(),
         )
 
@@ -56,9 +56,9 @@ class ConvEncoder(nn.Module):
         mlp_layers: list[nn.Module] = []
         prev_dim = flattened_size
         for dim in hidden_dims:
-            mlp_layers.extend([nn.Linear(prev_dim, dim), nn.ReLU()])
+            mlp_layers.extend([nn.Linear(prev_dim, dim, bias=False), nn.PReLU()])
             prev_dim = dim
-        mlp_layers.append(nn.Linear(prev_dim, n_components))
+        mlp_layers.append(nn.Linear(prev_dim, n_components, bias=False))
 
         self.mlp = nn.Sequential(*mlp_layers)
 
@@ -160,8 +160,10 @@ class ResidualMLPBlock(nn.Module):
         self.norm2 = LayerNormDetached(dim) if use_norm else nn.Identity()
 
         if activation == "leaky_relu":
-            self.act = nn.LeakyReLU(negative_slope=negative_slope)
-            a = negative_slope
+            # self.act = nn.LeakyReLU(negative_slope=negative_slope)
+            # a = negative_slope
+            
+            self.act = nn.PReLU()#negative_slope=negative_slope)
             nonlin = "leaky_relu"
         else:
             self.act = nn.ReLU()
@@ -169,8 +171,8 @@ class ResidualMLPBlock(nn.Module):
             nonlin = "relu"
 
         # He/Kaiming init for ReLU-family activations
-        init.kaiming_uniform_(self.fc1.weight, a=a, nonlinearity=nonlin)
-        init.kaiming_uniform_(self.fc2.weight, a=a, nonlinearity=nonlin)
+        init.kaiming_uniform_(self.fc1.weight, nonlinearity=nonlin)
+        init.kaiming_uniform_(self.fc2.weight, nonlinearity=nonlin)
 
     def forward(self, x: Tensor) -> Tensor:
         h = self.fc1(x)
