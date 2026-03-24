@@ -1,9 +1,8 @@
 import math
 
 import torch
-from torch import Tensor, nn
-
 import torch.nn.init as init
+from torch import Tensor, nn
 
 from glass_box_umap.components import LayerNormDetached
 
@@ -44,9 +43,18 @@ class ConvEncoder(nn.Module):
             hidden_dims = [512, 512]
 
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=64, kernel_size=3, stride=2, padding=1,bias=False),
+            nn.Conv2d(
+                in_channels=in_channels,
+                out_channels=64,
+                kernel_size=3,
+                stride=2,
+                padding=1,
+                bias=False,
+            ),
             nn.PReLU(),
-            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=2, padding=1,bias=False),
+            nn.Conv2d(
+                in_channels=64, out_channels=64, kernel_size=3, stride=2, padding=1, bias=False
+            ),
             nn.PReLU(),
             nn.Flatten(),
         )
@@ -61,6 +69,17 @@ class ConvEncoder(nn.Module):
         mlp_layers.append(nn.Linear(prev_dim, n_components, bias=False))
 
         self.mlp = nn.Sequential(*mlp_layers)
+        # Apply to all sub-modules recursively
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, (nn.Conv2d, nn.Linear)):
+            # Since you use PReLU, we set the 'a' parameter (negative slope)
+            # to match. Default PReLU starts at 0.25.
+            nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="leaky_relu", a=0.25)
+
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.conv_layers(x)
@@ -139,11 +158,12 @@ class ResidualMLPBlock(nn.Module):
     Residual MLP block: x -> Linear -> (Norm) -> Act -> Linear -> (Norm) -> +skip
     Keeps everything bias-free and piecewise-linear (if Norm has no affine).
     """
+
     def __init__(
         self,
         dim: int,
         hidden_dim: int | None = None,
-        activation: str = "relu",   # or "leaky_relu"
+        activation: str = "relu",  # or "leaky_relu"
         negative_slope: float = 0.01,
         use_norm: bool = True,
     ) -> None:
@@ -154,20 +174,17 @@ class ResidualMLPBlock(nn.Module):
         self.fc2 = nn.Linear(hidden_dim, dim, bias=False)
 
         # Norm that does NOT introduce an additive learned offset
-        # self.norm1 = nn.LayerNorm(hidden_dim, elementwise_affine=False) if use_norm else nn.Identity()
-        # self.norm2 = nn.LayerNorm(dim, elementwise_affine=False) if use_norm else nn.Identity()
         self.norm1 = LayerNormDetached(hidden_dim) if use_norm else nn.Identity()
         self.norm2 = LayerNormDetached(dim) if use_norm else nn.Identity()
 
         if activation == "leaky_relu":
             # self.act = nn.LeakyReLU(negative_slope=negative_slope)
             # a = negative_slope
-            
-            self.act = nn.PReLU()#negative_slope=negative_slope)
+
+            self.act = nn.PReLU()  # negative_slope=negative_slope)
             nonlin = "leaky_relu"
         else:
             self.act = nn.ReLU()
-            a = 0.0
             nonlin = "relu"
 
         # He/Kaiming init for ReLU-family activations
@@ -191,14 +208,15 @@ class DefaultEncoder(nn.Module):
     - All Linear layers use bias=False to preserve your local Jacobian property.
     - Residual blocks greatly improve trainability for depth.
     """
+
     def __init__(
         self,
         input_dims: tuple[int, ...],
         n_components: int = 2,
         width: int = 128,
-        depth: int = 3,              # number of residual blocks
-        mlp_ratio: float = 2.0,      # inner expansion in each block
-        activation: str = "leaky_relu",    # or "leaky_relu"
+        depth: int = 3,  # number of residual blocks
+        mlp_ratio: float = 2.0,  # inner expansion in each block
+        activation: str = "leaky_relu",  # or "leaky_relu"
         negative_slope: float = 0.01,
         use_norm: bool = True,
     ) -> None:
@@ -221,16 +239,18 @@ class DefaultEncoder(nn.Module):
         init.kaiming_uniform_(self.in_proj.weight, a=a, nonlinearity=nonlin)
 
         # Residual trunk
-        self.blocks = nn.Sequential(*[
-            ResidualMLPBlock(
-                dim=width,
-                hidden_dim=hidden_dim,
-                activation=activation,
-                negative_slope=negative_slope,
-                use_norm=use_norm,
-            )
-            for _ in range(depth)
-        ])
+        self.blocks = nn.Sequential(
+            *[
+                ResidualMLPBlock(
+                    dim=width,
+                    hidden_dim=hidden_dim,
+                    activation=activation,
+                    negative_slope=negative_slope,
+                    use_norm=use_norm,
+                )
+                for _ in range(depth)
+            ]
+        )
 
         # Optional final activation (keeps piecewise linearity)
         self.out_act = nn.Identity()  # or nn.ReLU() / nn.LeakyReLU(...) if you want

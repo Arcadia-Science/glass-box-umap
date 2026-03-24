@@ -48,6 +48,7 @@ class ParametricUMAP:
         lr: Learning rate for the optimizer.
         epochs: Number of training epochs.
         batch_size: Batch size for training and (default) inference.
+        num_batches: Manually set number of batches; by default, trains on all.
         negative_sample_rate: Number of negative samples per positive edge
             in the UMAP loss.
         repulsion_strength: Weighting of the repulsive term in the UMAP loss.
@@ -71,6 +72,7 @@ class ParametricUMAP:
     lr: float = 1e-3
     epochs: int = 10
     batch_size: int = 512
+    num_batches: int = -1
     negative_sample_rate: int = 5
     repulsion_strength: float = 3.0
     num_workers: int = 0
@@ -165,23 +167,22 @@ class ParametricUMAP:
             input_dims = tuple(X.shape[1:])
             self._model = self._build_model(input_dims)
 
-
-            if isinstance(X, torch.Tensor):                        
+            if isinstance(X, torch.Tensor):
                 X = X.detach().cpu().squeeze()
-            
-            if len(X.shape)>2:
-                conv_flag=True
+
+            if len(X.shape) > 2:
+                conv_flag = True
                 # X = X.reshape([-1,784])
                 graph = get_umap_graph(
-                    X.reshape([-1,784]),
+                    X.reshape([-1, 784]).detach().cpu().numpy(),
                     n_neighbors=self.n_neighbors,
                     metric=self.metric,
                     random_state=self.random_state,
                 )
             else:
-                conv_flag=False
+                conv_flag = False
                 graph = get_umap_graph(
-                    X,
+                    X.detach().cpu().numpy(),
                     n_neighbors=self.n_neighbors,
                     metric=self.metric,
                     random_state=self.random_state,
@@ -194,20 +195,23 @@ class ParametricUMAP:
             #     random_state=self.random_state,
             # )
 
-            if isinstance(X, torch.Tensor):                        
+            if isinstance(X, torch.Tensor):
                 X = X.detach().cpu().numpy()
             if conv_flag:
-                X = torch.tensor(X.squeeze()).unsqueeze(1).detach().cpu().numpy() #reshape([-1,28,28]).unsqueeze(1)
+                X = (
+                    torch.tensor(X.squeeze()).unsqueeze(1).detach().cpu().numpy()
+                )  # reshape([-1,28,28]).unsqueeze(1)
                 print("Shape: ", X.shape)
             datamodule = UMAPDataModule(
                 # UMAPDataset(X.detach().cpu().numpy(), graph),
                 UMAPDataset(X, graph),
                 self.batch_size,
+                self.num_batches,
                 self.num_workers,
             )
 
             trainer.fit(model=self._model, datamodule=datamodule)
-            
+
             if self.best_ckpt:
                 best_ckpt = torch.load(best_checkpoint.best_model_path, map_location="cpu")
                 self._model.load_state_dict(best_ckpt["state_dict"])

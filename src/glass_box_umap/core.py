@@ -1,8 +1,11 @@
-from dataclasses import dataclass, field
+import copy
+from dataclasses import dataclass
 
 import numpy as np
 import torch
+import torch.nn as nn
 from numpy.typing import NDArray
+from torch.func import functional_call, jacrev, vmap
 
 from glass_box_umap.components import DeepPReLUNet
 from glass_box_umap.parametric_umap.registry import register_encoder
@@ -42,7 +45,7 @@ class GlassBoxUMAP(ParametricUMAP):
             a temporary directory is used.
     """
 
-    encoder_name: str = field(default=GLASSBOX_ENCODER_NAME, init=False)
+    # encoder_name: str = field(default=GLASSBOX_ENCODER_NAME, init=False)
 
     def compute_attributions(
         self,
@@ -58,6 +61,8 @@ class GlassBoxUMAP(ParametricUMAP):
             X:
                 The input data (same format as passed to fit/transform).
                 Shape: (n_samples, n_input_dims)
+            batch_size:
+                Batch size for Jacobian computation. Defaults to ``self.batch_size``.
         """
         self._fitted_model.eval()
         self._fitted_model.to(self._device)
@@ -74,8 +79,11 @@ class GlassBoxUMAP(ParametricUMAP):
         else:
             X_processed = X_centered
 
-        X_encoder = torch.from_numpy(X_processed.astype(np.float32))
-        jacobians_input = self._compute_batch_jacobian(encoder, X_encoder, batch_size)
+        X_encoder = torch.from_numpy(X_processed.astype(np.float32)).to(self._device)
+
+        # Convert PReLU -> LeakyReLU for vmap-compatible Jacobian computation
+        encoder_for_jac = self.prelu_to_leaky(encoder)
+        jacobians_input = self.compute_jacobian(encoder_for_jac, X_encoder, batch_size=batch_size)
 
         if self._pca is not None:
             proj_tensor = torch.tensor(self._pca.components_, dtype=torch.float32)
@@ -89,21 +97,102 @@ class GlassBoxUMAP(ParametricUMAP):
 
         return feature_contributions, jacobians_input
 
-    def _compute_batch_jacobian(
-        self,
-        module: torch.nn.Module,
-        X: torch.Tensor,
-        batch_size: int,
-    ) -> torch.Tensor:
-        jacobian_list = []
-        for j in range(0, len(X), batch_size):
-            batch = X[j : j + batch_size].to(self._device)
-            jacobian = torch.autograd.functional.jacobian(
-                module,
-                batch,
-                vectorize=True,
-                strategy="reverse-mode",
-            )
-            jacobian_list.append(torch.einsum("bibj->bij", jacobian).detach().cpu())
+    def prelu_to_leaky(self, model: nn.Module) -> nn.Module:
+        """Replace all PReLU modules with LeakyReLU using the learned slopes.
 
-        return torch.cat(jacobian_list, dim=0)
+        This is needed for Jacobian computation via ``vmap`` + ``jacrev``, which
+        requires stateless activations.
+
+        Args:
+            model: The model to convert (not modified in-place).
+
+        Returns:
+            A deep copy of the model with PReLU replaced by LeakyReLU.
+        """
+        model = copy.deepcopy(model)
+        for name, module in model.named_modules():
+            if isinstance(module, nn.PReLU):
+                slope = (
+                    module.weight.detach().item()
+                    if module.weight.numel() == 1
+                    else module.weight.detach().mean().item()
+                )
+                parts = name.split(".")
+                parent = model
+                for p in parts[:-1]:
+                    parent = getattr(parent, p)
+                    # parent = getattr(parent, p) if not p.isdigit() else parent[int(p)]
+                # if parts[-1].isdigit():
+                #     parent[int(parts[-1])] = nn.LeakyReLU(negative_slope=slope)
+                # else:
+                setattr(parent, parts[-1], nn.LeakyReLU(negative_slope=slope))
+        return model
+
+    def compute_jacobian(
+        self,
+        model: nn.Module,
+        x: torch.Tensor,
+        batch_size: int = 1024,
+    ) -> torch.Tensor:
+        """Compute the Jacobian of a model using ``vmap`` + ``jacrev`` with ``functional_call``.
+
+        Compatible with LayerNormDetached, LeakyReLU, and other stateless layers.
+
+        Args:
+            model: Encoder network (will be deep-copied and set to eval mode).
+            x: Input tensor of shape ``(n, in_dim)``.
+            batch_size: Number of samples per Jacobian batch.
+
+        Returns:
+            Jacobian tensor of shape ``(n, out_dim, in_dim)``.
+        """
+        model = copy.deepcopy(model).eval()
+        params = dict(model.named_parameters())
+        buffers = dict(model.named_buffers())
+
+        def func_single(x_single: torch.Tensor) -> torch.Tensor:
+            return functional_call(model, {**params, **buffers}, (x_single.unsqueeze(0),)).squeeze(
+                0
+            )
+
+        jac_fn = vmap(jacrev(func_single))
+
+        results = []
+        for start in range(0, x.shape[0], batch_size):
+            x_batch = x[start : start + batch_size]
+            with torch.no_grad():
+                J_batch = jac_fn(x_batch)
+            results.append(J_batch)
+
+        return torch.cat(results, dim=0)
+
+    def verify_jacobian(
+        self,
+        Z: NDArray[np.floating],
+        J: NDArray[np.floating],
+        X: NDArray[np.floating],
+        tol: float = 1e-4,
+    ) -> float:
+        """Verify that ``f(x) ≈ J(x) @ x`` and print diagnostics.
+
+        Args:
+            Z: Embedding output, shape ``(n, out_dim)``.
+            J: Jacobian, shape ``(n, out_dim, in_dim)``.
+            X: Input data, shape ``(n, in_dim)``.
+            tol: Relative error threshold for PASS/FAIL.
+
+        Returns:
+            Relative max error.
+        """
+        Z_reconstructed = np.einsum("noi,ni->no", J, X)
+        max_err = np.abs(Z - Z_reconstructed).max()
+        mean_err = np.abs(Z - Z_reconstructed).mean()
+        rel_err = max_err / (np.abs(Z).max() + 1e-8)
+        print("\n── Jacobian Exactness Verification ──")
+        print(f"  f(x)       range : [{Z.min():.4f}, {Z.max():.4f}]")
+        print(f"  J(x)@x     range : [{Z_reconstructed.min():.4f}, {Z_reconstructed.max():.4f}]")
+        print(f"  Max |f(x) - J(x)@x|  : {max_err:.2e}")
+        print(f"  Mean |f(x) - J(x)@x| : {mean_err:.2e}")
+        print(f"  Relative max error    : {rel_err:.2e}")
+        print(f"  Verification {'PASSED ✓' if rel_err < tol else 'FAILED ✗'}")
+        return rel_err

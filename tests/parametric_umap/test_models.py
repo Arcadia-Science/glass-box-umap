@@ -29,22 +29,17 @@ def test_default_encoder_output_shape(
 
 
 @pytest.mark.parametrize(
-    "hidden_dims",
-    [
-        [64],
-        [128, 64],
-        [256, 128, 64],
-        [100, 100, 100, 100],
-    ],
+    "width",
+    [64, 128, 256],
 )
-def test_default_encoder_custom_hidden_dims(hidden_dims: list[int]):
+def test_default_encoder_custom_width(width: int):
     input_dims = (784,)
     n_components = 2
     batch_size = 4
     encoder = DefaultEncoder(
         input_dims=input_dims,
         n_components=n_components,
-        hidden_dims=hidden_dims,
+        width=width,
     )
     x = torch.randn(batch_size, *input_dims)
     output = encoder(x)
