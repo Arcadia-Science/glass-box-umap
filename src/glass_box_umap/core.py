@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from numpy.typing import NDArray
-from torch.func import functional_call, jacrev, vmap
+from torch.func import functional_call, jacrev, vmap  # type: ignore[reportPrivateImportUsage]
 
 from glass_box_umap.components import DeepPReLUNet
 from glass_box_umap.parametric_umap.registry import register_encoder
