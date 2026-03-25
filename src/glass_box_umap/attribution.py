@@ -11,7 +11,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 try:
-    import anndata as ad
+    import anndata as ad  # type: ignore[import-untyped]
 except ImportError:  # pragma: no cover
     ad = None  # type: ignore[assignment]
 
