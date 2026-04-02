@@ -18,24 +18,24 @@ repos:
     hooks:
       - id: format
         name: Format
-        entry: uv run make format
+        entry: make format
         language: system
         pass_filenames: false
 
       - id: lint
         name: Lint
-        entry: uv run make lint
+        entry: make lint
         language: system
         pass_filenames: false
 
       - id: type-check
         name: Type check
-        entry: uv run make typecheck
+        entry: make typecheck
         language: system
         pass_filenames: false
 
       - id: test
         name: Test
-        entry: uv run make test
+        entry: make test
         language: system
         pass_filenames: false
