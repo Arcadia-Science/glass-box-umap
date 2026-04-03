@@ -146,7 +146,7 @@ def make_tab40_cmap(seed=None):
 
     return cmap
 
-def plot_embedding(Z, labels, cmap, filename, title="Parametric UMAP"):
+def plot_embedding(Z, labels, cmap, filename, title="Parametric UMAP", show=False, label_names=None):
     """Scatter plot of embedding colored by cell type."""
     fig, ax = plt.subplots(figsize=(10, 8))
     scatter = ax.scatter(
@@ -163,11 +163,24 @@ def plot_embedding(Z, labels, cmap, filename, title="Parametric UMAP"):
     ax.set_xlabel("UMAP 1")
     ax.set_ylabel("UMAP 2")
     ax.grid(True, alpha=0.3)
+    if label_names is not None:
+        for code, name in enumerate(label_names):
+            mask = labels == code
+            if mask.sum() == 0:
+                continue
+            cx, cy = np.median(Z[mask, 0]), np.median(Z[mask, 1])
+            ax.annotate(
+                name, (cx, cy),
+                fontsize=7, fontweight="bold", ha="center", va="center",
+                bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray", alpha=0.85),
+            )
+    if show:
+        plt.show()
     plt.savefig(filename, dpi=300, bbox_inches="tight")
     plt.close()
 
 
-def plot_top_gene_map(Z, top_gene_names, gene_names_hvg, filename, n_label=60):
+def plot_top_gene_map(Z, top_gene_names, gene_names_hvg, filename, n_label=60, show=False):
     """UMAP colored by each cell's top contributing gene, with centroid labels."""
     unique_genes, counts = np.unique(top_gene_names, return_counts=True)
     top_n_genes = unique_genes[np.argsort(counts)[::-1][:n_label]]
@@ -186,7 +199,8 @@ def plot_top_gene_map(Z, top_gene_names, gene_names_hvg, filename, n_label=60):
     # Centroid labels
     for gene in top_n_genes:
         mask = top_gene_names == gene
-        cx, cy = Z[mask, 0].mean(), Z[mask, 1].mean()
+        # cx, cy = Z[mask, 0].mean(), Z[mask, 1].mean()
+        cx, cy = np.median(Z[mask, 0]), np.median(Z[mask, 1])
         ax.annotate(
             gene, (cx, cy),
             fontsize=7, fontweight="bold", ha="center", va="center",
@@ -198,5 +212,75 @@ def plot_top_gene_map(Z, top_gene_names, gene_names_hvg, filename, n_label=60):
     ax.set_ylabel("UMAP 2")
     ax.legend(markerscale=8, fontsize=7, loc="best", ncol=2)
     plt.tight_layout()
+    if show:
+        plt.show()
+    plt.savefig(filename, dpi=150, bbox_inches="tight")
+    plt.close()
+
+
+def plot_embedding_and_top_genes(
+    Z, labels, top_gene_names, gene_names_hvg,
+    filename, title="Parametric UMAP", label_names=None, n_label=60, show=False,
+):
+    """Side-by-side plot: cell-type embedding (left) and top-gene map (right)."""
+    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+
+    # ── Left: cell-type embedding ─────────────────────────────────────────────
+    ax = axes[0]
+    scatter = ax.scatter(
+        Z[:, 0], Z[:, 1],
+        c=labels,
+        cmap="tab40",
+        s=0.1,
+        marker=MarkerStyle("o", fillstyle="full"),
+        alpha=0.5,
+        rasterized=True,
+    )
+    # plt.colorbar(scatter, ax=ax, label="Cell Type")
+    ax.set_title(title, fontsize=14)
+    ax.set_xlabel("UMAP 1")
+    ax.set_ylabel("UMAP 2")
+    ax.grid(True, alpha=0.3)
+    if label_names is not None:
+        for code, name in enumerate(label_names):
+            mask = labels == code
+            if mask.sum() == 0:
+                continue
+            cx, cy = np.median(Z[mask, 0]), np.median(Z[mask, 1])
+            ax.annotate(
+                name, (cx, cy),
+                fontsize=7, fontweight="bold", ha="center", va="center",
+                bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray", alpha=0.85),
+            )
+
+    # ── Right: top-gene map ───────────────────────────────────────────────────
+    ax = axes[1]
+    unique_genes, counts = np.unique(top_gene_names, return_counts=True)
+    top_n_genes = unique_genes[np.argsort(counts)[::-1][:n_label]]
+    gene_cmap = cm.get_cmap("tab40", 40)
+
+    for i, gene in enumerate(top_n_genes):
+        mask = top_gene_names == gene
+        ax.scatter(
+            Z[mask, 0], Z[mask, 1],
+            s=0.3, alpha=0.7, color=gene_cmap(i % 40),
+            label=gene, rasterized=True,
+        )
+    for gene in top_n_genes:
+        mask = top_gene_names == gene
+        cx, cy = np.median(Z[mask, 0]), np.median(Z[mask, 1])
+        ax.annotate(
+            gene, (cx, cy),
+            fontsize=7, fontweight="bold", ha="center", va="center",
+            bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray", alpha=0.85),
+        )
+    ax.set_title("UMAP — colored by top contributing gene", fontsize=14)
+    ax.set_xlabel("UMAP 1")
+    ax.set_ylabel("UMAP 2")
+    # ax.legend(markerscale=8, fontsize=7, loc="best", ncol=2)
+
+    plt.tight_layout()
+    if show:
+        plt.show()
     plt.savefig(filename, dpi=150, bbox_inches="tight")
     plt.close()

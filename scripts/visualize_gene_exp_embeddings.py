@@ -85,6 +85,7 @@ if __name__ == "__main__":
         output, labels, "tab40",
         f"fc_umap_glassbox_{DESC}.png",
         title="Parametric UMAP — Bone Marrow Gene Expression",
+        label_names=label_names,
     )
 
     # ── Compute Jacobians ─────────────────────────────────────────────────────
