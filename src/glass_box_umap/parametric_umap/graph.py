@@ -10,10 +10,10 @@ from umap.umap_ import fuzzy_simplicial_set
 
 GraphElements = tuple[
     coo_matrix,
-    NDArray[np.floating],
-    NDArray[np.intp],
-    NDArray[np.intp],
-    NDArray[np.floating],
+    NDArray[np.float32],  # epochs_per_sample
+    NDArray[np.intp],  # head
+    NDArray[np.intp],  # tail
+    NDArray[np.float64],  # weight  <-- was np.floating
     int,
 ]
 
@@ -98,8 +98,8 @@ def get_graph_elements(graph: csr_matrix, n_epochs: int) -> GraphElements:
     graph_coo.eliminate_zeros()
 
     epochs_per_sample = (n_epochs * graph_coo.data).astype(np.float32)
-    head = graph_coo.row
-    tail = graph_coo.col
-    weight = graph_coo.data
+    head = graph_coo.row.astype(np.intp)
+    tail = graph_coo.col.astype(np.intp)
+    weight = graph_coo.data.astype(np.float64)
 
-    return graph_coo, epochs_per_sample, head, tail, weight, n_vertices
+    return graph_coo, epochs_per_sample, head, tail, weight, int(n_vertices)
