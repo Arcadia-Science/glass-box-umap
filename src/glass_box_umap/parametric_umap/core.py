@@ -151,6 +151,9 @@ class ParametricUMAP:
 
         X = torch.from_numpy(X_processed.astype(np.float32))
 
+        input_dims = tuple(X.shape[1:])
+        self._model = self._build_model(input_dims)
+
         with ExitStack() as stack:
             if self.checkpoint_dir is not None:
                 self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -181,9 +184,6 @@ class ParametricUMAP:
                 logger=logger,
                 log_every_n_steps=1,
             )
-
-            input_dims = tuple(X.shape[1:])
-            self._model = self._build_model(input_dims)
 
             if len(X.shape) > 2:
                 conv_flag = True
