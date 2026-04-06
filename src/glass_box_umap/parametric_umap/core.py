@@ -32,29 +32,42 @@ class ParametricUMAP:
     """Parametric UMAP model.
 
     Attributes:
-        n_neighbors: Number of nearest neighbors used to construct the
-            high-dimensional graph.
-        min_dist: Minimum distance between points in the low-dimensional
-            embedding.
-        metric: Distance metric used for computing nearest neighbors.
-        n_components: Dimensionality of the learned embedding.
-        random_state: Random seed for reproducibility. If ``None``, no seed
-            is set.
-        encoder_name: Name of the registered encoder architecture.
-        encoder_kwargs: Additional keyword arguments passed to the encoder
-            constructor.
-        pca_components: Number of PCA components for input preprocessing.
-            If ``None``, no PCA is applied.
-        lr: Learning rate for the optimizer.
-        epochs: Number of training epochs.
-        batch_size: Batch size for training and (default) inference.
-        num_batches: Manually set number of batches; by default, trains on all.
-        negative_sample_rate: Number of negative samples per positive edge
-            in the UMAP loss.
-        repulsion_strength: Weighting of the repulsive term in the UMAP loss.
-        num_workers: Number of data loading workers.
-        checkpoint_dir: Directory for saving training checkpoints. If ``None``,
-            a temporary directory is used.
+        n_neighbors:
+            Number of nearest neighbors used to construct the high-dimensional graph.
+        min_dist:
+            Minimum distance between points in the low-dimensional embedding.
+        metric:
+            Distance metric used for computing nearest neighbors.
+        n_components:
+            Dimensionality of the learned embedding.
+        random_state:
+            Random seed for reproducibility. If ``None``, no seed is set.
+        encoder_name:
+            Name of the registered encoder architecture.
+        encoder_kwargs:
+            Additional keyword arguments passed to the encoder constructor.
+        pca_components:
+            Number of PCA components for input preprocessing. If ``None``, no PCA is
+            applied.
+        lr:
+            Learning rate for the optimizer.
+        epochs:
+            Number of training epochs.
+        batch_size:
+            Batch size for training and (default) inference.
+        num_batches:
+            Cap the number of batches per epoch. Useful for large graphs where
+            a full pass would be prohibitively long. If ``None``, trains on
+            all batches.
+        negative_sample_rate:
+            Number of negative samples per positive edge in the UMAP loss.
+        repulsion_strength:
+            Weighting of the repulsive term in the UMAP loss.
+        num_workers:
+            Number of data loading workers.
+        checkpoint_dir:
+            Directory for saving training checkpoints. If ``None``, a temporary
+            directory is used.
     """
 
     n_neighbors: int = 10
@@ -72,7 +85,7 @@ class ParametricUMAP:
     lr: float = 1e-3
     epochs: int = 10
     batch_size: int = 512
-    num_batches: int = -1
+    num_batches: int | None = None
     negative_sample_rate: int = 5
     repulsion_strength: float = 3.0
     num_workers: int = 0
@@ -158,6 +171,7 @@ class ParametricUMAP:
                 accelerator=accelerator,
                 devices=devices,
                 max_epochs=self.epochs,
+                limit_train_batches=self.num_batches,
                 callbacks=[best_checkpoint],
                 enable_checkpointing=True,
                 logger=logger,
@@ -195,10 +209,10 @@ class ParametricUMAP:
                     torch.tensor(X.squeeze()).unsqueeze(1).detach().cpu().numpy()
                 )  # reshape([-1,28,28]).unsqueeze(1)
                 print("Shape: ", X.shape)
+
             datamodule = UMAPDataModule(
                 UMAPDataset(X, graph),
                 self.batch_size,
-                self.num_batches,
                 self.num_workers,
             )
 
