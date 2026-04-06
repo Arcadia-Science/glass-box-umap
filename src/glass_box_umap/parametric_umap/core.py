@@ -185,9 +185,6 @@ class ParametricUMAP:
             input_dims = tuple(X.shape[1:])
             self._model = self._build_model(input_dims)
 
-            if isinstance(X, torch.Tensor):
-                X = X.detach().cpu().squeeze()
-
             if len(X.shape) > 2:
                 conv_flag = True
                 # X = X.reshape([-1,784])
