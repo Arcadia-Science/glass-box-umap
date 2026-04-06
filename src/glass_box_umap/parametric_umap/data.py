@@ -22,9 +22,16 @@ class UMAPDataset(Dataset[tuple[Tensor, Tensor]]):
         edge_pruning_factor: Relative threshold for discarding weak edges from the graph.
 
     Attributes:
-        vertices_a: Vertex indices for one endpoint of each edge, shape (n_edges,).
-        vertices_b: Vertex indices for the other endpoint of each edge, shape (n_edges,).
-        data: Input feature vectors, shape (n_samples, ...).
+        vertices_a:
+            Vertex indices for one endpoint (COO matrix rows) of each edge, shape
+            (n_edges,).
+        vertices_b:
+            Vertex indices for the other endpoint (COO matrix columns) of each edge,
+            shape (n_edges,).
+        edge_weights:
+            Edge weights, shape (n_edges,).
+        data:
+            Input feature vectors, shape (n_samples, ...).
     """
 
     def __init__(
@@ -36,11 +43,9 @@ class UMAPDataset(Dataset[tuple[Tensor, Tensor]]):
         # NOTE: currently, edges are sampled uniformly. However, if we wanted to train
         # preferentially on high-weight edges, we could do a weighted sampling using
         # `edge_weights`.
-        _, vertices_a, vertices_b, edge_weights, _ = get_graph_elements(graph, edge_pruning_factor)
-
-        shuffle_mask = np.random.permutation(np.arange(len(vertices_a)))
-        self.vertices_a = vertices_a[shuffle_mask].astype(np.int64)
-        self.vertices_b = vertices_b[shuffle_mask].astype(np.int64)
+        _, self.vertices_a, self.vertices_b, self.edge_weights, _ = get_graph_elements(
+            graph, edge_pruning_factor
+        )
         self.data = torch.as_tensor(data, dtype=torch.float32)
 
     def __len__(self) -> int:
