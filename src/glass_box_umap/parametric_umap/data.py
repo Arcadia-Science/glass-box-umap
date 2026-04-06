@@ -33,7 +33,10 @@ class UMAPDataset(Dataset[tuple[Tensor, Tensor]]):
         graph: csr_matrix,
         edge_pruning_factor: float = 0.025,
     ) -> None:
-        _, vertices_a, vertices_b, _, _ = get_graph_elements(graph, edge_pruning_factor)
+        # NOTE: currently, edges are sampled uniformly. However, if we wanted to train
+        # preferentially on high-weight edges, we could do a weighted sampling using
+        # `edge_weights`.
+        _, vertices_a, vertices_b, edge_weights, _ = get_graph_elements(graph, edge_pruning_factor)
 
         shuffle_mask = np.random.permutation(np.arange(len(vertices_a)))
         self.vertices_a = vertices_a[shuffle_mask].astype(np.int64)
