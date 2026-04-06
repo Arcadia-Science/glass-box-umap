@@ -17,15 +17,15 @@ format:
 
 .PHONY: typecheck
 typecheck:
-	pyright --project pyproject.toml src/ tests/
+	uv run pyright --project pyproject.toml src/ tests/
 
 .PHONY: pre-commit
 pre-commit:
-	pre-commit run --all-files
+	uv run pre-commit run --all-files
 
 .PHONY: test
 test:
-	pytest -v .
+	uv run pytest -v .
 
 .PHONY: clean
 clean:
