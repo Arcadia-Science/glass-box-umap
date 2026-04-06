@@ -235,7 +235,7 @@ def plot_embedding_and_top_genes(
 
     # ── Left: cell-type embedding ─────────────────────────────────────────────
     ax = axes[0]
-    scatter = ax.scatter(
+    ax.scatter(
         Z[:, 0],
         Z[:, 1],
         c=labels,

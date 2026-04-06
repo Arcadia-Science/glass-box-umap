@@ -39,7 +39,10 @@ if __name__ == "__main__":
     NUM_BATCHES = 900
     BATCH_KEY = "Samplename"
     GROUPBY_KEY = "cell_type"
-    DESC = f"mar24_vis_gene_exp_ep{str(EPOCHS)}_repStr_{str(int(REP_STRENGTH))}_nn_{str(N_NEIGHBORS)}_batch_{str(BATCH_SIZE)}_regOut_scale_mar23"
+    DESC = (
+        f"mar24_vis_gene_exp_ep{str(EPOCHS)}_repStr_{str(int(REP_STRENGTH))}_"
+        f"nn_{str(N_NEIGHBORS)}_batch_{str(BATCH_SIZE)}_regOut_scale_mar23"
+    )
 
     # ── Data ──────────────────────────────────────────────────────────────────
     adata = prepare_data(groupby_key=GROUPBY_KEY, n_pcs=N_PCS, batch_key=BATCH_KEY)
