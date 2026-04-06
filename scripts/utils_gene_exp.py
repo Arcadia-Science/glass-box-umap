@@ -9,10 +9,6 @@ import scanpy as sc
 from matplotlib.colors import ListedColormap
 from matplotlib.markers import MarkerStyle
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Utils — move to utils.py and `from utils import *`
-# ═══════════════════════════════════════════════════════════════════════════════
-
 # ── Data loading & preprocessing ──────────────────────────────────────────────
 
 

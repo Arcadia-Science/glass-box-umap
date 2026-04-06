@@ -16,7 +16,13 @@ from glass_box_umap import GlassBoxUMAP
 # from glass_box_umap.utils import prelu_to_leaky, compute_jacobian, verify_jacobian
 from glass_box_umap.attribution import compute_gene_contributions, verify_gene_reconstruction
 from scipy.stats import spearmanr
-from utils_gene_exp import *
+from utils_gene_exp import (
+    make_tab40_cmap,
+    plot_embedding,
+    plot_top_gene_map,
+    prepare_data,
+    print_top_genes_per_cluster,
+)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Main
