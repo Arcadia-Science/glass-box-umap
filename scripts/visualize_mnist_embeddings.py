@@ -1,10 +1,9 @@
 from pathlib import Path
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
-from glass_box_umap import GlassBoxUMAP, ParametricUMAP
-from umap import UMAP
+from glass_box_umap import GlassBoxUMAP
 
 X = torch.load("./tests/fixtures/mnist_images.pt")
 y = torch.load("./tests/fixtures/mnist_labels.pt")
@@ -31,7 +30,7 @@ colors = [color_dict.get(x.item(), "grey") for x in y]
 # plt.savefig("umap_original.png")
 # plt.close()
 
-for epoch in [8]:#1, 5, 10, 50, 100, 200, 500]:
+for epoch in [8]:  # 1, 5, 10, 50, 100, 200, 500]:
     reducer = GlassBoxUMAP(
         epochs=epoch,
         lr=1e-3,
@@ -74,23 +73,23 @@ for epoch in [8]:#1, 5, 10, 50, 100, 200, 500]:
     reducer.verify_jacobian(Z_np, J_np, X)
 
     # Feature importance: L2 norm over embedding dims -> (n, n_dims)
-    feat_importance = np.linalg.norm(np.einsum('noi,ni->noi', J_np, X), axis=1)    # (n, n_dims)
+    feat_importance = np.linalg.norm(np.einsum("noi,ni->noi", J_np, X), axis=1)  # (n, n_dims)
 
-    labels=y
-    elem_prod = np.einsum('noi,ni->noi', J_np, X)
+    labels = y
+    elem_prod = np.einsum("noi,ni->noi", J_np, X)
     for cluster_id in range(10):
         # mask = y==str(cluster_id)
         cluster_mask = labels == cluster_id
         # mean_imp = np.median(feat_importance[cluster_mask],axis=0)
 
-        mean_imp = np.mean(elem_prod[cluster_mask][:,0,:]**2,axis=0)
+        mean_imp = np.mean(elem_prod[cluster_mask][:, 0, :] ** 2, axis=0)
 
-        mean_imp2 = np.mean(elem_prod[cluster_mask][:,1,:]**2,axis=0)
+        mean_imp2 = np.mean(elem_prod[cluster_mask][:, 1, :] ** 2, axis=0)
         top_genes = np.argsort(mean_imp)[::-1][:20]
         print(f"Cluster {cluster_id} top genes: {top_genes}")
         plt.figure()
-        plt.subplot(1,2,1)
-        plt.imshow(mean_imp.reshape([28,28]))
-        plt.subplot(1,2,2)
-        plt.imshow(mean_imp2.reshape([28,28]))
-        plt.savefig(f'mar24_mnist_cluster_{cluster_id}.png')
+        plt.subplot(1, 2, 1)
+        plt.imshow(mean_imp.reshape([28, 28]))
+        plt.subplot(1, 2, 2)
+        plt.imshow(mean_imp2.reshape([28, 28]))
+        plt.savefig(f"mar24_mnist_cluster_{cluster_id}.png")

@@ -1,25 +1,13 @@
-from pathlib import Path
-import copy
-import time
 import os
 import subprocess
 
-import numpy as np
-
-import matplotlib.pyplot as plt
+import anndata as ad
 import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import numpy as np
+import scanpy as sc
 from matplotlib.colors import ListedColormap
 from matplotlib.markers import MarkerStyle
-from scipy.stats import spearmanr
-
-import torch
-import torch.nn as nn
-from torch.func import functional_call, vmap, jacrev
-
-import scanpy as sc
-import anndata as ad
-
-from glass_box_umap import ParametricUMAP
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Utils — move to utils.py and `from utils import *`
@@ -27,9 +15,10 @@ from glass_box_umap import ParametricUMAP
 
 # ── Data loading & preprocessing ──────────────────────────────────────────────
 
+
 def download_bone_marrow_data(
     url="ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE194nnn/GSE194122/suppl/"
-        "GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz",
+    "GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz",
     filename="GSE194122_openproblems_neurips2021_cite_BMMC_processed.h5ad.gz",
 ) -> ad.AnnData:
     """Download, unzip, and load the bone marrow dataset."""
@@ -60,16 +49,14 @@ def preprocess_adata(
     adata.var["mt"] = adata.var_names.str.startswith("MT-")
     adata.var["ribo"] = adata.var_names.str.startswith(("RPS", "RPL"))
     adata.var["hb"] = adata.var_names.str.contains("^HB[^(P)]")
-    adata.var["technical"] = adata.var_names.str.startswith(
-        ("MALAT1", "NEAT1", "FOS", "JUN")
-    )
+    adata.var["technical"] = adata.var_names.str.startswith(("MALAT1", "NEAT1", "FOS", "JUN"))
 
     sc.pp.calculate_qc_metrics(
         adata, qc_vars=["mt", "ribo", "hb", "technical"], inplace=True, log1p=True
     )
 
     # Remove QC genes, filter cells/genes
-    genes_to_remove = adata.var["mt"] | adata.var["ribo"] #| adata.var["technical"]
+    genes_to_remove = adata.var["mt"] | adata.var["ribo"]  # | adata.var["technical"]
     adata._inplace_subset_var(~genes_to_remove)
     sc.pp.filter_cells(adata, min_genes=min_genes)
     sc.pp.filter_genes(adata, min_cells=min_cells)
@@ -84,7 +71,7 @@ def preprocess_adata(
     sc.pp.highly_variable_genes(adata, n_top_genes=n_top_genes, batch_key=batch_key)
 
     # Now regress out on the full matrix (or subset to HVGs first)
-    sc.pp.regress_out(adata, ['total_counts'])
+    sc.pp.regress_out(adata, ["total_counts"])
 
     # Store HVG mean for later gene-space reconstruction
     X_hvg = adata[:, adata.var.highly_variable].X
@@ -117,6 +104,7 @@ def prepare_data(
 
     return adata_final
 
+
 def print_top_genes_per_cluster(importance_gene, gene_names_hvg, labels, label_names, n_top=8):
     """Print top contributing genes for each cluster."""
     print(f"\n── Top {n_top} Genes Per Cluster ──")
@@ -128,6 +116,7 @@ def print_top_genes_per_cluster(importance_gene, gene_names_hvg, labels, label_n
 
 
 # ── Plotting helpers ──────────────────────────────────────────────────────────
+
 
 def make_tab40_cmap(seed=None):
     """Create a 40-color colormap with a randomized order."""
@@ -146,11 +135,15 @@ def make_tab40_cmap(seed=None):
 
     return cmap
 
-def plot_embedding(Z, labels, cmap, filename, title="Parametric UMAP", show=False, label_names=None):
+
+def plot_embedding(
+    Z, labels, cmap, filename, title="Parametric UMAP", show=False, label_names=None
+):
     """Scatter plot of embedding colored by cell type."""
     fig, ax = plt.subplots(figsize=(10, 8))
     scatter = ax.scatter(
-        Z[:, 0], Z[:, 1],
+        Z[:, 0],
+        Z[:, 1],
         c=labels,
         cmap=cmap,
         s=0.1,
@@ -170,8 +163,12 @@ def plot_embedding(Z, labels, cmap, filename, title="Parametric UMAP", show=Fals
                 continue
             cx, cy = np.median(Z[mask, 0]), np.median(Z[mask, 1])
             ax.annotate(
-                name, (cx, cy),
-                fontsize=7, fontweight="bold", ha="center", va="center",
+                name,
+                (cx, cy),
+                fontsize=7,
+                fontweight="bold",
+                ha="center",
+                va="center",
                 bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray", alpha=0.85),
             )
     if show:
@@ -191,9 +188,13 @@ def plot_top_gene_map(Z, top_gene_names, gene_names_hvg, filename, n_label=60, s
     for i, gene in enumerate(top_n_genes):
         mask = top_gene_names == gene
         ax.scatter(
-            Z[mask, 0], Z[mask, 1],
-            s=0.3, alpha=0.7, color=cmap(i % 40),
-            label=gene, rasterized=True,
+            Z[mask, 0],
+            Z[mask, 1],
+            s=0.3,
+            alpha=0.7,
+            color=cmap(i % 40),
+            label=gene,
+            rasterized=True,
         )
 
     # Centroid labels
@@ -202,8 +203,12 @@ def plot_top_gene_map(Z, top_gene_names, gene_names_hvg, filename, n_label=60, s
         # cx, cy = Z[mask, 0].mean(), Z[mask, 1].mean()
         cx, cy = np.median(Z[mask, 0]), np.median(Z[mask, 1])
         ax.annotate(
-            gene, (cx, cy),
-            fontsize=7, fontweight="bold", ha="center", va="center",
+            gene,
+            (cx, cy),
+            fontsize=7,
+            fontweight="bold",
+            ha="center",
+            va="center",
             bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray", alpha=0.85),
         )
 
@@ -219,8 +224,15 @@ def plot_top_gene_map(Z, top_gene_names, gene_names_hvg, filename, n_label=60, s
 
 
 def plot_embedding_and_top_genes(
-    Z, labels, top_gene_names, gene_names_hvg,
-    filename, title="Parametric UMAP", label_names=None, n_label=60, show=False,
+    Z,
+    labels,
+    top_gene_names,
+    gene_names_hvg,
+    filename,
+    title="Parametric UMAP",
+    label_names=None,
+    n_label=60,
+    show=False,
 ):
     """Side-by-side plot: cell-type embedding (left) and top-gene map (right)."""
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
@@ -228,7 +240,8 @@ def plot_embedding_and_top_genes(
     # ── Left: cell-type embedding ─────────────────────────────────────────────
     ax = axes[0]
     scatter = ax.scatter(
-        Z[:, 0], Z[:, 1],
+        Z[:, 0],
+        Z[:, 1],
         c=labels,
         cmap="tab40",
         s=0.1,
@@ -248,8 +261,12 @@ def plot_embedding_and_top_genes(
                 continue
             cx, cy = np.median(Z[mask, 0]), np.median(Z[mask, 1])
             ax.annotate(
-                name, (cx, cy),
-                fontsize=7, fontweight="bold", ha="center", va="center",
+                name,
+                (cx, cy),
+                fontsize=7,
+                fontweight="bold",
+                ha="center",
+                va="center",
                 bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray", alpha=0.85),
             )
 
@@ -262,16 +279,24 @@ def plot_embedding_and_top_genes(
     for i, gene in enumerate(top_n_genes):
         mask = top_gene_names == gene
         ax.scatter(
-            Z[mask, 0], Z[mask, 1],
-            s=0.3, alpha=0.7, color=gene_cmap(i % 40),
-            label=gene, rasterized=True,
+            Z[mask, 0],
+            Z[mask, 1],
+            s=0.3,
+            alpha=0.7,
+            color=gene_cmap(i % 40),
+            label=gene,
+            rasterized=True,
         )
     for gene in top_n_genes:
         mask = top_gene_names == gene
         cx, cy = np.median(Z[mask, 0]), np.median(Z[mask, 1])
         ax.annotate(
-            gene, (cx, cy),
-            fontsize=7, fontweight="bold", ha="center", va="center",
+            gene,
+            (cx, cy),
+            fontsize=7,
+            fontweight="bold",
+            ha="center",
+            va="center",
             bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray", alpha=0.85),
         )
     ax.set_title("UMAP — colored by top contributing gene", fontsize=14)

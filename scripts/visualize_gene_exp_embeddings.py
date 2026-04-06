@@ -6,49 +6,31 @@ computes exact Jacobian-based feature contributions,
 and identifies top contributing genes per cell / cluster.
 """
 
-from pathlib import Path
-import copy
 import time
-import os
-import subprocess
+from pathlib import Path
 
 import numpy as np
-
-
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from matplotlib.colors import ListedColormap
-from matplotlib.markers import MarkerStyle
-from scipy.stats import spearmanr
-
 import torch
-import torch.nn as nn
-from torch.func import functional_call, vmap, jacrev
-
-import scanpy as sc
-import anndata as ad
-
 from glass_box_umap import GlassBoxUMAP
-
-from utils_gene_exp import *
 
 # from glass_box_umap.utils import prelu_to_leaky, compute_jacobian, verify_jacobian
 from glass_box_umap.attribution import compute_gene_contributions, verify_gene_reconstruction
+from scipy.stats import spearmanr
+from utils_gene_exp import *
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Main
 # ═══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-
     # ── Config ────────────────────────────────────────────────────────────────
     DEVICE = "mps"
     N_PCS = 200
     EPOCHS = 4
-    REP_STRENGTH=3.0
+    REP_STRENGTH = 3.0
     N_NEIGHBORS = 64
-    BATCH_SIZE=128 * 4 * 8 # higher may be better
-    NUM_BATCHES=900
+    BATCH_SIZE = 128 * 4 * 8  # higher may be better
+    NUM_BATCHES = 900
     BATCH_KEY = "Samplename"
     GROUPBY_KEY = "cell_type"
     DESC = f"mar24_vis_gene_exp_ep{str(EPOCHS)}_repStr_{str(int(REP_STRENGTH))}_nn_{str(N_NEIGHBORS)}_batch_{str(BATCH_SIZE)}_regOut_scale_mar23"
@@ -82,7 +64,9 @@ if __name__ == "__main__":
     # ── Plot embedding ────────────────────────────────────────────────────────
     tab40 = make_tab40_cmap()
     plot_embedding(
-        output, labels, "tab40",
+        output,
+        labels,
+        "tab40",
         f"fc_umap_glassbox_{DESC}.png",
         title="Parametric UMAP — Bone Marrow Gene Expression",
         label_names=label_names,
@@ -106,9 +90,7 @@ if __name__ == "__main__":
     reducer.verify_jacobian(Z_np, J_np, X)
 
     # ── Gene-space contributions ──────────────────────────────────────────────
-    contributions_gene, importance_gene, gene_names_hvg = compute_gene_contributions(
-        J_np, adata
-    )
+    contributions_gene, importance_gene, gene_names_hvg = compute_gene_contributions(J_np, adata)
     verify_gene_reconstruction(contributions_gene, Z_np)
     print_top_genes_per_cluster(importance_gene, gene_names_hvg, labels.values, label_names)
 
@@ -117,7 +99,9 @@ if __name__ == "__main__":
     top_gene_names = gene_names_hvg[top_gene_idx]
 
     plot_top_gene_map(
-        Z_np, top_gene_names, gene_names_hvg,
+        Z_np,
+        top_gene_names,
+        gene_names_hvg,
         f"residual_umap_{DESC}_{EPOCHS}_top_gene_colored.png",
     )
 
