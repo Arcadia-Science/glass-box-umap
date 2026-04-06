@@ -10,7 +10,7 @@ from umap.umap_ import fuzzy_simplicial_set
 
 GraphElements = tuple[
     coo_matrix,
-    NDArray[np.float32],  # epochs_per_sample
+    NDArray[np.float32],  # sampling_weights
     NDArray[np.intp],  # head
     NDArray[np.intp],  # tail
     NDArray[np.float64],  # weight  <-- was np.floating
@@ -70,20 +70,21 @@ def get_umap_graph(
     return umap_graph
 
 
-def get_graph_elements(graph: csr_matrix, n_epochs: int) -> GraphElements:
-    """Extract graph elements from a sparse UMAP graph for edge sampling.
+def get_graph_elements(graph: csr_matrix, edge_pruning_factor: float) -> GraphElements:
+    """Extract and prune edges from a sparse UMAP graph.
 
-    Converts a sparse graph representation into arrays of edge indices and weights
-    suitable for training a parametric UMAP model.
+    Removes weak edges below a relative weight threshold and returns the
+    remaining edge indices, weights, and sampling weights.
 
     Args:
         graph: Sparse CSR matrix representing the UMAP graph with edge weights.
-        n_epochs: Number of training epochs, used to determine sampling frequency.
+        edge_pruning_factor: Relative threshold for discarding weak edges. Edges with
+            weight less than ``max_weight * edge_pruning_factor`` are removed.
 
     Returns:
         A tuple containing:
-            - graph: The COO format graph with low-probability edges removed
-            - epochs_per_sample: Number of times each edge should be sampled per epoch
+            - graph: The COO format graph with low-weight edges removed
+            - sampling_weights: Edge weights scaled by the inverse of the pruning factor
             - head: Source vertex indices for each edge
             - tail: Target vertex indices for each edge
             - weight: Edge weights
@@ -94,12 +95,12 @@ def get_graph_elements(graph: csr_matrix, n_epochs: int) -> GraphElements:
 
     n_vertices = graph_coo.get_shape()[0]
 
-    graph_coo.data[graph_coo.data < (graph_coo.data.max() / float(n_epochs))] = 0.0
+    graph_coo.data[graph_coo.data < (graph_coo.data.max() * float(edge_pruning_factor))] = 0.0
     graph_coo.eliminate_zeros()
 
-    epochs_per_sample = (n_epochs * graph_coo.data).astype(np.float32)
+    sampling_weights = (graph_coo.data / edge_pruning_factor).astype(np.float32)
     head = graph_coo.row.astype(np.intp)
     tail = graph_coo.col.astype(np.intp)
     weight = graph_coo.data.astype(np.float64)
 
-    return graph_coo, epochs_per_sample, head, tail, weight, int(n_vertices)
+    return graph_coo, sampling_weights, head, tail, weight, int(n_vertices)

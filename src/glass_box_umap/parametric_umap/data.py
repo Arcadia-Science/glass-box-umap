@@ -17,16 +17,16 @@ class UMAPDataset(Dataset[tuple[Tensor, Tensor]]):
     Args:
         data: Input data array of shape (n_samples, ...).
         graph: Sparse UMAP graph representing neighborhood relationships.
-        n_epochs: Number of training epochs for computing edge sampling frequency.
+        edge_pruning_factor: Relative threshold for discarding weak edges from the graph.
     """
 
     def __init__(
         self,
         data: NDArray[np.floating],
         graph: csr_matrix,
-        n_epochs: int = 40,
+        edge_pruning_factor: float = 0.025,
     ) -> None:
-        _, epochs_per_sample, head, tail, _, _ = get_graph_elements(graph, n_epochs)
+        _, _, head, tail, _, _ = get_graph_elements(graph, edge_pruning_factor)
         edges_to_exp = np.repeat(head, 1)
         edges_from_exp = np.repeat(tail, 1)
 
