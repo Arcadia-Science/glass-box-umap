@@ -188,13 +188,6 @@ class ParametricUMAP:
                     random_state=self.random_state,
                 )
 
-            # graph = get_umap_graph(
-            #     X,
-            #     n_neighbors=self.n_neighbors,
-            #     metric=self.metric,
-            #     random_state=self.random_state,
-            # )
-
             if isinstance(X, torch.Tensor):
                 X = X.detach().cpu().numpy()
             if conv_flag:
@@ -203,7 +196,6 @@ class ParametricUMAP:
                 )  # reshape([-1,28,28]).unsqueeze(1)
                 print("Shape: ", X.shape)
             datamodule = UMAPDataModule(
-                # UMAPDataset(X.detach().cpu().numpy(), graph),
                 UMAPDataset(X, graph),
                 self.batch_size,
                 self.num_batches,

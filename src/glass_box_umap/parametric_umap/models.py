@@ -86,37 +86,6 @@ class ConvEncoder(nn.Module):
         return self.mlp(x)
 
 
-# class DefaultEncoder(nn.Module):
-#     """Default MLP encoder for flattened data.
-
-#     A simple feedforward encoder that flattens input and projects through
-#     hidden layers to the embedding space.
-
-#     Args:
-#         input_dims: Shape of input data (excluding batch dimension).
-#         n_components: Dimensionality of the output embedding space.
-#         hidden_dims: Sizes of hidden layers.
-#     """
-
-#     def __init__(
-#         self,
-#         input_dims: tuple[int, ...],
-#         n_components: int = 2,
-#         hidden_dims: list[int] = DEFAULT_HIDDEN_DIMS,
-#     ) -> None:
-#         super().__init__()
-#         layers: list[nn.Module] = [nn.Flatten()]
-#         prev_dim = math.prod(input_dims)
-#         for dim in hidden_dims:
-#             layers.extend([nn.Linear(prev_dim, dim), nn.ReLU()])
-#             prev_dim = dim
-#         layers.append(nn.Linear(prev_dim, n_components))
-#         self.encoder = nn.Sequential(*layers)
-
-#     def forward(self, x: Tensor) -> Tensor:
-#         return self.encoder(x)
-
-
 class DefaultDecoder(nn.Module):
     """Default MLP decoder for reconstruction.
 

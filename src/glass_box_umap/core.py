@@ -45,8 +45,6 @@ class GlassBoxUMAP(ParametricUMAP):
             a temporary directory is used.
     """
 
-    # encoder_name: str = field(default=GLASSBOX_ENCODER_NAME, init=False)
-
     def compute_attributions(
         self,
         X: NDArray[np.floating] | torch.Tensor,
@@ -121,10 +119,6 @@ class GlassBoxUMAP(ParametricUMAP):
                 parent = model
                 for p in parts[:-1]:
                     parent = getattr(parent, p)
-                    # parent = getattr(parent, p) if not p.isdigit() else parent[int(p)]
-                # if parts[-1].isdigit():
-                #     parent[int(parts[-1])] = nn.LeakyReLU(negative_slope=slope)
-                # else:
                 setattr(parent, parts[-1], nn.LeakyReLU(negative_slope=slope))
         return model
 

@@ -20,28 +20,15 @@ class UMAPDataset(Dataset[tuple[Tensor, Tensor]]):
         n_epochs: Number of training epochs for computing edge sampling frequency.
     """
 
-    # def __init__(
-    #     self,
-    #     data: NDArray[np.floating],
-    #     graph: csr_matrix,
-    #     n_epochs: int = 200,
-    # ) -> None:
-    #     _, epochs_per_sample, head, tail, _, _ = get_graph_elements(graph, n_epochs)
-
-    #     edges_to_exp = np.repeat(head, epochs_per_sample.astype(np.intp))
-    #     edges_from_exp = np.repeat(tail, epochs_per_sample.astype(np.intp))
-
     def __init__(
         self,
         data: NDArray[np.floating],
         graph: csr_matrix,
-        n_epochs: int = 40,  # 200,#
+        n_epochs: int = 40,
     ) -> None:
         _, epochs_per_sample, head, tail, _, _ = get_graph_elements(graph, n_epochs)
-        print("n_epochs: ", n_epochs)
-        print("Graph len: ", len(head), len(tail))
-        edges_to_exp = np.repeat(head, 1)  # epochs_per_sample.astype(np.intp))
-        edges_from_exp = np.repeat(tail, 1)  # epochs_per_sample.astype(np.intp))
+        edges_to_exp = np.repeat(head, 1)
+        edges_from_exp = np.repeat(tail, 1)
 
         shuffle_mask = np.random.permutation(np.arange(len(edges_to_exp)))
         self.edges_to_exp = edges_to_exp[shuffle_mask].astype(np.int64)
