@@ -10,10 +10,9 @@ from umap.umap_ import fuzzy_simplicial_set
 
 GraphElements = tuple[
     coo_matrix,
-    NDArray[np.float32],  # sampling_weights
-    NDArray[np.intp],  # head
-    NDArray[np.intp],  # tail
-    NDArray[np.float64],  # weight  <-- was np.floating
+    NDArray[np.intp],
+    NDArray[np.intp],
+    NDArray[np.float64],
     int,
 ]
 
@@ -74,7 +73,7 @@ def get_graph_elements(graph: csr_matrix, edge_pruning_factor: float) -> GraphEl
     """Extract and prune edges from a sparse UMAP graph.
 
     Removes weak edges below a relative weight threshold and returns the
-    remaining edge indices, weights, and sampling weights.
+    remaining edge indices, weights, and vertex counts.
 
     Args:
         graph: Sparse CSR matrix representing the UMAP graph with edge weights.
@@ -84,23 +83,21 @@ def get_graph_elements(graph: csr_matrix, edge_pruning_factor: float) -> GraphEl
     Returns:
         A tuple containing:
             - graph: The COO format graph with low-weight edges removed
-            - sampling_weights: Edge weights scaled by the inverse of the pruning factor
-            - head: Source vertex indices for each edge
-            - tail: Target vertex indices for each edge
-            - weight: Edge weights
-            - n_vertices: Total number of vertices in the graph
+            - vertices_a: Source vertex indices for each edge (rows in COO matrix)
+            - vertices_b: Destination vertex indices for each edge (cols in COO matrix)
+            - edge_weights: Edge weights
+            - num_vertices: Total number of vertices in the graph
     """
     graph_coo = cast(coo_matrix, graph.tocoo())
     graph_coo.sum_duplicates()
 
-    n_vertices = graph_coo.get_shape()[0]
+    num_vertices = int(graph_coo.get_shape()[0])
 
     graph_coo.data[graph_coo.data < (graph_coo.data.max() * float(edge_pruning_factor))] = 0.0
     graph_coo.eliminate_zeros()
 
-    sampling_weights = (graph_coo.data / edge_pruning_factor).astype(np.float32)
-    head = graph_coo.row.astype(np.intp)
-    tail = graph_coo.col.astype(np.intp)
-    weight = graph_coo.data.astype(np.float64)
+    vertices_a = graph_coo.row.astype(np.intp)
+    vertices_b = graph_coo.col.astype(np.intp)
+    edge_weights = graph_coo.data.astype(np.float64)
 
-    return graph_coo, sampling_weights, head, tail, weight, int(n_vertices)
+    return graph_coo, vertices_a, vertices_b, edge_weights, num_vertices
