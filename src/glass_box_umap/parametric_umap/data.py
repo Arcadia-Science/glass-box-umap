@@ -48,8 +48,16 @@ class UMAPDataset(Dataset[tuple[Tensor, Tensor]]):
         )
         self.data = torch.as_tensor(data, dtype=torch.float32)
 
-    def __len__(self) -> int:
+    @property
+    def num_edges(self) -> int:
         return self.vertices_a.shape[0]
+
+    @property
+    def num_samples(self) -> int:
+        return self.data.shape[0]
+
+    def __len__(self) -> int:
+        return self.num_edges
 
     def __getitem__(self, index: int) -> tuple[Tensor, Tensor]:
         vertex_a_data = self.data[self.vertices_a[index]]
