@@ -234,7 +234,7 @@ class ParametricUMAP:
 
         return torch.cat(results).numpy()
 
-    def fit_transform(self, X: Tensor) -> NDArray[np.floating]:
+    def fit_transform(self, X: NDArray[np.floating] | Tensor) -> NDArray[np.floating]:
         self.fit(X)
         return self.transform(X)
 
