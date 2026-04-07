@@ -185,31 +185,12 @@ class ParametricUMAP:
                 log_every_n_steps=1,
             )
 
-            if len(X.shape) > 2:
-                conv_flag = True
-                # X = X.reshape([-1,784])
-                graph = get_umap_graph(
-                    X.reshape([-1, 784]).detach().cpu().numpy(),
-                    n_neighbors=self.n_neighbors,
-                    metric=self.metric,
-                    random_state=self.random_state,
-                )
-            else:
-                conv_flag = False
-                graph = get_umap_graph(
-                    X.detach().cpu().numpy(),
-                    n_neighbors=self.n_neighbors,
-                    metric=self.metric,
-                    random_state=self.random_state,
-                )
-
-            if isinstance(X, torch.Tensor):
-                X = X.detach().cpu().numpy()
-            if conv_flag:
-                X = (
-                    torch.tensor(X.squeeze()).unsqueeze(1).detach().cpu().numpy()
-                )  # reshape([-1,28,28]).unsqueeze(1)
-                print("Shape: ", X.shape)
+            graph = get_umap_graph(
+                X,
+                n_neighbors=self.n_neighbors,
+                metric=self.metric,
+                random_state=self.random_state,
+            )
 
             datamodule = UMAPDataModule(
                 UMAPDataset(X, graph),
