@@ -53,7 +53,12 @@ class ConvEncoder(nn.Module):
             ),
             nn.PReLU(),
             nn.Conv2d(
-                in_channels=64, out_channels=64, kernel_size=3, stride=2, padding=1, bias=False
+                in_channels=64,
+                out_channels=64,
+                kernel_size=3,
+                stride=2,
+                padding=1,
+                bias=False,
             ),
             nn.PReLU(),
             nn.Flatten(),
@@ -215,6 +220,7 @@ class DefaultEncoder(nn.Module):
         else:
             a = 0.0
             nonlin = "relu"
+
         init.kaiming_uniform_(self.in_proj.weight, a=a, nonlinearity=nonlin)
 
         # Residual trunk
