@@ -132,7 +132,6 @@ class ResidualMLPBlock(nn.Module):
         dim: Input and output dimension.
         hidden_dim: Inner dimension. Defaults to ``dim``.
         activation: Activation function, either ``"relu"`` or ``"leaky_relu"``.
-        negative_slope: Negative slope for leaky ReLU.
         use_norm: Whether to apply layer normalization.
     """
 
@@ -141,7 +140,6 @@ class ResidualMLPBlock(nn.Module):
         dim: int,
         hidden_dim: int | None = None,
         activation: str = "relu",
-        negative_slope: float = 0.01,
         use_norm: bool = True,
     ) -> None:
         super().__init__()
@@ -155,10 +153,7 @@ class ResidualMLPBlock(nn.Module):
         self.norm2 = LayerNormDetached(dim) if use_norm else nn.Identity()
 
         if activation == "leaky_relu":
-            # self.act = nn.LeakyReLU(negative_slope=negative_slope)
-            # a = negative_slope
-
-            self.act = nn.PReLU()  # negative_slope=negative_slope)
+            self.act = nn.PReLU()
             nonlin = "leaky_relu"
         else:
             self.act = nn.ReLU()
@@ -229,15 +224,11 @@ class DefaultEncoder(nn.Module):
                     dim=width,
                     hidden_dim=hidden_dim,
                     activation=activation,
-                    negative_slope=negative_slope,
                     use_norm=use_norm,
                 )
                 for _ in range(depth)
             ]
         )
-
-        # Optional final activation (keeps piecewise linearity)
-        self.out_act = nn.Identity()  # or nn.ReLU() / nn.LeakyReLU(...) if you want
 
         # Bias free output projection
         self.out_proj = nn.Linear(width, n_components, bias=False)
@@ -247,6 +238,5 @@ class DefaultEncoder(nn.Module):
         x = self.flatten(x)
         x = self.in_proj(x)
         x = self.blocks(x)
-        x = self.out_act(x)
         x = self.out_proj(x)
         return x
