@@ -2,7 +2,7 @@ import tempfile
 from contextlib import ExitStack
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pytorch_lightning as pl
@@ -21,10 +21,10 @@ from .lightning import UMAPDataModule, UMAPLightningModule
 from .registry import create_encoder
 
 
-def _to_numpy(X: NDArray[np.floating] | Tensor) -> NDArray[np.floating]:
+def _to_numpy_float32(X: NDArray[np.floating] | Tensor) -> NDArray[np.float32]:
     if isinstance(X, Tensor):
         return X.detach().cpu().numpy()
-    return X
+    return cast(NDArray[np.float32], X.astype(np.float32))
 
 
 @dataclass
@@ -138,19 +138,16 @@ class ParametricUMAP:
         if self.random_state is not None:
             pl.seed_everything(self.random_state, workers=True)
 
-        X_np = _to_numpy(X)
-        self._mean = X_np.mean(axis=0)
+        X = _to_numpy_float32(X)
+        self._mean = X.mean(axis=0)
         assert self._mean is not None
-        X_centered = X_np - self._mean
+        X = X - self._mean
 
         if self.pca_components is not None:
             self._pca = PCA(n_components=self.pca_components, random_state=self.random_state)
-            X_processed = self._pca.fit_transform(X_centered)
-        else:
-            X_processed = X_centered
+            X = self._pca.fit_transform(X).astype(np.float32)
 
-        X = torch.from_numpy(X_processed.astype(np.float32))
-
+        X = cast(NDArray[np.float32], X)
         input_dims = tuple(X.shape[1:])
         self._model = self._build_model(input_dims)
 
@@ -218,14 +215,12 @@ class ParametricUMAP:
             self._fitted_model.to(self._device)
 
         assert self._mean is not None
-        X_centered = _to_numpy(X) - self._mean
+        X = _to_numpy_float32(X) - self._mean
 
         if self._pca is not None:
-            X_processed = self._pca.transform(X_centered)
-        else:
-            X_processed = X_centered
+            X = self._pca.transform(X).astype(np.float32)
 
-        X = torch.from_numpy(X_processed.astype(np.float32))
+        X = torch.from_numpy(X)
 
         if batch_size is None:
             batch_size = self.batch_size

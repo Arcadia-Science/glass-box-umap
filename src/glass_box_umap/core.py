@@ -11,7 +11,7 @@ from glass_box_umap.components import DeepPReLUNet
 from glass_box_umap.parametric_umap.registry import register_encoder
 
 from .parametric_umap import ParametricUMAP
-from .parametric_umap.core import _to_numpy
+from .parametric_umap.core import _to_numpy_float32
 
 GLASSBOX_ENCODER_NAME = "glassbox_encoder"
 register_encoder(GLASSBOX_ENCODER_NAME)(DeepPReLUNet)
@@ -70,18 +70,16 @@ class GlassBoxUMAP(ParametricUMAP):
             batch_size = self.batch_size
 
         assert self._mean is not None
-        X_centered = _to_numpy(X) - self._mean
+        X = _to_numpy_float32(X) - self._mean
 
         if self._pca is not None:
-            X_processed = self._pca.transform(X_centered)
-        else:
-            X_processed = X_centered
+            X = self._pca.transform(X).astype(np.float32)
 
-        X_encoder = torch.from_numpy(X_processed.astype(np.float32)).to(self._device)
+        X = torch.from_numpy(X).to(self._device)
 
         # Convert PReLU -> LeakyReLU for vmap-compatible Jacobian computation
         encoder_for_jac = self.prelu_to_leaky(encoder)
-        jacobians_input = self.compute_jacobian(encoder_for_jac, X_encoder, batch_size=batch_size)
+        jacobians_input = self.compute_jacobian(encoder_for_jac, X, batch_size=batch_size)
 
         if self._pca is not None:
             proj_tensor = torch.tensor(self._pca.components_, dtype=torch.float32)
@@ -89,9 +87,7 @@ class GlassBoxUMAP(ParametricUMAP):
         else:
             jacobians_raw = jacobians_input
 
-        feature_contributions = (jacobians_raw.numpy() * X_centered[:, np.newaxis, :]).astype(
-            np.float16
-        )
+        feature_contributions = (jacobians_raw.numpy() * X[:, np.newaxis, :]).astype(np.float16)
 
         return feature_contributions, jacobians_input
 
