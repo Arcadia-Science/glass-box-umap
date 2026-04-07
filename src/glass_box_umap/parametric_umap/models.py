@@ -69,6 +69,7 @@ class ConvEncoder(nn.Module):
         mlp_layers.append(nn.Linear(prev_dim, n_components, bias=False))
 
         self.mlp = nn.Sequential(*mlp_layers)
+
         # Apply to all sub-modules recursively
         self.apply(self._init_weights)
 
@@ -123,16 +124,23 @@ class DefaultDecoder(nn.Module):
 
 
 class ResidualMLPBlock(nn.Module):
-    """
-    Residual MLP block: x -> Linear -> (Norm) -> Act -> Linear -> (Norm) -> +skip
+    """Residual MLP block: x -> Linear -> Norm -> Act -> Linear -> Norm -> +skip.
+
     Keeps everything bias-free and piecewise-linear (if Norm has no affine).
+
+    Args:
+        dim: Input and output dimension.
+        hidden_dim: Inner dimension. Defaults to ``dim``.
+        activation: Activation function, either ``"relu"`` or ``"leaky_relu"``.
+        negative_slope: Negative slope for leaky ReLU.
+        use_norm: Whether to apply layer normalization.
     """
 
     def __init__(
         self,
         dim: int,
         hidden_dim: int | None = None,
-        activation: str = "relu",  # or "leaky_relu"
+        activation: str = "relu",
         negative_slope: float = 0.01,
         use_norm: bool = True,
     ) -> None:
@@ -170,12 +178,20 @@ class ResidualMLPBlock(nn.Module):
 
 
 class DefaultEncoder(nn.Module):
-    """
-    Bias-free residual MLP encoder for tabular data.
+    """Bias-free residual MLP encoder for tabular data.
 
-    - Mean-centering/scaling done outside the module (recommended).
-    - All Linear layers use bias=False to preserve your local Jacobian property.
-    - Residual blocks greatly improve trainability for depth.
+    Notes:
+     - All Linear layers use bias=False to preserve the local Jacobian property.
+
+    Args:
+        input_dims: Shape of input data (excluding batch dimension).
+        n_components: Dimensionality of the output embedding space.
+        width: Width of the residual blocks.
+        depth: Number of residual blocks.
+        mlp_ratio: Inner expansion factor in each residual block.
+        activation: Activation function, either ``"relu"`` or ``"leaky_relu"``.
+        negative_slope: Negative slope for leaky ReLU.
+        use_norm: Whether to use layer normalization in residual blocks.
     """
 
     def __init__(
@@ -183,9 +199,9 @@ class DefaultEncoder(nn.Module):
         input_dims: tuple[int, ...],
         n_components: int = 2,
         width: int = 128,
-        depth: int = 3,  # number of residual blocks
-        mlp_ratio: float = 2.0,  # inner expansion in each block
-        activation: str = "leaky_relu",  # or "leaky_relu"
+        depth: int = 3,
+        mlp_ratio: float = 2.0,
+        activation: str = "leaky_relu",
         negative_slope: float = 0.01,
         use_norm: bool = True,
     ) -> None:
@@ -195,10 +211,9 @@ class DefaultEncoder(nn.Module):
 
         self.flatten = nn.Flatten()
 
-        # Input projection (bias-free)
+        # Bias-free input projection
         self.in_proj = nn.Linear(in_dim, width, bias=False)
 
-        # Init
         if activation == "leaky_relu":
             a = negative_slope
             nonlin = "leaky_relu"
@@ -224,7 +239,7 @@ class DefaultEncoder(nn.Module):
         # Optional final activation (keeps piecewise linearity)
         self.out_act = nn.Identity()  # or nn.ReLU() / nn.LeakyReLU(...) if you want
 
-        # Output projection (bias-free!)
+        # Bias free output projection
         self.out_proj = nn.Linear(width, n_components, bias=False)
         init.kaiming_uniform_(self.out_proj.weight, a=a, nonlinearity=nonlin)
 
