@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from glass_box_umap.components import VmapPreLU
+from glass_box_umap.components import VmapPReLU
 from torch.func import functional_call, jacrev, vmap
 
 
@@ -8,7 +8,7 @@ def test_train_mode_matches_prelu():
     x = torch.randn(10, 5)
     slope = 0.3
 
-    vmap_prelu = VmapPreLU(init=slope)
+    vmap_prelu = VmapPReLU(init=slope)
     prelu = nn.PReLU(init=slope)
 
     vmap_prelu.train()
@@ -21,7 +21,7 @@ def test_eval_mode_matches_prelu():
     x = torch.randn(10, 5)
     slope = 0.3
 
-    vmap_prelu = VmapPreLU(init=slope)
+    vmap_prelu = VmapPReLU(init=slope)
     prelu = nn.PReLU(init=slope)
 
     vmap_prelu.eval()
@@ -32,7 +32,7 @@ def test_eval_mode_matches_prelu():
 
 def test_gradient_flows_in_train_mode():
     x = torch.randn(10, 5)
-    vmap_prelu = VmapPreLU()
+    vmap_prelu = VmapPReLU()
     vmap_prelu.train()
 
     out = vmap_prelu(x).sum()
@@ -42,7 +42,7 @@ def test_gradient_flows_in_train_mode():
 
 
 def test_vmap_jacrev_compatible():
-    model = nn.Sequential(nn.Linear(5, 3, bias=False), VmapPreLU(), nn.Linear(3, 2, bias=False))
+    model = nn.Sequential(nn.Linear(5, 3, bias=False), VmapPReLU(), nn.Linear(3, 2, bias=False))
     model.eval()
 
     params = dict(model.named_parameters())
@@ -61,7 +61,7 @@ def test_vmap_jacrev_compatible():
 
 
 def test_cache_invalidated_on_train():
-    vmap_prelu = VmapPreLU(init=0.3)
+    vmap_prelu = VmapPReLU(init=0.3)
     vmap_prelu.eval()
 
     x = torch.randn(5)
@@ -74,7 +74,7 @@ def test_cache_invalidated_on_train():
 
 def test_cache_refreshed_after_weight_change():
     x = torch.randn(10, 5)
-    vmap_prelu = VmapPreLU(init=0.25)
+    vmap_prelu = VmapPReLU(init=0.25)
 
     vmap_prelu.eval()
     vmap_prelu(x)

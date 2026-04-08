@@ -77,9 +77,7 @@ class GlassBoxUMAP(ParametricUMAP):
 
         X = torch.from_numpy(X).to(self._device)
 
-        # Convert PReLU -> LeakyReLU for vmap-compatible Jacobian computation
-        encoder_for_jac = self.prelu_to_leaky(encoder)
-        jacobians_input = self.compute_jacobian(encoder_for_jac, X, batch_size=batch_size)
+        jacobians_input = self.compute_jacobian(encoder, X, batch_size=batch_size)
 
         if self._pca is not None:
             proj_tensor = torch.tensor(self._pca.components_, dtype=torch.float32)
@@ -90,33 +88,6 @@ class GlassBoxUMAP(ParametricUMAP):
         feature_contributions = (jacobians_raw.numpy() * X[:, np.newaxis, :]).astype(np.float16)
 
         return feature_contributions, jacobians_input
-
-    def prelu_to_leaky(self, model: nn.Module) -> nn.Module:
-        """Replace all PReLU modules with LeakyReLU using the learned slopes.
-
-        This is needed for Jacobian computation via ``vmap`` + ``jacrev``, which
-        requires stateless activations.
-
-        Args:
-            model: The model to convert (not modified in-place).
-
-        Returns:
-            A deep copy of the model with PReLU replaced by LeakyReLU.
-        """
-        model = copy.deepcopy(model)
-        for name, module in model.named_modules():
-            if isinstance(module, nn.PReLU):
-                slope = (
-                    module.weight.detach().item()
-                    if module.weight.numel() == 1
-                    else module.weight.detach().mean().item()
-                )
-                parts = name.split(".")
-                parent = model
-                for p in parts[:-1]:
-                    parent = getattr(parent, p)
-                setattr(parent, parts[-1], nn.LeakyReLU(negative_slope=slope))
-        return model
 
     def compute_jacobian(
         self,

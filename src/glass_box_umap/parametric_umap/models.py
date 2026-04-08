@@ -4,7 +4,7 @@ import torch
 import torch.nn.init as init
 from torch import Tensor, nn
 
-from glass_box_umap.components import LayerNormDetached
+from glass_box_umap.components import LayerNormDetached, VmapPReLU
 
 DEFAULT_HIDDEN_DIMS = [100, 100, 100]
 
@@ -51,7 +51,7 @@ class ConvEncoder(nn.Module):
                 padding=1,
                 bias=False,
             ),
-            nn.PReLU(),
+            VmapPReLU(),
             nn.Conv2d(
                 in_channels=64,
                 out_channels=64,
@@ -60,7 +60,7 @@ class ConvEncoder(nn.Module):
                 padding=1,
                 bias=False,
             ),
-            nn.PReLU(),
+            VmapPReLU(),
             nn.Flatten(),
         )
 
@@ -69,7 +69,7 @@ class ConvEncoder(nn.Module):
         mlp_layers: list[nn.Module] = []
         prev_dim = flattened_size
         for dim in hidden_dims:
-            mlp_layers.extend([nn.Linear(prev_dim, dim, bias=False), nn.PReLU()])
+            mlp_layers.extend([nn.Linear(prev_dim, dim, bias=False), VmapPReLU()])
             prev_dim = dim
         mlp_layers.append(nn.Linear(prev_dim, n_components, bias=False))
 
@@ -144,7 +144,6 @@ class ResidualMLPBlock(nn.Module):
         self,
         dim: int,
         hidden_dim: int | None = None,
-        activation: str = "relu",
         use_norm: bool = True,
     ) -> None:
         super().__init__()
@@ -157,16 +156,13 @@ class ResidualMLPBlock(nn.Module):
         self.norm1 = LayerNormDetached(hidden_dim) if use_norm else nn.Identity()
         self.norm2 = LayerNormDetached(dim) if use_norm else nn.Identity()
 
-        if activation == "leaky_relu":
-            self.act = nn.PReLU()
-            nonlin = "leaky_relu"
-        else:
-            self.act = nn.ReLU()
-            nonlin = "relu"
+        self.act = VmapPReLU()
 
-        # He/Kaiming init for ReLU-family activations
-        init.kaiming_uniform_(self.fc1.weight, nonlinearity=nonlin)
-        init.kaiming_uniform_(self.fc2.weight, nonlinearity=nonlin)
+        # He/Kaiming init for ReLU-family activations. Note, kaiming_uniform_ doesn't
+        # accept a PReLU activation string, so we use `"leaky_relu"`.
+        # TODO(James): a=0.25 has been added, but its effect untested.
+        init.kaiming_uniform_(self.fc1.weight, a=0.25, nonlinearity="leaky_relu")
+        init.kaiming_uniform_(self.fc2.weight, a=0.25, nonlinearity="leaky_relu")
 
     def forward(self, x: Tensor) -> Tensor:
         h = self.fc1(x)
@@ -189,7 +185,6 @@ class DefaultEncoder(nn.Module):
         width: Width of the residual blocks.
         depth: Number of residual blocks.
         mlp_ratio: Inner expansion factor in each residual block.
-        activation: Activation function, either ``"relu"`` or ``"leaky_relu"``.
         negative_slope: Negative slope for leaky ReLU.
         use_norm: Whether to use layer normalization in residual blocks.
     """
@@ -201,8 +196,6 @@ class DefaultEncoder(nn.Module):
         width: int = 128,
         depth: int = 3,
         mlp_ratio: float = 2.0,
-        activation: str = "leaky_relu",
-        negative_slope: float = 0.01,
         use_norm: bool = True,
     ) -> None:
         super().__init__()
@@ -214,14 +207,9 @@ class DefaultEncoder(nn.Module):
         # Bias-free input projection
         self.in_proj = nn.Linear(in_dim, width, bias=False)
 
-        if activation == "leaky_relu":
-            a = negative_slope
-            nonlin = "leaky_relu"
-        else:
-            a = 0.0
-            nonlin = "relu"
-
-        init.kaiming_uniform_(self.in_proj.weight, a=a, nonlinearity=nonlin)
+        # PReLU has a default of 0.25 and is constructed in ResidualMLPBlock, and we
+        # want to match that with kaiming_uniform_.
+        init.kaiming_uniform_(self.in_proj.weight, a=0.25, nonlinearity="leaky_relu")
 
         # Residual trunk
         self.blocks = nn.Sequential(
@@ -229,7 +217,6 @@ class DefaultEncoder(nn.Module):
                 ResidualMLPBlock(
                     dim=width,
                     hidden_dim=hidden_dim,
-                    activation=activation,
                     use_norm=use_norm,
                 )
                 for _ in range(depth)
@@ -238,7 +225,7 @@ class DefaultEncoder(nn.Module):
 
         # Bias free output projection
         self.out_proj = nn.Linear(width, n_components, bias=False)
-        init.kaiming_uniform_(self.out_proj.weight, a=a, nonlinearity=nonlin)
+        init.kaiming_uniform_(self.out_proj.weight, a=0.25, nonlinearity="leaky_relu")
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.flatten(x)

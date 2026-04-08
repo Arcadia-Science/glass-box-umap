@@ -1,3 +1,4 @@
+from __future__ import annotations
 import math
 
 import torch
@@ -5,7 +6,7 @@ import torch.nn.functional as F
 from torch import nn
 
 
-class VmapPreLU(nn.PReLU):
+class VmapPReLU(nn.PReLU):
     """PReLU that becomes stateless in eval mode.
 
     This is used by :method:`GlassBoxUMAP.compute_attributions`, which computes
@@ -22,7 +23,7 @@ class VmapPreLU(nn.PReLU):
         super().__init__(*args, **kwargs)
         self._cached_slope: float | None = None
 
-    def train(self, mode: bool = True) -> "VmapPreLU":
+    def train(self, mode: bool = True) -> VmapPReLU:
         if mode:
             self._cached_slope = None
         return super().train(mode)
@@ -78,7 +79,7 @@ class DeepPReLUNet(nn.Module):
             in_dim = input_size if i == 0 else hidden_size
 
             layers.append(nn.Linear(in_dim, hidden_size, bias=False))
-            layers.append(nn.PReLU())
+            layers.append(VmapPReLU())
 
             if i < n_hidden_layers - 1:
                 layers.append(LayerNormDetached(hidden_size))

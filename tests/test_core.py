@@ -1,4 +1,4 @@
-from glass_box_umap.components import LayerNormDetached
+from glass_box_umap.components import LayerNormDetached, VmapPReLU
 from glass_box_umap.core import DeepPReLUNet
 from torch import nn
 
@@ -17,23 +17,23 @@ def test_parametric_architecture_construction():
 
     expected = nn.Sequential(
         nn.Linear(input_size, hidden_size, bias=False),
-        nn.PReLU(),
+        VmapPReLU(),
         LayerNormDetached(hidden_size),
         nn.Dropout(0.1),
         nn.Linear(hidden_size, hidden_size, bias=False),
-        nn.PReLU(),
+        VmapPReLU(),
         LayerNormDetached(hidden_size),
         nn.Dropout(0.1),
         nn.Linear(hidden_size, hidden_size, bias=False),
-        nn.PReLU(),
+        VmapPReLU(),
         LayerNormDetached(hidden_size),
         nn.Dropout(0.1),
         nn.Linear(hidden_size, hidden_size, bias=False),
-        nn.PReLU(),
+        VmapPReLU(),
         LayerNormDetached(hidden_size),
         nn.Dropout(0.1),
         nn.Linear(hidden_size, hidden_size, bias=False),
-        nn.PReLU(),
+        VmapPReLU(),
         nn.Dropout(0.1),
         nn.Linear(hidden_size, n_components, bias=False),
     )
