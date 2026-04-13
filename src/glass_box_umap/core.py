@@ -1,5 +1,5 @@
 import copy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 import torch
@@ -44,6 +44,8 @@ class GlassBoxUMAP(ParametricUMAP):
         checkpoint_dir: Directory for saving training checkpoints. If ``None``,
             a temporary directory is used.
     """
+
+    encoder_name: str = field(default=GLASSBOX_ENCODER_NAME, init=False)
 
     def compute_attributions(
         self,
