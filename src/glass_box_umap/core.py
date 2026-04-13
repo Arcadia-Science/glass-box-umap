@@ -18,6 +18,25 @@ register_encoder(GLASSBOX_ENCODER_NAME)(DeepPReLUNet)
 
 
 @dataclass
+class JacobianVerification:
+    """Result of verifying that ``f(x) ≈ J(x) @ x``.
+
+    Attributes:
+        z_range: (min, max) of the embedding output.
+        reconstruction_range: (min, max) of the Jacobian reconstruction.
+        max_error: Maximum absolute error between embedding and reconstruction.
+        mean_error: Mean absolute error between embedding and reconstruction.
+        relative_error: Max error relative to the embedding's magnitude.
+    """
+
+    z_range: tuple[float, float]
+    reconstruction_range: tuple[float, float]
+    max_error: float
+    mean_error: float
+    relative_error: float
+
+
+@dataclass
 class GlassBoxUMAP(ParametricUMAP):
     """Glass Box UMAP model.
 
@@ -134,28 +153,22 @@ class GlassBoxUMAP(ParametricUMAP):
         Z: NDArray[np.floating],
         J: NDArray[np.floating],
         X: NDArray[np.floating],
-        tol: float = 1e-4,
-    ) -> float:
-        """Verify that ``f(x) ≈ J(x) @ x`` and print diagnostics.
+    ) -> JacobianVerification:
+        """Verify that ``f(x) ≈ J(x) @ x``.
 
         Args:
             Z: Embedding output, shape ``(n, out_dim)``.
             J: Jacobian, shape ``(n, out_dim, in_dim)``.
             X: Input data, shape ``(n, in_dim)``.
-            tol: Relative error threshold for PASS/FAIL.
 
         Returns:
-            Relative max error.
+            A ``JacobianVerification`` with error diagnostics.
         """
         Z_reconstructed = np.einsum("noi,ni->no", J, X)
-        max_err = np.abs(Z - Z_reconstructed).max()
-        mean_err = np.abs(Z - Z_reconstructed).mean()
-        rel_err = max_err / (np.abs(Z).max() + 1e-8)
-        print("\n── Jacobian Exactness Verification ──")
-        print(f"  f(x)       range : [{Z.min():.4f}, {Z.max():.4f}]")
-        print(f"  J(x)@x     range : [{Z_reconstructed.min():.4f}, {Z_reconstructed.max():.4f}]")
-        print(f"  Max |f(x) - J(x)@x|  : {max_err:.2e}")
-        print(f"  Mean |f(x) - J(x)@x| : {mean_err:.2e}")
-        print(f"  Relative max error    : {rel_err:.2e}")
-        print(f"  Verification {'PASSED ✓' if rel_err < tol else 'FAILED ✗'}")
-        return rel_err
+        return JacobianVerification(
+            z_range=(float(Z.min()), float(Z.max())),
+            reconstruction_range=(float(Z_reconstructed.min()), float(Z_reconstructed.max())),
+            max_error=float(np.abs(Z - Z_reconstructed).max()),
+            mean_error=float(np.abs(Z - Z_reconstructed).mean()),
+            relative_error=float(np.abs(Z - Z_reconstructed).max() / (np.abs(Z).max() + 1e-8)),
+        )
