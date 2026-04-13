@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from glass_box_umap import GlassBoxUMAP
+from glass_box_umap.diagnostics import verify_jacobian
 
 X = torch.load("./tests/fixtures/mnist_images.pt")
 y = torch.load("./tests/fixtures/mnist_labels.pt")
@@ -70,7 +71,7 @@ for epoch in [8]:  # 1, 5, 10, 50, 100, 200, 500]:
     # X = X_tensor.cpu().numpy()
 
     # ── Verify Jacobian exactness ─────────────────────────────────────────────
-    reducer.verify_jacobian(Z_np, J_np, X)
+    print(verify_jacobian(Z_np, J_np, X))
 
     # Feature importance: L2 norm over embedding dims -> (n, n_dims)
     feat_importance = np.linalg.norm(np.einsum("noi,ni->noi", J_np, X), axis=1)  # (n, n_dims)

@@ -12,9 +12,8 @@ from pathlib import Path
 import numpy as np
 import torch
 from glass_box_umap import GlassBoxUMAP
-
-# from glass_box_umap.utils import prelu_to_leaky, compute_jacobian, verify_jacobian
 from glass_box_umap.attribution import compute_gene_contributions, verify_gene_reconstruction
+from glass_box_umap.diagnostics import verify_jacobian
 from scipy.stats import spearmanr
 from utils_gene_exp import (
     make_tab40_cmap,
@@ -96,7 +95,7 @@ if __name__ == "__main__":
     X = X_tensor.cpu().numpy()
 
     # ── Verify Jacobian exactness ─────────────────────────────────────────────
-    reducer.verify_jacobian(Z_np, J_np, X)
+    print(verify_jacobian(Z_np, J_np, X))
 
     # ── Gene-space contributions ──────────────────────────────────────────────
     contributions_gene, importance_gene, gene_names_hvg = compute_gene_contributions(J_np, adata)
