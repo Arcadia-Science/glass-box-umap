@@ -13,8 +13,8 @@ from glass_box_umap.parametric_umap.registry import register_encoder
 from .parametric_umap import ParametricUMAP
 from .parametric_umap.core import _to_numpy_float32
 
-GLASSBOX_ENCODER_NAME = "glassbox_encoder"
-register_encoder(GLASSBOX_ENCODER_NAME)(DeepPReLUNet)
+GLASSBOX_DEFAULT_ENCODER_NAME = "glassbox_default_encoder"
+register_encoder(GLASSBOX_DEFAULT_ENCODER_NAME)(DeepPReLUNet)
 
 
 @dataclass
@@ -45,7 +45,8 @@ class GlassBoxUMAP(ParametricUMAP):
             a temporary directory is used.
     """
 
-    encoder_name: str = field(default=GLASSBOX_ENCODER_NAME, init=False)
+    # Overwrite base class default with `GLASSBOX_DEFAULT_ENCODER_NAME`.
+    encoder_name: str = field(default=GLASSBOX_DEFAULT_ENCODER_NAME)
 
     def compute_attributions(
         self,

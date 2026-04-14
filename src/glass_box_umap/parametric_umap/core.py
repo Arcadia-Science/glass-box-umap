@@ -1,6 +1,6 @@
 import tempfile
 from contextlib import ExitStack
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 from typing import Any, cast
 
@@ -260,7 +260,9 @@ class ParametricUMAP:
     def load(cls, path: Path) -> Self:
         checkpoint = torch.load(path, map_location="cpu", weights_only=False)
 
-        instance = cls(**checkpoint["attrs"])
+        init_field_names = {f.name for f in fields(cls) if f.init}
+        attrs = {k: v for k, v in checkpoint["attrs"].items() if k in init_field_names}
+        instance = cls(**attrs)
         instance._model = instance._build_model(checkpoint["input_dims"])
         instance._model.load_state_dict(checkpoint["state_dict"])
         instance._model.to(instance._device)
