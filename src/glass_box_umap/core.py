@@ -73,22 +73,27 @@ class GlassBoxUMAP(ParametricUMAP):
             batch_size = self.batch_size
 
         assert self._mean is not None
-        X = _to_numpy_float32(X) - self._mean
+        X_centered = _to_numpy_float32(X) - self._mean
 
         if self._pca is not None:
-            X = self._pca.transform(X).astype(np.float32)
+            X_encoder = torch.from_numpy(self._pca.transform(X_centered).astype(np.float32))
+        else:
+            X_encoder = torch.from_numpy(X_centered)
 
-        X = torch.from_numpy(X).to(self._device)
+        X_encoder = X_encoder.to(self._device)
 
-        jacobians_input = self.compute_jacobian(encoder, X, batch_size=batch_size)
+        jacobians_input = self.compute_jacobian(encoder, X_encoder, batch_size=batch_size)
 
         if self._pca is not None:
-            proj_tensor = torch.tensor(self._pca.components_, dtype=torch.float32)
+            proj_tensor = torch.tensor(
+                self._pca.components_, dtype=torch.float32, device=self._device
+            )
             jacobians_raw = torch.einsum("bij,jk->bik", jacobians_input, proj_tensor)
         else:
             jacobians_raw = jacobians_input
 
-        feature_contributions = (jacobians_raw.numpy() * X[:, np.newaxis, :]).astype(np.float16)
+        X_centered_t = torch.from_numpy(X_centered).unsqueeze(1).to(self._device)
+        feature_contributions = (jacobians_raw * X_centered_t).cpu().numpy()
 
         return feature_contributions, jacobians_input
 
