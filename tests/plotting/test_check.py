@@ -1,9 +1,8 @@
 from unittest.mock import patch
 
 import pytest
-from packaging.requirements import Requirement
-
 from glass_box_umap.plotting.check import check_package, get_plotting_requirements
+from packaging.requirements import Requirement
 
 
 def test_get_plotting_requirements_returns_matplotlib():

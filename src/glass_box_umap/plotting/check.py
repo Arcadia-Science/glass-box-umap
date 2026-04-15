@@ -7,7 +7,7 @@ from packaging.version import Version
 
 def get_plotting_requirements() -> list[Requirement]:
     """Get the plotting extra requirements from package metadata."""
-    all_reqs = [Requirement(r) for r in importlib.metadata.requires("glass-box-umap")]
+    all_reqs = [Requirement(r) for r in importlib.metadata.requires("glass-box-umap") or []]
     return [r for r in all_reqs if r.marker and r.marker.evaluate({"extra": "plotting"})]
 
 
