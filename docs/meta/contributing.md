@@ -14,16 +14,10 @@ Verify uv is installed:
 uv --version
 ```
 
-Then install the project with development dependencies:
+Then install the project with all development dependencies:
 
 ```bash
-uv sync --group dev
-```
-
-To also install documentation dependencies:
-
-```bash
-uv sync --group dev --group docs
+uv sync --extra plotting --group dev --group docs
 ```
 
 This creates a virtual environment in `.venv` and installs all dependencies. The package itself is automatically installed in editable mode.

@@ -958,6 +958,7 @@ dependencies = [
     { name = "leidenalg" },
     { name = "lightning-utilities" },
     { name = "numpy" },
+    { name = "packaging" },
     { name = "pandas" },
     { name = "pynndescent" },
     { name = "pytorch-lightning" },
@@ -968,6 +969,11 @@ dependencies = [
     { name = "torch", version = "2.9.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
     { name = "torch", version = "2.9.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin' and sys_platform != 'linux'" },
     { name = "umap-learn" },
+]
+
+[package.optional-dependencies]
+plotting = [
+    { name = "matplotlib" },
 ]
 
 [package.dev-dependencies]
@@ -984,6 +990,7 @@ docs = [
     { name = "astroid" },
     { name = "furo" },
     { name = "jupyterlab" },
+    { name = "jupytext" },
     { name = "matplotlib" },
     { name = "myst-parser" },
     { name = "nbsphinx" },
@@ -1004,7 +1011,9 @@ requires-dist = [
     { name = "einops", specifier = ">=0.8.1,<0.9" },
     { name = "leidenalg", specifier = ">=0.10.2,<0.11" },
     { name = "lightning-utilities", specifier = ">=0.15.2,<0.16" },
+    { name = "matplotlib", marker = "extra == 'plotting'", specifier = ">=3.9" },
     { name = "numpy", specifier = ">=1.26.4,<2" },
+    { name = "packaging", specifier = ">=23.0" },
     { name = "pandas", specifier = ">=2.2.3,<3" },
     { name = "pynndescent", specifier = ">=0.5.13" },
     { name = "pytorch-lightning", specifier = ">=2.6.0" },
@@ -1014,6 +1023,7 @@ requires-dist = [
     { name = "torch", marker = "sys_platform == 'linux'", specifier = ">=2.5.1", index = "https://download.pytorch.org/whl/cu121" },
     { name = "umap-learn", specifier = ">=0.5.7" },
 ]
+provides-extras = ["plotting"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1029,6 +1039,7 @@ docs = [
     { name = "astroid", specifier = "==3.3.11" },
     { name = "furo", specifier = "==2024.8.6" },
     { name = "jupyterlab", specifier = "==4.2.5" },
+    { name = "jupytext", specifier = ">=1.19.1" },
     { name = "matplotlib", specifier = "==3.9.2" },
     { name = "myst-parser", specifier = "==4.0.1" },
     { name = "nbsphinx", specifier = "==0.9.7" },
@@ -1608,6 +1619,23 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d6/2c/90153f189e421e93c4bb4f9e3f59802a1f01abd2ac5cf40b152d7f735232/jupyterlab_server-2.28.0.tar.gz", hash = "sha256:35baa81898b15f93573e2deca50d11ac0ae407ebb688299d3a5213265033712c", size = 76996, upload-time = "2025-10-22T13:59:18.37Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e0/07/a000fe835f76b7e1143242ab1122e6362ef1c03f23f83a045c38859c2ae0/jupyterlab_server-2.28.0-py3-none-any.whl", hash = "sha256:e4355b148fdcf34d312bbbc80f22467d6d20460e8b8736bf235577dd18506968", size = 59830, upload-time = "2025-10-22T13:59:16.767Z" },
+]
+
+[[package]]
+name = "jupytext"
+version = "1.19.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "markdown-it-py" },
+    { name = "mdit-py-plugins" },
+    { name = "nbformat" },
+    { name = "packaging" },
+    { name = "pyyaml" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/13/a5/80c02f307c8ce863cb33e27daf049315e9d96979e14eead700923b5ec9cc/jupytext-1.19.1.tar.gz", hash = "sha256:82587c07e299173c70ed5e8ec7e75183edf1be289ed518bab49ad0d4e3d5f433", size = 4307829, upload-time = "2026-01-25T21:35:13.276Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/16/5a/736dd2f4535dbf3bf26523f9158c011389ef88dd06ec2eef67fd744f1c7b/jupytext-1.19.1-py3-none-any.whl", hash = "sha256:d8975035155d034bdfde5c0c37891425314b7ea8d3a6c4b5d18c294348714cd9", size = 170478, upload-time = "2026-01-25T21:35:11.17Z" },
 ]
 
 [[package]]
