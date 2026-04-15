@@ -1,5 +1,4 @@
 import importlib.metadata
-import importlib.util
 
 from packaging.requirements import Requirement
 from packaging.version import Version
@@ -13,13 +12,13 @@ def get_plotting_requirements() -> list[Requirement]:
 
 def check_package(req: Requirement) -> None:
     """Raises ImportError if a required package is missing or the wrong version."""
-    if importlib.util.find_spec(req.name) is None:
+    try:
+        installed_version = Version(importlib.metadata.version(req.name))
+    except importlib.metadata.PackageNotFoundError:
         raise ImportError(
             f"glass_box_umap.plotting requires {req}, but it is not installed. "
             f"Install it with: pip install 'glass-box-umap[plotting]'"
-        )
-
-    installed_version = Version(importlib.metadata.version(req.name))
+        ) from None
 
     if installed_version not in req.specifier:
         raise ImportError(

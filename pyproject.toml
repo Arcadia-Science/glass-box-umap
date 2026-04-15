@@ -38,6 +38,7 @@ dependencies = [
 [project.optional-dependencies]
 plotting = [
     "matplotlib>=3.9",
+    "adjustText>=1.3",
 ]
 
 [[tool.uv.index]]
@@ -96,6 +97,8 @@ indent-width = 4
 [tool.ruff.lint.per-file-ignores]
 # Ignore star and unused imports.
 "__init__.py" = ["F403", "F405"]
+# Imports must come after runtime dependency checks.
+"src/glass_box_umap/plotting/__init__.py" = ["E402"]
 
 [tool.ruff.lint]
 select = [

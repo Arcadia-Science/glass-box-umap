@@ -1,3 +1,4 @@
+import importlib.metadata
 from unittest.mock import patch
 
 import pytest
@@ -5,15 +6,19 @@ from glass_box_umap.plotting.check import check_package, get_plotting_requiremen
 from packaging.requirements import Requirement
 
 
-def test_get_plotting_requirements_returns_matplotlib():
+def test_get_plotting_requirements():
     reqs = get_plotting_requirements()
     names = [r.name for r in reqs]
     assert "matplotlib" in names
+    assert "adjusttext" in names
 
 
 def test_check_package_missing_raises_import_error():
     req = Requirement("matplotlib>=3.9")
-    with patch("glass_box_umap.plotting.check.importlib.util.find_spec", return_value=None):
+    with patch(
+        "glass_box_umap.plotting.check.importlib.metadata.version",
+        side_effect=importlib.metadata.PackageNotFoundError("matplotlib"),
+    ):
         with pytest.raises(ImportError, match="not installed"):
             check_package(req)
 
