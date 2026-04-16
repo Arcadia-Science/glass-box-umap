@@ -55,11 +55,11 @@ def test_parametric_architecture_construction():
     assert repr(net.model) == repr(expected)
 
 
-def test_compute_attributions_shape(gb_umap: GlassBoxUMAP, mnist_images: Tensor):
-    # Attribution shape is correct.
+def test_compute_contributions_shape(gb_umap: GlassBoxUMAP, mnist_images: Tensor):
+    # contribution shape is correct.
     X = mnist_images
     gb_umap.fit(X)
-    contributions = gb_umap.compute_attributions(X)
+    contributions = gb_umap.compute_contributions(X)
     assert contributions.shape == (len(X), 2, X.shape[1])
 
 
@@ -67,27 +67,27 @@ def test_compute_attributions_shape_pca(gb_umap_pca: GlassBoxUMAP, mnist_images:
     # Maps back to raw features when PCA preprocessing is used.
     X = mnist_images
     gb_umap_pca.fit(X)
-    contributions = gb_umap_pca.compute_attributions(X)
+    contributions = gb_umap_pca.compute_contributions(X)
     assert contributions.shape == (len(X), 2, X.shape[1])
 
 
-def test_compute_attributions_embeddings(gb_umap: GlassBoxUMAP, mnist_images: Tensor):
+def test_compute_contributions_embeddings(gb_umap: GlassBoxUMAP, mnist_images: Tensor):
     # Contributions sum to the embedding.
     X = mnist_images
     gb_umap.fit(X)
     Z = gb_umap.transform(X)
-    contributions = gb_umap.compute_attributions(X)
+    contributions = gb_umap.compute_contributions(X)
     Z_reconstructed = contributions.astype(np.float32).sum(axis=-1)
     rel_err = np.abs(Z - Z_reconstructed).max() / (np.abs(Z).max() + 1e-8)
     assert rel_err < 1e-3
 
 
-def test_compute_attributions_embeddings_pca(gb_umap_pca: GlassBoxUMAP, mnist_images: Tensor):
+def test_compute_contributions_embeddings_pca(gb_umap_pca: GlassBoxUMAP, mnist_images: Tensor):
     # Same property holds when PCA preprocessing is used.
     X = mnist_images
     gb_umap_pca.fit(X)
     Z = gb_umap_pca.transform(X)
-    contributions = gb_umap_pca.compute_attributions(X)
+    contributions = gb_umap_pca.compute_contributions(X)
     Z_reconstructed = contributions.astype(np.float32).sum(axis=-1)
     rel_err = np.abs(Z - Z_reconstructed).max() / (np.abs(Z).max() + 1e-8)
     assert rel_err < 1e-3

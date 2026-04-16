@@ -7,7 +7,7 @@
 
 Glass Box UMAP augments UMAP by computing exact feature contributions to the UMAP embedding.
 
-Standard UMAP produces embeddings but offers no insight into why points land where they do. Glass Box UMAP solves this by using a specially designed neural network that enables exact computation of feature contributions, and does so without approximations. The feature attributions are mathematically exact, validated to near machine precision.
+Standard UMAP produces embeddings but offers no insight into why points land where they do. Glass Box UMAP solves this by using a specially designed neural network that enables exact computation of feature contributions, and does so without approximations. The feature contributions are mathematically exact, validated to near machine precision.
 
 # Documentation
 

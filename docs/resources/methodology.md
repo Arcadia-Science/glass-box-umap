@@ -47,7 +47,7 @@ This ensures contributions are always expressed in terms of the original input f
 
 The locally linear property can be verified empirically. For any sample, the sum of feature contributions should equal the embedding exactly. In practice, Glass Box UMAP achieves reconstruction errors on the order of $3 \times 10^{-14}$—machine precision for 64-bit floating point.
 
-Glass Box UMAP's attributions are exact, not estimates.
+Glass Box UMAP's contributions are exact, not estimates.
 
 ## Further Reading
 

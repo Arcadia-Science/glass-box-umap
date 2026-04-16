@@ -46,7 +46,7 @@ class GlassBoxUMAP(ParametricUMAP):
     # Overwrite base class default with `GLASSBOX_DEFAULT_ENCODER_NAME`.
     encoder_name: str = field(default=GLASSBOX_DEFAULT_ENCODER_NAME)
 
-    def compute_attributions(
+    def compute_contributions(
         self,
         X: NDArray[np.floating] | torch.Tensor,
         batch_size: int | None = None,

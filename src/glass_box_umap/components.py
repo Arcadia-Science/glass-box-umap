@@ -9,7 +9,7 @@ from torch import nn
 class VmapPReLU(nn.PReLU):
     """PReLU that becomes stateless in eval mode.
 
-    This is used by :method:`GlassBoxUMAP.compute_attributions`, which computes
+    This is used by :method:`GlassBoxUMAP.compute_contributions`, which computes
     per-sample Jacobians via ``vmap(jacrev(...))``. Using this subclass in place of
     ``nn.PReLU`` makes this possible. ``vmap`` requires all operations to be stateless,
     but ``nn.PReLU`` reads from a learnable ``weight`` parameter during forward. In eval
