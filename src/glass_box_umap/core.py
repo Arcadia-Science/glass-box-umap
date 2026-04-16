@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Literal
 
 import numpy as np
 import torch
@@ -7,7 +8,7 @@ from numpy.typing import NDArray
 from glass_box_umap.components import DeepPReLUNet
 from glass_box_umap.parametric_umap.registry import register_encoder
 
-from .jacobian import compute_jacobian, project_jacobian
+from .jacobian import compute_jacobian, project_jacobian, reduce_contributions
 from .parametric_umap import ParametricUMAP
 from .parametric_umap.core import _to_numpy_float32
 
@@ -50,18 +51,28 @@ class GlassBoxUMAP(ParametricUMAP):
         self,
         X: NDArray[np.floating] | torch.Tensor,
         batch_size: int | None = None,
+        reduction: Literal["l2"] | None = None,
     ) -> NDArray[np.float32]:
-        """Computes Jacobian of the learned embedding w.r.t input features.
+        """Compute per-feature contributions to the embedding via Gradient x Input.
 
         Projects gradients back to raw feature space if PCA preprocessing was used.
-        Uses Gradient x Input method with mean-centered features.
 
         Args:
             X:
                 The input data (same format as passed to fit/transform).
-                Shape: (n_samples, n_input_dims)
+                Shape: (n_samples, n_features).
             batch_size:
                 Batch size for Jacobian computation. Defaults to ``self.batch_size``.
+            reduction:
+                How to reduce contributions across embedding dimensions. If ``"l2"``,
+                takes the L2 norm across components, returning shape
+                (n_samples, n_features). If ``None``, returns the full
+                (n_samples, n_components, n_features) array.
+
+        Returns:
+            Feature contributions array. Shape is (n_samples, n_components, n_features)
+            when reduction is ``None``, or (n_samples, n_features) when a reduction
+            is applied.
         """
         self._fitted_model.eval()
         self._fitted_model.to(self._device)
@@ -79,7 +90,7 @@ class GlassBoxUMAP(ParametricUMAP):
 
         X_encoder = X_encoder.to(self._device)
 
-        jacobians_input = self.compute_jacobian(X_encoder, batch_size=batch_size)
+        jacobians = self.compute_jacobian(X_encoder, batch_size=batch_size)
 
         if self._pca is not None:
             proj_tensor = torch.tensor(
@@ -87,12 +98,13 @@ class GlassBoxUMAP(ParametricUMAP):
                 dtype=torch.float32,
                 device=self._device,
             )
-            jacobians_raw = project_jacobian(jacobians_input, proj_tensor)
-        else:
-            jacobians_raw = jacobians_input
+            jacobians = project_jacobian(jacobians, proj_tensor)
 
         X_centered_t = torch.from_numpy(X_centered).unsqueeze(1).to(self._device)
-        feature_contributions = (jacobians_raw * X_centered_t).cpu().numpy()
+        feature_contributions = (jacobians * X_centered_t).cpu().numpy()
+
+        if reduction is not None:
+            feature_contributions = reduce_contributions(feature_contributions, method=reduction)
 
         return feature_contributions
 
