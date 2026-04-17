@@ -33,6 +33,7 @@ def plot_embedding(
     group_ids: NDArray[np.integer] | None = None,
     group_names: list[str] | None = None,
     cmap: ListedColormap | None = None,
+    marker_size: float = 2.0,
 ) -> Figure:
     """Scatter plot of a 2D embedding, optionally colored by group.
 
@@ -48,6 +49,8 @@ def plot_embedding(
         cmap:
             Colormap for the scatter plot. If None and group_ids are provided, a
             colormap is generated with one color per unique group.
+        marker_size:
+            Size of scatter plot markers.
     """
     fig, ax = plt.subplots(figsize=(10, 8))
 
@@ -55,7 +58,7 @@ def plot_embedding(
         ax.scatter(
             Z[:, 0],
             Z[:, 1],
-            s=0.1,
+            s=marker_size,
             alpha=0.5,
             rasterized=True,
         )
@@ -73,7 +76,7 @@ def plot_embedding(
             ax.scatter(
                 Z[mask, 0],
                 Z[mask, 1],
-                s=0.1,
+                s=marker_size,
                 alpha=0.5,
                 color=color,
                 rasterized=True,
