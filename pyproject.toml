@@ -84,6 +84,9 @@ docs = [
     "anndata==0.11.4",
     "scanpy==1.11.5",
     "jupytext>=1.19.1",
+    "bokeh>=3.4",
+    "pillow>=10.0",
+    "ipywidgets>=8.0",
 ]
 
 [tool.ruff]
