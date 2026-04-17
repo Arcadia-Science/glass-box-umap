@@ -45,6 +45,7 @@ def get_umap_graph(
         X,
         n_neighbors=n_neighbors,
         metric=metric,
+        random_state=random_state,
         n_trees=n_trees,
         n_iters=n_iters,
         max_candidates=60,
