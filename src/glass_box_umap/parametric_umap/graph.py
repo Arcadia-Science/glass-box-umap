@@ -38,7 +38,7 @@ def get_umap_graph(
         Sparse CSR matrix representing the UMAP graph with edge weights.
     """
     rng = check_random_state(random_state)
-    n_trees = 5 + int(round((X.shape[0]) ** 0.5 / 20.0))
+    n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
     n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
     nnd = NNDescent(
