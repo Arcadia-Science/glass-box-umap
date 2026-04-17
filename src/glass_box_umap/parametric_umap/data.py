@@ -40,9 +40,6 @@ class UMAPDataset(Dataset[tuple[Tensor, Tensor]]):
         graph: csr_matrix,
         edge_pruning_factor: float = 0.025,
     ) -> None:
-        # NOTE: currently, edges are sampled uniformly. However, if we wanted to train
-        # preferentially on high-weight edges, we could do a weighted sampling using
-        # `edge_weights`.
         _, self.vertices_a, self.vertices_b, self.edge_weights, _ = get_graph_elements(
             graph, edge_pruning_factor
         )
