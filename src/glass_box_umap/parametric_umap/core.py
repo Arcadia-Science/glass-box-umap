@@ -95,6 +95,7 @@ class ParametricUMAP:
     num_workers: int = 0
     checkpoint_dir: Path | None = None
     restore_best_weights: bool = False
+    extra_callbacks: list[pl.Callback] = field(default_factory=list)
 
     _model: UMAPLightningModule | None = field(init=False, default=None)
     _pca: PCA | None = field(init=False, default=None)
@@ -176,7 +177,7 @@ class ParametricUMAP:
                 devices=devices,
                 max_epochs=self.epochs,
                 limit_train_batches=self.num_batches,
-                callbacks=[best_checkpoint],
+                callbacks=[best_checkpoint, *self.extra_callbacks],
                 enable_checkpointing=True,
                 logger=logger,
                 log_every_n_steps=1,
@@ -245,6 +246,7 @@ class ParametricUMAP:
         del attrs["_pca"]
         del attrs["_mean"]
         del attrs["_device"]
+        del attrs["extra_callbacks"]
 
         state = {
             "attrs": attrs,
