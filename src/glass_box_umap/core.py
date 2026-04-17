@@ -5,12 +5,11 @@ import numpy as np
 import torch
 from numpy.typing import NDArray
 
-from glass_box_umap.components import DeepPReLUNet
-from glass_box_umap.parametric_umap.registry import register_encoder
-
 from .jacobian import compute_jacobian, project_jacobian, reduce_contributions
 from .parametric_umap import ParametricUMAP
 from .parametric_umap.core import _to_numpy_float32
+from .parametric_umap.models import DeepPReLUNet
+from .parametric_umap.registry import register_encoder
 
 GLASSBOX_DEFAULT_ENCODER_NAME = "glassbox_default_encoder"
 register_encoder(GLASSBOX_DEFAULT_ENCODER_NAME)(DeepPReLUNet)

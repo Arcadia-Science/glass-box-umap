@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
 from glass_box_umap.components import LayerNormDetached, VmapPReLU
-from glass_box_umap.core import DeepPReLUNet, GlassBoxUMAP
+from glass_box_umap.core import GlassBoxUMAP
+from glass_box_umap.parametric_umap.models import DeepPReLUNet
 from torch import Tensor, nn
 
 

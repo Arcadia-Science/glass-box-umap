@@ -58,36 +58,3 @@ class LayerNormDetached(nn.Module):
         return self.scale * norm_x
 
 
-class DeepPReLUNet(nn.Module):
-    """A network with PReLU activation and LayerNormDetached."""
-
-    def __init__(
-        self,
-        input_dims: tuple[int, ...],
-        n_components: int = 2,
-        hidden_size: int = 256,
-        n_hidden_layers: int = 5,
-        dropout_rate: float = 0.1,
-    ):
-        super().__init__()
-
-        input_size = math.prod(input_dims)
-        self.flatten = nn.Flatten()
-
-        layers = []
-        for i in range(n_hidden_layers):
-            in_dim = input_size if i == 0 else hidden_size
-
-            layers.append(nn.Linear(in_dim, hidden_size, bias=False))
-            layers.append(VmapPReLU())
-
-            if i < n_hidden_layers - 1:
-                layers.append(LayerNormDetached(hidden_size))
-
-            layers.append(nn.Dropout(dropout_rate))
-
-        layers.append(nn.Linear(hidden_size, n_components, bias=False))
-        self.model = nn.Sequential(*layers)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.model(self.flatten(x))
