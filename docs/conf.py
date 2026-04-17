@@ -82,7 +82,7 @@ GOOGLE_FONTS_URL = (
     "family=Merriweather:ital,wght@0,300..900;1,300..900&"
     "display=swap"
 )
-html_logo = "_assets/logo.png"
+html_logo = "_assets/lockup.png"
 html_theme_options = {
     "light_css_variables": {
         "font-stack": '"Atkinson Hyperlegible Next", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
@@ -159,4 +159,5 @@ html_css_files = [
     "css/headings.css",
     "css/cards.css",
     "css/rubric.css",
+    "css/sidebar.css",
 ]
