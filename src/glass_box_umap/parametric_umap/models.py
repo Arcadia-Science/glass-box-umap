@@ -6,8 +6,6 @@ from torch import Tensor, nn
 
 from glass_box_umap.components import LayerNormDetached, VmapPReLU
 
-DEFAULT_HIDDEN_DIMS = [100, 100, 100]
-
 
 def _compute_conv_output_size(
     input_dims: tuple[int, ...],
@@ -26,9 +24,9 @@ class DeepPReLUNet(nn.Module):
         self,
         input_dims: tuple[int, ...],
         n_components: int = 2,
-        hidden_size: int = 256,
-        n_hidden_layers: int = 5,
-        dropout_rate: float = 0.1,
+        hidden_size: int = 128,
+        n_hidden_layers: int = 3,
+        dropout_rate: float = 0.0,
     ):
         super().__init__()
 
@@ -125,6 +123,9 @@ class ConvEncoder(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         x = self.conv_layers(x)
         return self.mlp(x)
+
+
+DEFAULT_HIDDEN_DIMS = [100, 100, 100]
 
 
 class DefaultDecoder(nn.Module):
