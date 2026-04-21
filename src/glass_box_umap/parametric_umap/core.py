@@ -94,7 +94,7 @@ class ParametricUMAP:
     repulsion_strength: float = 1.0
     num_workers: int = 0
     checkpoint_dir: Path | None = None
-    restore_best_weights: bool = False
+    restore_best_weights: bool = True
     extra_callbacks: list[pl.Callback] = field(default_factory=list)
 
     _model: UMAPLightningModule | None = field(init=False, default=None)
