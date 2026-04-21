@@ -168,7 +168,7 @@ class ParametricUMAP:
                 filename="best",
             )
 
-            logger = TensorBoardLogger(save_dir=ckpt_dir, name="logs")
+            logger = TensorBoardLogger(save_dir=ckpt_dir, name="logs", version="")
 
             accelerator, devices = device_to_lightning_acceleration_config(self._device)
 
@@ -210,6 +210,7 @@ class ParametricUMAP:
     def transform(
         self, X: NDArray[np.floating] | Tensor, batch_size: int | None = None
     ) -> NDArray[np.floating]:
+        was_training = self._fitted_model.training
         self._fitted_model.eval()
 
         if next(self._fitted_model.parameters()).device != self._device:
@@ -232,6 +233,9 @@ class ParametricUMAP:
             batch = batch.to(self._device)
             embedding = self._fitted_model.encoder(batch)
             results.append(embedding.detach().cpu())
+
+        if was_training:
+            self._fitted_model.train()
 
         return torch.cat(results).numpy()
 
