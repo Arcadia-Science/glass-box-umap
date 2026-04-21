@@ -74,7 +74,7 @@ class ParametricUMAP:
             the final epoch.
     """
 
-    n_neighbors: int = 10
+    n_neighbors: int = 15
     min_dist: float = 0.1
     metric: str = "euclidean"
     n_components: int = 2
@@ -91,7 +91,7 @@ class ParametricUMAP:
     batch_size: int = 512
     num_batches: int | None = None
     negative_sample_rate: int = 5
-    repulsion_strength: float = 3.0
+    repulsion_strength: float = 1.0
     num_workers: int = 0
     checkpoint_dir: Path | None = None
     restore_best_weights: bool = False

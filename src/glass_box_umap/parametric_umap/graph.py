@@ -19,7 +19,7 @@ GraphElements = tuple[
 
 def get_umap_graph(
     X: NDArray[np.floating],
-    n_neighbors: int = 10,
+    n_neighbors: int = 15,
     metric: str = "euclidean",
     random_state: RandomState | int | None = None,
 ) -> csr_matrix:
