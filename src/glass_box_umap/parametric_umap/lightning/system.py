@@ -1,7 +1,6 @@
 import pytorch_lightning as pl
 from torch import Tensor, nn
 from torch.optim import AdamW
-from torch.optim.optimizer import Optimizer
 from umap.umap_ import find_ab_params
 
 from ..loss import umap_loss
@@ -46,7 +45,7 @@ class UMAPLightningModule(pl.LightningModule):
 
         self._a, self._b = find_ab_params(1.0, min_dist)
 
-    def configure_optimizers(self) -> Optimizer:
+    def configure_optimizers(self) -> AdamW:
         return AdamW(self.parameters(), lr=self.lr)
 
     def training_step(self, batch: tuple[Tensor, Tensor], batch_idx: int) -> Tensor:
@@ -63,9 +62,7 @@ class UMAPLightningModule(pl.LightningModule):
             repulsion_strength=self.repulsion_strength,
         )
 
-        lr = self.optimizers().param_groups[0]["lr"]
         self.log("umap_loss_step", encoder_loss, prog_bar=False, on_step=True, on_epoch=False)
         self.log("umap_loss_epoch", encoder_loss, prog_bar=True, on_step=False, on_epoch=True)
-        self.log("lr(1e3)", lr * 1e3, prog_bar=True)
 
         return encoder_loss

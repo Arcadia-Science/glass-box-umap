@@ -163,3 +163,18 @@ def test_mean_roundtrip_serialization(mnist_images: Tensor, tmp_path: Path):
 
     embedding_after = loaded_model.transform(mnist_images)
     np.testing.assert_array_almost_equal(embedding_before, embedding_after, decimal=4)
+
+
+def test_quiet_suppresses_output(mnist_images: Tensor, capfd):
+    """Ensure quiet=True silences all stdout/stderr output during fit."""
+    model = ParametricUMAP(epochs=1, n_neighbors=5, quiet=True)
+    model.fit(mnist_images)
+    captured = capfd.readouterr()
+    assert captured.out == "", f"Unexpected stdout: {captured.out}"
+    assert captured.err == "", f"Unexpected stderr: {captured.err}"
+
+    # When quiet is not set, output is captured.
+    model = ParametricUMAP(epochs=1, n_neighbors=5)
+    model.fit(mnist_images)
+    captured = capfd.readouterr()
+    assert captured.out != ""

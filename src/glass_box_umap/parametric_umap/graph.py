@@ -22,6 +22,7 @@ def get_umap_graph(
     n_neighbors: int = 15,
     metric: str = "euclidean",
     random_state: RandomState | int | None = None,
+    quiet: bool = False,
 ) -> csr_matrix:
     """Build a UMAP graph from input data using nearest neighbor descent.
 
@@ -49,7 +50,7 @@ def get_umap_graph(
         n_trees=n_trees,
         n_iters=n_iters,
         max_candidates=60,
-        verbose=True,
+        verbose=not quiet,
     )
 
     assert nnd.neighbor_graph is not None

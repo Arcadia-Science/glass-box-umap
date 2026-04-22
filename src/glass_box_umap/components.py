@@ -1,5 +1,4 @@
 from __future__ import annotations
-import math
 
 import torch
 import torch.nn.functional as F
@@ -56,5 +55,3 @@ class LayerNormDetached(nn.Module):
 
         norm_x = (x - mean) / torch.sqrt(var + 1e-12)  # Added epsilon for stability
         return self.scale * norm_x
-
-

@@ -18,6 +18,7 @@ from ..utils import device_to_lightning_acceleration_config, get_default_device
 from .data import UMAPDataset
 from .graph import get_umap_graph
 from .lightning import UMAPDataModule, UMAPLightningModule
+from .logging_config import suppress_lightning_logs
 from .registry import create_encoder
 
 
@@ -95,6 +96,7 @@ class ParametricUMAP:
     num_workers: int = 0
     checkpoint_dir: Path | None = None
     restore_best_weights: bool = True
+    quiet: bool = False
     extra_callbacks: list[pl.Callback] = field(default_factory=list)
 
     _model: UMAPLightningModule | None = field(init=False, default=None)
@@ -137,7 +139,7 @@ class ParametricUMAP:
 
     def fit(self, X: NDArray[np.floating] | Tensor) -> Self:
         if self.random_state is not None:
-            pl.seed_everything(self.random_state, workers=True)
+            pl.seed_everything(self.random_state, workers=True, verbose=not self.quiet)
 
         X = _to_numpy_float32(X)
         self._mean = X.mean(axis=0)
@@ -153,6 +155,9 @@ class ParametricUMAP:
         self._model = self._build_model(input_dims)
 
         with ExitStack() as stack:
+            if self.quiet:
+                stack.enter_context(suppress_lightning_logs())
+
             if self.checkpoint_dir is not None:
                 self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
                 ckpt_dir = self.checkpoint_dir
@@ -160,7 +165,7 @@ class ParametricUMAP:
                 ckpt_dir = Path(stack.enter_context(tempfile.TemporaryDirectory()))
 
             best_checkpoint = ModelCheckpoint(
-                dirpath=ckpt_dir,
+                dirpath=ckpt_dir / "checkpoints",
                 monitor="umap_loss_epoch",
                 mode="min",
                 save_top_k=1,
@@ -181,6 +186,8 @@ class ParametricUMAP:
                 enable_checkpointing=True,
                 logger=logger,
                 log_every_n_steps=1,
+                enable_progress_bar=not self.quiet,
+                enable_model_summary=not self.quiet,
             )
 
             graph = get_umap_graph(
@@ -188,6 +195,7 @@ class ParametricUMAP:
                 n_neighbors=self.n_neighbors,
                 metric=self.metric,
                 random_state=self.random_state,
+                quiet=self.quiet,
             )
 
             datamodule = UMAPDataModule(
