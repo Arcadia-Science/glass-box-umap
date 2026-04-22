@@ -1,7 +1,12 @@
+import importlib.util
 import logging
 import warnings
 from collections.abc import Generator
 from contextlib import contextmanager
+from typing import Any
+
+import pytorch_lightning as pl
+from pytorch_lightning.callbacks.progress.tqdm_progress import TQDMProgressBar
 
 _LIGHTNING_LOGGER_NAMES = (
     "pytorch_lightning",
@@ -17,6 +22,28 @@ class _SuppressTrainerFitStopped(logging.Filter):
 
 logging.getLogger("pytorch_lightning.utilities.rank_zero").addFilter(_SuppressTrainerFitStopped())
 warnings.filterwarnings("ignore", message=".*does not have many workers.*")
+
+
+def _is_notebook() -> bool:
+    if importlib.util.find_spec("IPython") is None:
+        return False
+    from IPython.core.getipython import get_ipython
+
+    shell = get_ipython()
+    return shell is not None and shell.__class__.__name__ == "ZMQInteractiveShell"
+
+
+class _EpochFractionProgressBar(TQDMProgressBar):
+    def on_train_epoch_start(self, trainer: "pl.Trainer", *_: Any) -> None:
+        super().on_train_epoch_start(trainer, *_)
+        total = trainer.max_epochs or "?"
+        self.train_progress_bar.set_description(f"Epoch {trainer.current_epoch + 1}/{total}")
+
+
+def get_progress_bar() -> TQDMProgressBar | None:
+    if _is_notebook():
+        return _EpochFractionProgressBar()
+    return None
 
 
 @contextmanager

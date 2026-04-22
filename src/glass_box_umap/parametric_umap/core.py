@@ -18,7 +18,7 @@ from ..utils import device_to_lightning_acceleration_config, get_default_device
 from .data import UMAPDataset
 from .graph import get_umap_graph
 from .lightning import UMAPDataModule, UMAPLightningModule
-from .logging_config import suppress_lightning_logs
+from .logging_config import get_progress_bar, suppress_lightning_logs
 from .registry import create_encoder
 
 
@@ -88,14 +88,16 @@ class ParametricUMAP:
 
     # Train config
     lr: float = 1e-3
-    epochs: int = 10
-    batch_size: int = 512
+    epochs: int = 100
+    batch_size: int = 10_000
     num_batches: int | None = None
     negative_sample_rate: int = 5
     repulsion_strength: float = 1.0
     num_workers: int = 0
     checkpoint_dir: Path | None = None
     restore_best_weights: bool = True
+
+    # Extras
     quiet: bool = False
     extra_callbacks: list[pl.Callback] = field(default_factory=list)
 
@@ -177,12 +179,17 @@ class ParametricUMAP:
 
             accelerator, devices = device_to_lightning_acceleration_config(self._device)
 
+            progress_bar = None if self.quiet else get_progress_bar()
             trainer = pl.Trainer(
                 accelerator=accelerator,
                 devices=devices,
                 max_epochs=self.epochs,
                 limit_train_batches=self.num_batches,
-                callbacks=[best_checkpoint, *self.extra_callbacks],
+                callbacks=[
+                    best_checkpoint,
+                    *([progress_bar] if progress_bar is not None else []),
+                    *self.extra_callbacks,
+                ],
                 enable_checkpointing=True,
                 logger=logger,
                 log_every_n_steps=1,
