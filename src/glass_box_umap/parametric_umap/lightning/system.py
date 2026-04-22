@@ -62,6 +62,10 @@ class UMAPLightningModule(pl.LightningModule):
             negative_sample_rate=self.negative_sample_rate,
             repulsion_strength=self.repulsion_strength,
         )
-        self.log("umap_loss", encoder_loss, prog_bar=True)
+
+        lr = self.optimizers().param_groups[0]["lr"]
+        self.log("umap_loss_step", encoder_loss, prog_bar=False, on_step=True, on_epoch=False)
+        self.log("umap_loss_epoch", encoder_loss, prog_bar=True, on_step=False, on_epoch=True)
+        self.log("lr(1e3)", lr * 1e3, prog_bar=True)
 
         return encoder_loss
