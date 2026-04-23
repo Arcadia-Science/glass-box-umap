@@ -61,18 +61,22 @@ def test_reproducibility(mnist_images):
     """Ensure random_state produces identical embeddings."""
     seed = 42
 
-    model_a = ParametricUMAP(random_state=seed, epochs=2)
+    # Pin training to CPU: MPS has non-deterministic kernels that `random_state`
+    # (via `pl.seed_everything`) cannot control, which makes this test flaky on
+    # Apple Silicon. CPU provides a deterministic substrate to validate the
+    # seeding contract itself.
+    model_a = ParametricUMAP(random_state=seed, epochs=2).to("cpu")
     model_a.fit(mnist_images)
     emb_a = model_a.transform(mnist_images)
 
-    model_b = ParametricUMAP(random_state=seed, epochs=2)
+    model_b = ParametricUMAP(random_state=seed, epochs=2).to("cpu")
     model_b.fit(mnist_images)
     emb_b = model_b.transform(mnist_images)
 
     np.testing.assert_array_equal(emb_a, emb_b)
 
     # Run third model with a different seed to verify different result.
-    model_c = ParametricUMAP(random_state=seed + 1, epochs=2)
+    model_c = ParametricUMAP(random_state=seed + 1, epochs=2).to("cpu")
     model_c.fit(mnist_images)
     emb_c = model_c.transform(mnist_images)
     assert not np.allclose(emb_a, emb_c)
