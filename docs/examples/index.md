@@ -1,8 +1,9 @@
 # Examples
 
-```{eval-rst}
-.. nbgallery::
-   example.ipynb
-   mnist.ipynb
-   gene_expression.ipynb
+```{toctree}
+:maxdepth: 1
+
+example
+mnist
+gene_expression
 ```

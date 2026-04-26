@@ -26,7 +26,7 @@ project = "glass-box-umap"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "nbsphinx",
+    "myst_nb",
     "sphinx.ext.napoleon",
     "sphinx.ext.mathjax",
     "sphinx.ext.doctest",
@@ -36,7 +36,6 @@ extensions = [
     "autoapi.extension",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
-    "myst_parser",
     "sphinx_togglebutton",
     "custom_skip_members",
     "resolve_missing_references",
@@ -61,14 +60,8 @@ smartquotes_action = "qe"
 
 # -- Notebook rendering -------------------------------------------------
 
-# Something to consider: https://dokk.org/documentation/nbsphinx/0.9.3/prolog-and-epilog/
-nbsphinx_epilog = """"""
-nbsphinx_prolog = """"""
-
-nbsphinx_allow_errors = True
-nbsphinx_input_prompt = "%.0s"
-nbsphinx_output_prompt = "%.0s"
-nbsphinx_prompt_width = "0"
+nb_execution_mode = "off"
+nb_execution_allow_errors = True
 
 # -- Options for HTML output -------------------------------------------------
 

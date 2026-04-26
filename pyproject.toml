@@ -75,7 +75,7 @@ docs = [
     "myst-parser==4.0.1",
     "sphinx-autoapi==3.6.0",
     "sphinx-tabs==3.4.7",
-    "nbsphinx==0.9.7",
+    "myst-nb==1.1.2",
     "sphinx-autobuild==2024.10.3",
     "sphinx-togglebutton==0.3.2",
     "astroid==3.3.11",
