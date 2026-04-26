@@ -1010,7 +1010,9 @@ dependencies = [
 [package.optional-dependencies]
 plotting = [
     { name = "adjusttext" },
+    { name = "bokeh" },
     { name = "matplotlib" },
+    { name = "pillow" },
 ]
 
 [package.dev-dependencies]
@@ -1048,6 +1050,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "adjusttext", marker = "extra == 'plotting'", specifier = ">=1.3" },
+    { name = "bokeh", marker = "extra == 'plotting'", specifier = ">=3.4" },
     { name = "dill", specifier = ">=0.4.0,<0.5" },
     { name = "einops", specifier = ">=0.8.1,<0.9" },
     { name = "leidenalg", specifier = ">=0.10.2,<0.11" },
@@ -1056,6 +1059,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.26.4,<2" },
     { name = "packaging", specifier = ">=23.0" },
     { name = "pandas", specifier = ">=2.2.3,<3" },
+    { name = "pillow", marker = "extra == 'plotting'", specifier = ">=10.0" },
     { name = "pynndescent", specifier = ">=0.5.13" },
     { name = "pytorch-lightning", specifier = ">=2.6.0" },
     { name = "scikit-learn", specifier = ">=1.6.0" },
