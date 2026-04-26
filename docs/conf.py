@@ -150,7 +150,8 @@ html_css_files = [
     "css/label.css",
     "css/sphinx-togglebutton.css",
     "css/headings.css",
-    "css/cards.css",
+    "css/pub_card.css",
+    "css/notebook.css",
     "css/rubric.css",
     "css/sidebar.css",
 ]

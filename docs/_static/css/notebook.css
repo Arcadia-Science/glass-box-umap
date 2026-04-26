@@ -1,0 +1,7 @@
+.cell_input div[class*=highlight] > pre {
+    padding: 15px !important;
+}
+
+.cell_input {
+    margin-bottom: 1rem;
+}
