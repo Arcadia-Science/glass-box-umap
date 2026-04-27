@@ -8,16 +8,19 @@ import numpy as np
 from bokeh.layouts import column, row
 from bokeh.models import (
     AutocompleteInput,
+    CategoricalColorMapper,
     CDSView,
     ColorBar,
     ColumnDataSource,
     CustomJS,
+    CustomJSFilter,
     Div,
     FactorRange,
     GroupFilter,
     HoverTool,
     LinearColorMapper,
     RadioButtonGroup,
+    Slider,
 )
 from bokeh.models.layouts import LayoutDOM
 from bokeh.palettes import Category10, Category20, Viridis256
@@ -25,13 +28,15 @@ from bokeh.plotting import figure
 from numpy.typing import NDArray
 from PIL import Image
 
-from ..jacobian import groups_from_top_features, reduce_contributions
+from ..jacobian import reduce_contributions
 
 BAR_COLOR_REDUCED = "#756bb1"
 
-_FIGURE_HEIGHT = 600
+_COLUMN_HEIGHT = 720
 _HOVER_IMAGE_LONGEST_SIDE = 64
-_RESERVED_HOVER_KEYS = frozenset({"x", "y", "index", "group", "color_value", "__hover_image"})
+_RESERVED_HOVER_KEYS = frozenset(
+    {"x", "y", "index", "group", "color_value", "top_feature_group", "sample_rank", "__hover_image"}
+)
 
 _VIEW_LABELS = ("L2", "normed L2", "Dim 1", "Dim 2")
 
@@ -100,7 +105,7 @@ const vals = top.map(t => means[t.idx]);
 bar_source.data = { feature: feat, mean: vals };
 bar_range.factors = feat;
 
-heading_div.text = `<b>Mean contribution</b> — ${view_labels[view]}`;
+heading_div.text = `<b>Mean contribution — ${view_labels[view]}</b>`;
 """
 
 
@@ -134,10 +139,15 @@ class TopFeatures:
 class BarViews:
     """Three pre-computed ``(n_samples, n_kept)`` views of the kept-feature pool.
 
-    All three are signed values. The "normed L2" view shown in the bar chart
-    is derived JS-side from ``l2`` as ``value / max(Σ_k value, ε)`` per sample
-    (so each sample's row sums to 1 across the kept pool), cached after first
-    computation.
+    Sign convention is per-attribute, not uniform: ``l2`` is non-negative
+    (it's an L2 norm); ``d0`` and ``d1`` are signed (raw per-dimension
+    contributions). The "normed L2" view shown in the bar chart is derived
+    JS-side from ``l2`` as ``value / max(Σ_k value, ε)`` per sample (so each
+    sample's row sums to 1 across the kept pool), cached after first
+    computation. Note that the scatter's "Top feature" coloring is also
+    decided from ``l2`` (argmax over the kept pool), so a sample's "top
+    feature" reflects magnitude regardless of which view the user toggles
+    in the bar chart.
 
     Attributes:
         l2: L2-reduced contributions, sliced to ``top.keep_idx``. Always non-negative.
@@ -267,12 +277,46 @@ def _compute_bar_views(
     )
 
 
-def _base_figure(title: str) -> figure:
+def _precompute_top_features(
+    kept_l2: NDArray[np.floating],
+    kept_names: list[str],
+) -> tuple[list[str], NDArray[np.integer]]:
+    """Per-sample top kept feature, ranked by frequency.
+
+    For each sample, the kept feature with the largest L2-reduced contribution
+    is its "top feature". Distinct top features are then ranked by how often
+    they win across the dataset (most common → rank 0). Restricting argmax to
+    the kept pool guarantees every legend label has a corresponding bar in the
+    bar chart.
+
+    Args:
+        kept_l2: L2-reduced contributions sliced to the kept pool, shape
+            ``(n_samples, n_kept)``.
+        kept_names: Feature names matching ``kept_l2``'s column axis.
+
+    Returns:
+        A ``(top_feature_names_by_rank, sample_rank)`` pair:
+
+        - ``top_feature_names_by_rank``: distinct kept-feature names ordered
+          by descending frequency of being a sample's top feature.
+        - ``sample_rank``: per-sample integer rank into
+          ``top_feature_names_by_rank`` (always ``< len(top_feature_names_by_rank)``).
+    """
+    top_kept_idx = kept_l2.argmax(axis=1)
+    unique, counts = np.unique(top_kept_idx, return_counts=True)
+    rank_order = unique[np.argsort(counts)[::-1]]
+    top_feature_names_by_rank = [kept_names[i] for i in rank_order]
+    rank_of: dict[int, int] = {int(idx): r for r, idx in enumerate(rank_order)}
+    sample_rank = np.array([rank_of[int(i)] for i in top_kept_idx], dtype=np.int64)
+    return top_feature_names_by_rank, sample_rank
+
+
+def _base_figure() -> figure:
     tools = "pan,wheel_zoom,box_zoom,reset,lasso_select,box_select"
     return figure(
-        title=title or "Embedding — lasso or box-select to filter",
+        title="Embedding — lasso or box-select to filter",
         width=600,
-        height=_FIGURE_HEIGHT,
+        sizing_mode="stretch_height",
         tools=tools,
     )
 
@@ -424,7 +468,10 @@ def _build_bars(
     p_bar.hbar(y="feature", right="mean", height=0.8, source=bar_source, color=BAR_COLOR_REDUCED)
     p_bar.xgrid.grid_line_color = None
 
-    heading_div = Div(text=f"<b>Mean contribution</b> — {_VIEW_LABELS[0]}")
+    heading_div = Div(
+        text=f"<b>Mean contribution — {_VIEW_LABELS[0]}</b>",
+        styles={"color": "#444444", "font-size": "13px"},
+    )
     view_widget = RadioButtonGroup(labels=list(_VIEW_LABELS), active=0)
 
     cb = CustomJS(
@@ -448,271 +495,200 @@ def _build_bars(
     view_widget.js_on_change("active", cb)
 
     return column(
-        heading_div,
         view_widget,
+        heading_div,
         p_bar,
-        height=_FIGURE_HEIGHT,
+        height=_COLUMN_HEIGHT,
         styles={"background-color": "white"},
     )
 
 
-@overload
-def plot_embedding_by_group(
+def plot_embedding(
     Z: NDArray[np.floating],
     contributions: NDArray[np.floating],
-    group_names: Sequence[Any] | NDArray,
+    *,
+    group_names: Sequence[Any] | NDArray | None = None,
     feature_names: list[str] | None = None,
     top_k_global: int = 200,
     top_k_display: int = 20,
-    title: str = "",
-    *,
-    hover_images: NDArray[np.uint8],
-) -> LayoutDOM: ...
-
-
-@overload
-def plot_embedding_by_group(
-    Z: NDArray[np.floating],
-    contributions: NDArray[np.floating],
-    group_names: Sequence[Any] | NDArray,
-    feature_names: list[str] | None = None,
-    top_k_global: int = 200,
-    top_k_display: int = 20,
-    title: str = "",
-    *,
-    hover_tooltips: str | None = None,
-    hover_data: Mapping[str, Sequence[Any]] | None = None,
-) -> LayoutDOM: ...
-
-
-def plot_embedding_by_group(
-    Z: NDArray[np.floating],
-    contributions: NDArray[np.floating],
-    group_names: Sequence[Any] | NDArray,
-    feature_names: list[str] | None = None,
-    top_k_global: int = 200,
-    top_k_display: int = 20,
-    title: str = "",
-    *,
     hover_images: NDArray[np.uint8] | None = None,
     hover_tooltips: str | None = None,
     hover_data: Mapping[str, Sequence[Any]] | None = None,
 ) -> LayoutDOM:
-    """Embedding scatter colored by group, linked to a feature-contribution bar chart.
+    """Interactive 2D embedding scatter linked to a feature-contribution bar chart.
 
-    Renders a 2D scatter of ``Z`` colored categorically by ``group_names``, with a
-    bar chart on the right showing the mean per-feature contribution. The chart
-    has a single radio toggle ``L2 | normed L2 | Dim 1 | Dim 2``:
+    A single radio toggle above the scatter chooses how to color the points:
 
-    - ``L2``: per-feature L2 norm across embedding dimensions (always non-negative).
-    - ``normed L2``: each sample's L2 values divided by their sum across the kept
-      pool, so each row sums to 1. Reads as "what share of this sample's overall
-      contribution magnitude came from this feature."
-    - ``Dim 1`` / ``Dim 2``: signed contributions to embedding dimension 0 and 1
-      separately.
+    - ``Group`` (only available when ``group_names`` is provided): categorical
+      coloring by user-supplied labels.
+    - ``Feature``: a Viridis gradient over the L2-reduced contribution of one
+      feature, picked via an autocomplete input that appears below the toggle
+      (substring match, case-insensitive).
+    - ``Top feature``: each sample is colored by the kept feature with its
+      largest L2-reduced contribution. A slider lets the user choose the top-N
+      most-frequent top features to colorize; samples whose top feature isn't
+      in that set are drawn in gray underneath the colored points.
 
-    Lasso- or box-selecting points in the scatter updates the bars to summarize
-    only the selection; with no selection the bars summarize all samples. Group
-    identity is surfaced via the hover tooltip rather than a rendered legend.
-
-    Args:
-        Z:
-            Embedding coordinates of shape ``(n_samples, 2)``.
-        contributions:
-            Per-feature contributions to each embedding dimension, of shape
-            ``(n_samples, 2, n_features)``. Typically the output of
-            :meth:`~glass_box_umap.GlassBoxUMAP.compute_contributions` with
-            ``reduction=None``.
-        group_names:
-            Group label per sample. Any sequence of length ``n_samples``; elements
-            are stringified before use. Up to 10 groups use the Category10 palette;
-            beyond that a tiled Category20 palette is used.
-        feature_names:
-            Human-readable name per feature; length must equal
-            ``contributions.shape[2]``. Defaults to ``"Feature {i}"``.
-        top_k_global:
-            How many features to ship to the browser, ranked by global L2
-            importance. Features beyond this cap never appear in the bar chart, so
-            set it high enough to cover anything worth inspecting but low enough
-            that the page stays responsive.
-        top_k_display:
-            How many features the bar chart shows at any one time. The selected
-            features are reordered as the scatter selection or view toggle changes.
-        title:
-            Scatter-plot title.
-        hover_images:
-            Per-sample image to display in the tooltip, as a uint8 array of shape
-            ``(n_samples, H, W)`` (grayscale) or ``(n_samples, H, W, 3 | 4)``
-            (RGB / RGBA). Each image is resized to a small thumbnail and PNG-encoded
-            into the tooltip above the default index/group text. Mutually exclusive
-            with ``hover_tooltips`` and ``hover_data``.
-        hover_tooltips:
-            Bokeh tooltip HTML template that fully replaces the default. May
-            reference ``@index``, ``@group``, and any keys from ``hover_data``.
-        hover_data:
-            Extra columns merged into the scatter ``ColumnDataSource`` for reference
-            from ``hover_tooltips``. Keys must not collide with the reserved columns
-            ``x``, ``y``, ``index``, ``group``, ``color_value``.
-
-    Returns:
-        A Bokeh layout — scatter on the left, linked bar chart with a view toggle
-        on the right. Pass it to :func:`bokeh.io.show` or :func:`bokeh.io.save`.
-    """
-    _validate_shapes(Z, contributions, feature_names=feature_names, group_names=group_names)
-    n_samples = Z.shape[0]
-
-    top = _select_top_features(contributions, feature_names, top_k_global, top_k_display)
-    views = _compute_bar_views(contributions, top)
-
-    tooltip_html, hover_extras = _resolve_hover(
-        default_body="index: @index &nbsp;&middot;&nbsp; group: @group",
-        hover_images=hover_images,
-        hover_tooltips=hover_tooltips,
-        hover_data=hover_data,
-    )
-
-    scatter_source = _make_scatter_source(
-        Z,
-        n_samples,
-        {"group": np.asarray([str(g) for g in group_names]), **hover_extras},
-    )
-
-    p_scatter = _base_figure(title)
-    p_scatter.add_tools(HoverTool(tooltips=tooltip_html))
-
-    factors = sorted({str(g) for g in group_names})
-    palette = _pick_palette(len(factors))
-    for factor, color in zip(factors, palette, strict=False):
-        view = CDSView(filter=GroupFilter(column_name="group", group=factor))
-        p_scatter.scatter(
-            "x",
-            "y",
-            source=scatter_source,
-            view=view,
-            size=5,
-            alpha=0.6,
-            nonselection_alpha=0.1,
-            color=color,
-        )
-
-    bars = _build_bars(
-        views=views,
-        top=top,
-        n_samples=n_samples,
-        scatter_source=scatter_source,
-    )
-
-    return row(p_scatter, bars)
-
-
-@overload
-def plot_embedding_by_feature_gradient(
-    Z: NDArray[np.floating],
-    contributions: NDArray[np.floating],
-    feature_names: list[str] | None = None,
-    top_k_global: int = 200,
-    top_k_display: int = 20,
-    title: str = "",
-    *,
-    hover_images: NDArray[np.uint8],
-) -> LayoutDOM: ...
-
-
-@overload
-def plot_embedding_by_feature_gradient(
-    Z: NDArray[np.floating],
-    contributions: NDArray[np.floating],
-    feature_names: list[str] | None = None,
-    top_k_global: int = 200,
-    top_k_display: int = 20,
-    title: str = "",
-    *,
-    hover_tooltips: str | None = None,
-    hover_data: Mapping[str, Sequence[Any]] | None = None,
-) -> LayoutDOM: ...
-
-
-def plot_embedding_by_feature_gradient(
-    Z: NDArray[np.floating],
-    contributions: NDArray[np.floating],
-    feature_names: list[str] | None = None,
-    top_k_global: int = 200,
-    top_k_display: int = 20,
-    title: str = "",
-    *,
-    hover_images: NDArray[np.uint8] | None = None,
-    hover_tooltips: str | None = None,
-    hover_data: Mapping[str, Sequence[Any]] | None = None,
-) -> LayoutDOM:
-    """Embedding scatter colored by a single feature's contribution, with picker.
-
-    Renders a 2D scatter of ``Z`` colored by the L2-reduced contribution of one
-    feature, using a Viridis gradient. An autocomplete input above the scatter
-    selects which feature drives the coloring (substring match against feature
-    names, case-insensitive). The bar chart on the right has the same view
-    toggle described in :func:`plot_embedding_by_group`; lasso- or box-selecting
-    points in the scatter updates the bars to summarize only the selection.
+    Lasso- or box-selecting points in the scatter updates the linked bar chart
+    on the right (which has its own ``L2 | normed L2 | Dim 1 | Dim 2`` view
+    toggle); with no selection the bars summarize all samples.
 
     Args:
         Z:
             Embedding coordinates of shape ``(n_samples, 2)``.
         contributions:
             Per-feature contributions of shape ``(n_samples, 2, n_features)``.
+            Typically the output of
+            :meth:`~glass_box_umap.GlassBoxUMAP.compute_contributions` with
+            ``reduction=None``.
+        group_names:
+            Group label per sample. Any sequence of length ``n_samples``;
+            elements are stringified before use. When provided, the ``Group``
+            color mode is added to the radio and used as the default; when
+            ``None`` (default), the radio shows only ``Feature`` / ``Top
+            feature`` and starts in ``Feature`` mode.
         feature_names:
             Human-readable name per feature; length must equal
-            ``contributions.shape[2]``. Populates the autocomplete completion
-            list. Defaults to ``"Feature {i}"``.
+            ``contributions.shape[2]``. Defaults to ``"Feature {i}"``
+            (0-indexed).
         top_k_global:
             How many features to ship to the browser, ranked by global L2
-            importance. Caps the size of the autocomplete list — features
-            beyond this cap cannot be selected for coloring.
+            importance. Caps everything: the bar chart, the feature-picker
+            autocomplete, and the candidate set for top-feature ranking.
         top_k_display:
             How many features the bar chart shows at any one time.
-        title:
-            Scatter-plot title.
         hover_images:
-            See :func:`plot_embedding_by_group`. Mutually exclusive with
-            ``hover_tooltips`` and ``hover_data``.
+            Per-sample uint8 image array of shape ``(n_samples, H, W)`` or
+            ``(n_samples, H, W, 3 | 4)``. When set, each tooltip shows the
+            sample's image above the default index/group text. Mutually
+            exclusive with ``hover_tooltips`` and ``hover_data``.
         hover_tooltips:
             Bokeh tooltip HTML template that fully replaces the default. May
-            reference ``@index`` plus any keys from ``hover_data``.
+            reference ``@index``, ``@group`` (when ``group_names`` is
+            provided), and any keys from ``hover_data``.
         hover_data:
             Extra columns merged into the scatter ``ColumnDataSource`` for
             reference from ``hover_tooltips``. Keys must not collide with the
-            reserved columns ``x``, ``y``, ``index``, ``group``, ``color_value``.
+            reserved columns ``x``, ``y``, ``index``, ``group``,
+            ``color_value``, ``top_feature_group``, ``sample_rank``.
 
     Returns:
-        A Bokeh layout — feature picker on top, scatter + linked bar chart with a
-        view toggle below. Pass it to :func:`bokeh.io.show` or :func:`bokeh.io.save`.
+        A Bokeh layout — color-by controls + scatter on the left, linked bar
+        chart with view toggle on the right. Pass it to :func:`bokeh.io.show`
+        or :func:`bokeh.io.save`.
     """
-    _validate_shapes(Z, contributions, feature_names=feature_names)
+    _validate_shapes(Z, contributions, feature_names=feature_names, group_names=group_names)
     n_samples = Z.shape[0]
 
     top = _select_top_features(contributions, feature_names, top_k_global, top_k_display)
     views = _compute_bar_views(contributions, top)
+    top_feature_names_by_rank, sample_rank = _precompute_top_features(views.l2, top.kept_names)
+    n_distinct = len(top_feature_names_by_rank)
 
-    reduced_kept = views.l2
-    initial_color = reduced_kept[:, 0]
+    has_groups = group_names is not None
+    color_modes = (["Group"] if has_groups else []) + ["Feature", "Top feature"]
+    initial_mode = color_modes[0]
 
+    initial_t = min(20, n_distinct)
+    initial_top_group = np.asarray(
+        [top_feature_names_by_rank[r] if r < initial_t else "(other)" for r in sample_rank]
+    )
+    initial_gradient = views.l2[:, 0].astype(np.float32).copy()
+
+    default_hover_body = "index: @index"
+    if has_groups:
+        default_hover_body += " &nbsp;&middot;&nbsp; group: @group"
     tooltip_html, hover_extras = _resolve_hover(
-        default_body="index: @index",
+        default_body=default_hover_body,
         hover_images=hover_images,
         hover_tooltips=hover_tooltips,
         hover_data=hover_data,
     )
 
-    scatter_source = _make_scatter_source(
-        Z, n_samples, {"color_value": initial_color.copy(), **hover_extras}
-    )
+    extras: dict[str, NDArray[Any]] = {
+        "color_value": initial_gradient,
+        "top_feature_group": initial_top_group,
+        "sample_rank": sample_rank,
+        **hover_extras,
+    }
+    if has_groups:
+        extras["group"] = np.asarray([str(g) for g in group_names])
 
-    reduced_source = ColumnDataSource({f"f{k}": reduced_kept[:, k] for k in range(top.n_kept)})
+    scatter_source = _make_scatter_source(Z, n_samples, extras)
 
-    p_scatter = _base_figure(title)
+    p_scatter = _base_figure()
     p_scatter.add_tools(HoverTool(tooltips=tooltip_html))
 
-    init_lo, init_hi = _nondegenerate_range(float(initial_color.min()), float(initial_color.max()))
+    reduced_kept_source = ColumnDataSource(
+        {f"f{k}": views.l2[:, k] for k in range(top.n_kept)}
+    )
+
+    other_view = CDSView(
+        filter=GroupFilter(column_name="top_feature_group", group="(other)")
+    )
+    top_other_glyph = p_scatter.scatter(
+        "x",
+        "y",
+        source=scatter_source,
+        view=other_view,
+        size=5,
+        alpha=0.5,
+        nonselection_alpha=0.1,
+        color="#cccccc",
+        visible=(initial_mode == "Top feature"),
+    )
+
+    named_filter = CustomJSFilter(
+        code="""
+        const tfg = source.data["top_feature_group"];
+        const out = new Array(tfg.length);
+        for (let i = 0; i < tfg.length; i++) out[i] = tfg[i] !== "(other)";
+        return out;
+        """,
+    )
+    named_view = CDSView(filter=named_filter)
+    palette = _pick_palette(max(n_distinct, 1))
+    top_color_mapper = CategoricalColorMapper(
+        factors=[*top_feature_names_by_rank, "(other)"],
+        palette=[*palette, "#cccccc"],
+    )
+    top_named_glyph = p_scatter.scatter(
+        "x",
+        "y",
+        source=scatter_source,
+        view=named_view,
+        size=5,
+        alpha=0.6,
+        nonselection_alpha=0.1,
+        color={"field": "top_feature_group", "transform": top_color_mapper},
+        visible=(initial_mode == "Top feature"),
+    )
+
+    group_glyphs: list[Any] = []
+    if has_groups:
+        factors = sorted({str(g) for g in group_names})
+        group_palette = _pick_palette(len(factors))
+        for factor, color in zip(factors, group_palette, strict=False):
+            view = CDSView(filter=GroupFilter(column_name="group", group=factor))
+            group_glyphs.append(
+                p_scatter.scatter(
+                    "x",
+                    "y",
+                    source=scatter_source,
+                    view=view,
+                    size=5,
+                    alpha=0.6,
+                    nonselection_alpha=0.1,
+                    color=color,
+                    visible=(initial_mode == "Group"),
+                )
+            )
+
+    init_lo, init_hi = _nondegenerate_range(
+        float(initial_gradient.min()), float(initial_gradient.max())
+    )
     gradient_mapper = LinearColorMapper(palette=Viridis256, low=init_lo, high=init_hi)
-    p_scatter.scatter(
+    gradient_glyph = p_scatter.scatter(
         "x",
         "y",
         source=scatter_source,
@@ -720,12 +696,20 @@ def plot_embedding_by_feature_gradient(
         alpha=0.6,
         nonselection_alpha=0.1,
         color={"field": "color_value", "transform": gradient_mapper},
+        visible=(initial_mode == "Feature"),
     )
-    color_bar = ColorBar(color_mapper=gradient_mapper, location=(0, 0))
+    color_bar = ColorBar(
+        color_mapper=gradient_mapper, location=(0, 0), visible=(initial_mode == "Feature")
+    )
     p_scatter.add_layout(color_bar, "right")
 
+    color_by_widget = RadioButtonGroup(labels=color_modes, active=0)
+    color_by_prefix = Div(
+        text="<b>Color by:</b>",
+        styles={"color": "#444444", "font-size": "13px", "padding-top": "8px"},
+    )
     feature_picker = AutocompleteInput(
-        title="feature",
+        title="Search for feature",
         completions=top.kept_names,
         value=top.kept_names[0],
         placeholder="start typing…",
@@ -734,13 +718,55 @@ def plot_embedding_by_feature_gradient(
         min_characters=0,
         max_completions=15,
         width=260,
+        visible=(initial_mode == "Feature"),
+        styles={"color": "#444444"},
     )
+    top_n_slider = Slider(
+        start=1,
+        end=max(n_distinct, 1),
+        value=max(initial_t, 1),
+        step=1,
+        title="Top features",
+        width=260,
+        visible=(initial_mode == "Top feature"),
+        styles={"color": "#444444"},
+    )
+
+    color_by_widget.js_on_change(
+        "active",
+        CustomJS(
+            args=dict(
+                color_modes=color_modes,
+                group_glyphs=group_glyphs,
+                top_other_glyph=top_other_glyph,
+                top_named_glyph=top_named_glyph,
+                gradient_glyph=gradient_glyph,
+                color_bar=color_bar,
+                feature_picker=feature_picker,
+                top_n_slider=top_n_slider,
+            ),
+            code="""
+            const mode = color_modes[cb_obj.active];
+            const is_group = (mode === "Group");
+            const is_feature = (mode === "Feature");
+            const is_top = (mode === "Top feature");
+            for (const g of group_glyphs) g.visible = is_group;
+            top_other_glyph.visible = is_top;
+            top_named_glyph.visible = is_top;
+            gradient_glyph.visible = is_feature;
+            color_bar.visible = is_feature;
+            feature_picker.visible = is_feature;
+            top_n_slider.visible = is_top;
+            """,
+        ),
+    )
+
     feature_picker.js_on_change(
         "value",
         CustomJS(
             args=dict(
                 scatter_source=scatter_source,
-                reduced_source=reduced_source,
+                reduced_source=reduced_kept_source,
                 mapper=gradient_mapper,
                 feature_names=top.kept_names,
             ),
@@ -770,6 +796,26 @@ def plot_embedding_by_feature_gradient(
         ),
     )
 
+    top_n_slider.js_on_change(
+        "value",
+        CustomJS(
+            args=dict(
+                scatter_source=scatter_source,
+                names_by_rank=top_feature_names_by_rank,
+            ),
+            code="""
+            const t = cb_obj.value;
+            const tfg = scatter_source.data["top_feature_group"];
+            const ranks = scatter_source.data["sample_rank"];
+            const n = ranks.length;
+            for (let i = 0; i < n; i++) {
+                tfg[i] = ranks[i] < t ? names_by_rank[ranks[i]] : "(other)";
+            }
+            scatter_source.change.emit();
+            """,
+        ),
+    )
+
     bars = _build_bars(
         views=views,
         top=top,
@@ -777,130 +823,16 @@ def plot_embedding_by_feature_gradient(
         scatter_source=scatter_source,
     )
 
-    return column(feature_picker, row(p_scatter, bars))
-
-
-@overload
-def plot_embedding_by_top_feature(
-    Z: NDArray[np.floating],
-    contributions: NDArray[np.floating],
-    feature_names: list[str] | None = None,
-    top_n: int = 20,
-    top_k_global: int = 200,
-    top_k_display: int = 20,
-    title: str = "",
-    *,
-    hover_images: NDArray[np.uint8],
-) -> LayoutDOM: ...
-
-
-@overload
-def plot_embedding_by_top_feature(
-    Z: NDArray[np.floating],
-    contributions: NDArray[np.floating],
-    feature_names: list[str] | None = None,
-    top_n: int = 20,
-    top_k_global: int = 200,
-    top_k_display: int = 20,
-    title: str = "",
-    *,
-    hover_tooltips: str | None = None,
-    hover_data: Mapping[str, Sequence[Any]] | None = None,
-) -> LayoutDOM: ...
-
-
-def plot_embedding_by_top_feature(
-    Z: NDArray[np.floating],
-    contributions: NDArray[np.floating],
-    feature_names: list[str] | None = None,
-    top_n: int = 20,
-    top_k_global: int = 200,
-    top_k_display: int = 20,
-    title: str = "",
-    *,
-    hover_images: NDArray[np.uint8] | None = None,
-    hover_tooltips: str | None = None,
-    hover_data: Mapping[str, Sequence[Any]] | None = None,
-) -> LayoutDOM:
-    """Embedding scatter colored by each sample's most-contributing feature.
-
-    For every sample, the feature with the largest L2-reduced contribution is
-    chosen as that sample's group. Samples whose top feature is not among the
-    ``top_n`` most-frequently-occurring top features across the dataset are
-    dropped — this keeps the color count manageable when many features each
-    "win" for only a handful of samples. The remaining samples are rendered
-    via :func:`plot_embedding_by_group`, so all interactions and arguments
-    there apply here.
-
-    Args:
-        Z:
-            Embedding coordinates of shape ``(n_samples, 2)``.
-        contributions:
-            Per-feature contributions of shape ``(n_samples, 2, n_features)``.
-        feature_names:
-            Human-readable name per feature; length must equal
-            ``contributions.shape[2]``. Used both to identify each sample's
-            top feature and as the group label. Defaults to ``"Feature {i}"``.
-        top_n:
-            Cap on the number of distinct top-feature groups in the plot.
-            Samples whose top-contributing feature falls outside the most-common
-            ``top_n`` are filtered out. Reducing ``top_n`` hides rare top
-            features and shrinks the dataset rendered.
-        top_k_global:
-            Forwarded to :func:`plot_embedding_by_group`.
-        top_k_display:
-            Forwarded to :func:`plot_embedding_by_group`.
-        title:
-            Scatter-plot title; defaults to ``"Top-feature groups"``.
-        hover_images:
-            See :func:`plot_embedding_by_group`. Filtered alongside ``Z`` so
-            the hover image matches each kept point.
-        hover_tooltips:
-            See :func:`plot_embedding_by_group`.
-        hover_data:
-            See :func:`plot_embedding_by_group`. Each column is filtered
-            alongside ``Z``.
-
-    Returns:
-        The Bokeh layout produced by :func:`plot_embedding_by_group` — scatter
-        on the left, linked bar chart with a view toggle on the right. Pass it to
-        :func:`bokeh.io.show` or :func:`bokeh.io.save`.
-    """
-    _validate_shapes(Z, contributions, feature_names=feature_names)
-
-    n_features = contributions.shape[-1]
-    names_arr = (
-        np.array(feature_names)
-        if feature_names is not None
-        else np.array([f"Feature {i}" for i in range(n_features)])
-    )
-    group_ids, group_name_list, mask = groups_from_top_features(
-        contributions, feature_names=names_arr, top_n=top_n
-    )
-    kept_group_names = [group_name_list[gid] for gid in group_ids]
-
-    shared_kwargs: dict[str, Any] = dict(
-        Z=Z[mask],
-        contributions=contributions[mask],
-        group_names=kept_group_names,
-        feature_names=list(names_arr),
-        top_k_global=top_k_global,
-        top_k_display=top_k_display,
-        title=title or "Top-feature groups",
-    )
-
-    if hover_images is not None:
-        return plot_embedding_by_group(**shared_kwargs, hover_images=hover_images[mask])
-
-    masked_data = (
-        {k: np.asarray(v)[mask].tolist() for k, v in hover_data.items()}
-        if hover_data is not None
-        else None
-    )
-    return plot_embedding_by_group(
-        **shared_kwargs,
-        hover_tooltips=hover_tooltips,
-        hover_data=masked_data,
+    return row(
+        column(
+            row(color_by_prefix, color_by_widget),
+            feature_picker,
+            top_n_slider,
+            p_scatter,
+            height=_COLUMN_HEIGHT,
+            styles={"background-color": "white"},
+        ),
+        bars,
     )
 
 
