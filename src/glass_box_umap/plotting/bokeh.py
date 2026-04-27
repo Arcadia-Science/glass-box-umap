@@ -2,7 +2,7 @@ import base64
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Any, Literal, overload
+from typing import Any, overload
 
 import numpy as np
 from bokeh.layouts import column, row
@@ -12,11 +12,12 @@ from bokeh.models import (
     ColorBar,
     ColumnDataSource,
     CustomJS,
+    Div,
     FactorRange,
     GroupFilter,
     HoverTool,
     LinearColorMapper,
-    Range,
+    RadioButtonGroup,
 )
 from bokeh.models.layouts import LayoutDOM
 from bokeh.palettes import Category10, Category20, Viridis256
@@ -27,72 +28,94 @@ from PIL import Image
 from ..jacobian import groups_from_top_features, reduce_contributions
 
 BAR_COLOR_REDUCED = "#756bb1"
-BAR_COLOR_DIM_X = "#2b8cbe"
-BAR_COLOR_DIM_Y = "#e34a33"
 
+_FIGURE_HEIGHT = 600
 _HOVER_IMAGE_LONGEST_SIDE = 64
 _RESERVED_HOVER_KEYS = frozenset({"x", "y", "index", "group", "color_value", "__hover_image"})
 
+_VIEW_LABELS = ("L2", "normed L2", "Dim 1", "Dim 2")
+
 _LINKED_BARS_CALLBACK_JS = """
+const view = view_widget.active;
+
+let active_data;
+if (view === 0) {
+    active_data = contrib_sources[0].data;
+} else if (view === 1) {
+    if (!normed_l2_cache.data) {
+        const src = contrib_sources[0].data;
+        const totals = new Float64Array(n_samples);
+        for (let k = 0; k < n_kept; k++) {
+            const col = src["c" + k];
+            for (let i = 0; i < n_samples; i++) {
+                totals[i] += col[i];
+            }
+        }
+        for (let i = 0; i < n_samples; i++) {
+            if (totals[i] < 1e-12) totals[i] = 1.0;
+        }
+        const cache = {};
+        for (let k = 0; k < n_kept; k++) {
+            const s = src["c" + k];
+            const dst = new Float64Array(n_samples);
+            for (let i = 0; i < n_samples; i++) {
+                dst[i] = s[i] / totals[i];
+            }
+            cache["c" + k] = dst;
+        }
+        normed_l2_cache.data = cache;
+    }
+    active_data = normed_l2_cache.data;
+} else if (view === 2) {
+    active_data = contrib_sources[1].data;
+} else {
+    active_data = contrib_sources[2].data;
+}
+
 const sel = scatter_source.selected.indices;
 const indices = sel.length
     ? sel
     : Array.from({length: n_samples}, (_, i) => i);
 const n = indices.length;
 
-const n_channels = contrib_sources.length;
-const means = [];
-for (let c = 0; c < n_channels; c++) {
-    means.push(new Float64Array(n_kept));
-}
-
+const means = new Float64Array(n_kept);
 for (let k = 0; k < n_kept; k++) {
-    const key = "c" + k;
-    for (let c = 0; c < n_channels; c++) {
-        const col = contrib_sources[c].data[key];
-        let s = 0.0;
-        for (let j = 0; j < n; j++) {
-            s += col[indices[j]];
-        }
-        means[c][k] = s / n;
+    const col = active_data["c" + k];
+    let s = 0.0;
+    for (let j = 0; j < n; j++) {
+        s += col[indices[j]];
     }
+    means[k] = s / n;
 }
 
 const scored = new Array(n_kept);
 for (let k = 0; k < n_kept; k++) {
-    let score = 0.0;
-    for (let c = 0; c < n_channels; c++) {
-        const m = Math.abs(means[c][k]);
-        if (m > score) score = m;
-    }
-    scored[k] = { idx: k, score: score };
+    scored[k] = { idx: k, score: Math.abs(means[k]) };
 }
 scored.sort((a, b) => b.score - a.score);
 const top = scored.slice(0, display_k).reverse();
-const feat = top.map(t => feature_names[t.idx]);
 
-for (let c = 0; c < n_channels; c++) {
-    const vals = top.map(t => means[c][t.idx]);
-    bar_sources[c].data = { feature: feat, mean: vals };
-    bar_ranges[c].factors = feat;
-}
+const feat = top.map(t => feature_names[t.idx]);
+const vals = top.map(t => means[t.idx]);
+bar_source.data = { feature: feat, mean: vals };
+bar_range.factors = feat;
+
+heading_div.text = `<b>Mean contribution</b> — ${view_labels[view]}`;
 """
 
 
 @dataclass(frozen=True)
 class TopFeatures:
-    """Result of ranking features by global importance and selecting the top slice.
+    """Result of ranking features by global L2 importance and selecting the top slice.
 
     Attributes:
         kept_names: Feature names for the kept pool, ordered by descending
-            global importance.
+            global L2 importance.
         keep_idx: Indices into the original feature axis, in the same order
             as ``kept_names``. Length equals ``n_kept``.
         display_k: Number of features to draw in the bar chart at any one
             time. Always ``<= n_kept``.
-        reduced: The ``(n_samples, n_features)`` array produced by the
-            chosen reduction (e.g. L2 across embedding dimensions), or
-            ``None`` if no reduction was applied. This is the full reduced
+        reduced: The full ``(n_samples, n_features)`` L2-reduced contributions
             array — not sliced by ``keep_idx``.
         n_kept: (property) Size of the kept pool, i.e. ``len(kept_names)``.
     """
@@ -100,11 +123,31 @@ class TopFeatures:
     kept_names: list[str]
     keep_idx: NDArray[np.integer]
     display_k: int
-    reduced: NDArray[np.floating] | None
+    reduced: NDArray[np.floating]
 
     @property
     def n_kept(self) -> int:
         return len(self.kept_names)
+
+
+@dataclass(frozen=True)
+class BarViews:
+    """Three pre-computed ``(n_samples, n_kept)`` views of the kept-feature pool.
+
+    All three are signed values. The "normed L2" view shown in the bar chart
+    is derived JS-side from ``l2`` as ``value / max(Σ_k value, ε)`` per sample
+    (so each sample's row sums to 1 across the kept pool), cached after first
+    computation.
+
+    Attributes:
+        l2: L2-reduced contributions, sliced to ``top.keep_idx``. Always non-negative.
+        d0: Signed contributions to embedding dimension 0, sliced to ``top.keep_idx``.
+        d1: Signed contributions to embedding dimension 1, sliced to ``top.keep_idx``.
+    """
+
+    l2: NDArray[np.floating]
+    d0: NDArray[np.floating]
+    d1: NDArray[np.floating]
 
 
 def _pick_palette(n: int) -> list[str]:
@@ -166,19 +209,13 @@ def _select_top_features(
     feature_names: list[str] | None,
     top_k_global: int,
     top_k_display: int,
-    reduction: Literal["l2"] | None,
 ) -> TopFeatures:
-    """Rank features by global importance and select the top slice for plotting.
+    """Rank features by global L2 importance and select the top slice for plotting.
 
-    Ranking is done on a per-feature scalar derived from ``contributions``:
-
-    - ``reduction=None``: the scalar is ``mean(|contributions|)`` taken over
-      both the sample axis and the embedding-dimension axis. The reduced
-      array is not computed and ``None`` is returned in its place.
-    - ``reduction="l2"``: contributions are first collapsed across embedding
-      dimensions via :func:`reduce_contributions`, producing a
-      ``(n_samples, n_features)`` array. The scalar is then the per-feature
-      mean across samples.
+    Contributions are first collapsed across embedding dimensions via
+    :func:`reduce_contributions` (L2 norm), producing a
+    ``(n_samples, n_features)`` array. The per-feature scalar is the mean of
+    that across samples.
 
     The top ``top_k_global`` features by this scalar are retained as the
     pool shipped to the browser; ``top_k_display`` (clipped to the pool
@@ -192,25 +229,19 @@ def _select_top_features(
             ``n_features``.
         top_k_display: Target number of features to display. Clipped to the
             kept pool size.
-        reduction: Controls both how global importance is computed and
-            whether the reduced array is materialized. See above.
 
     Returns:
         A :class:`TopFeatures` with ``kept_names`` and ``keep_idx`` ordered
-        by descending global importance, ``display_k`` clipped to the kept
-        pool size, and ``reduced`` populated iff ``reduction`` is set.
+        by descending global L2 importance, ``display_k`` clipped to the
+        kept pool size, and the full L2-reduced array in ``reduced``.
     """
     n_features = contributions.shape[-1]
     names = (
         feature_names if feature_names is not None else [f"Feature {i}" for i in range(n_features)]
     )
 
-    if reduction is None:
-        global_importance = np.abs(contributions).mean(axis=(0, 1))
-        reduced: NDArray[np.floating] | None = None
-    else:
-        reduced = reduce_contributions(contributions, reduction)
-        global_importance = reduced.mean(axis=0)
+    reduced = reduce_contributions(contributions, "l2")
+    global_importance = reduced.mean(axis=0)
 
     n_kept = min(top_k_global, n_features)
     keep_idx = np.argsort(global_importance)[::-1][:n_kept]
@@ -224,12 +255,24 @@ def _select_top_features(
     )
 
 
+def _compute_bar_views(
+    contributions: NDArray[np.floating],
+    top: TopFeatures,
+) -> BarViews:
+    """Slice the three absolute bar views for the kept-feature pool."""
+    return BarViews(
+        l2=top.reduced[:, top.keep_idx].astype(np.float32),
+        d0=contributions[:, 0, top.keep_idx].astype(np.float32),
+        d1=contributions[:, 1, top.keep_idx].astype(np.float32),
+    )
+
+
 def _base_figure(title: str) -> figure:
     tools = "pan,wheel_zoom,box_zoom,reset,lasso_select,box_select"
     return figure(
         title=title or "Embedding — lasso or box-select to filter",
         width=600,
-        height=600,
+        height=_FIGURE_HEIGHT,
         tools=tools,
     )
 
@@ -346,49 +389,70 @@ def _resolve_hover(
 
 
 def _build_bars(
-    contributions: NDArray[np.floating],
+    views: BarViews,
     top: TopFeatures,
-    reduction: Literal["l2"] | None,
     n_samples: int,
     scatter_source: ColumnDataSource,
 ) -> LayoutDOM:
-    if reduction is None:
-        return _build_two_dim_bars(
-            contributions=contributions,
-            top=top,
-            n_samples=n_samples,
-            scatter_source=scatter_source,
-        )
-    assert top.reduced is not None
-    return _build_reduced_bars(
-        reduced=top.reduced,
-        top=top,
-        n_samples=n_samples,
-        scatter_source=scatter_source,
-        reduction=reduction,
+    """Single bar chart with a ``L2 | normed L2 | Dim 1 | Dim 2`` view toggle.
+
+    The chart shows the per-feature mean of contributions over the current
+    scatter selection (or all samples if none selected). The ``normed L2`` view
+    is computed JS-side on first selection (per-sample fractions of L2) and
+    cached.
+    """
+    contrib_sources = [
+        ColumnDataSource({f"c{k}": views.l2[:, k] for k in range(top.n_kept)}),
+        ColumnDataSource({f"c{k}": views.d0[:, k] for k in range(top.n_kept)}),
+        ColumnDataSource({f"c{k}": views.d1[:, k] for k in range(top.n_kept)}),
+    ]
+
+    init_mean = views.l2.mean(axis=0)
+    init_top = np.argsort(init_mean)[::-1][: top.display_k][::-1]
+    init_feat = [top.kept_names[i] for i in init_top]
+    bar_source = ColumnDataSource(
+        data=dict(feature=init_feat, mean=[float(init_mean[i]) for i in init_top])
     )
 
+    p_bar = figure(
+        width=400,
+        sizing_mode="stretch_height",
+        y_range=FactorRange(factors=init_feat),
+        tools="",
+        toolbar_location=None,
+    )
+    p_bar.hbar(y="feature", right="mean", height=0.8, source=bar_source, color=BAR_COLOR_REDUCED)
+    p_bar.xgrid.grid_line_color = None
 
-def _linked_bars_callback(
-    scatter_source: ColumnDataSource,
-    contrib_sources: list[ColumnDataSource],
-    bar_sources: list[ColumnDataSource],
-    bar_ranges: list[Range],
-    top: TopFeatures,
-    n_samples: int,
-) -> CustomJS:
-    return CustomJS(
+    heading_div = Div(text=f"<b>Mean contribution</b> — {_VIEW_LABELS[0]}")
+    view_widget = RadioButtonGroup(labels=list(_VIEW_LABELS), active=0)
+
+    cb = CustomJS(
         args=dict(
             scatter_source=scatter_source,
             contrib_sources=contrib_sources,
-            bar_sources=bar_sources,
-            bar_ranges=bar_ranges,
+            bar_source=bar_source,
+            bar_range=p_bar.y_range,
+            heading_div=heading_div,
+            view_widget=view_widget,
             feature_names=top.kept_names,
             n_kept=top.n_kept,
             n_samples=n_samples,
             display_k=top.display_k,
+            view_labels=list(_VIEW_LABELS),
+            normed_l2_cache={"data": None},
         ),
         code=_LINKED_BARS_CALLBACK_JS,
+    )
+    scatter_source.selected.js_on_change("indices", cb)
+    view_widget.js_on_change("active", cb)
+
+    return column(
+        heading_div,
+        view_widget,
+        p_bar,
+        height=_FIGURE_HEIGHT,
+        styles={"background-color": "white"},
     )
 
 
@@ -400,7 +464,6 @@ def plot_embedding_by_group(
     feature_names: list[str] | None = None,
     top_k_global: int = 200,
     top_k_display: int = 20,
-    reduction: Literal["l2"] | None = "l2",
     title: str = "",
     *,
     hover_images: NDArray[np.uint8],
@@ -415,7 +478,6 @@ def plot_embedding_by_group(
     feature_names: list[str] | None = None,
     top_k_global: int = 200,
     top_k_display: int = 20,
-    reduction: Literal["l2"] | None = "l2",
     title: str = "",
     *,
     hover_tooltips: str | None = None,
@@ -430,47 +492,77 @@ def plot_embedding_by_group(
     feature_names: list[str] | None = None,
     top_k_global: int = 200,
     top_k_display: int = 20,
-    reduction: Literal["l2"] | None = "l2",
     title: str = "",
     *,
     hover_images: NDArray[np.uint8] | None = None,
     hover_tooltips: str | None = None,
     hover_data: Mapping[str, Sequence[Any]] | None = None,
 ) -> LayoutDOM:
-    """Embedding colored by group with linked bar charts of feature contributions.
+    """Embedding scatter colored by group, linked to a feature-contribution bar chart.
 
-    Points are colored categorically by ``group_names``. Group identity is
-    surfaced via the hover tooltip rather than a legend.
+    Renders a 2D scatter of ``Z`` colored categorically by ``group_names``, with a
+    bar chart on the right showing the mean per-feature contribution. The chart
+    has a single radio toggle ``L2 | normed L2 | Dim 1 | Dim 2``:
+
+    - ``L2``: per-feature L2 norm across embedding dimensions (always non-negative).
+    - ``normed L2``: each sample's L2 values divided by their sum across the kept
+      pool, so each row sums to 1. Reads as "what share of this sample's overall
+      contribution magnitude came from this feature."
+    - ``Dim 1`` / ``Dim 2``: signed contributions to embedding dimension 0 and 1
+      separately.
+
+    Lasso- or box-selecting points in the scatter updates the bars to summarize
+    only the selection; with no selection the bars summarize all samples. Group
+    identity is surfaced via the hover tooltip rather than a rendered legend.
 
     Args:
-        Z: Embedding coordinates with shape (n_samples, 2).
-        contributions: Array of shape (n_samples, 2, n_features).
-        group_names: Label per point. Any sequence of length ``n_samples`` —
-            elements are stringified and used as legend entries.
-        feature_names: Optional human-readable names for each feature.
-        top_k_global: Number of globally most-important features shipped to
-            the browser.
-        top_k_display: Number of features drawn in the bar chart(s) at a time.
-        reduction: Per-sample reduction across embedding dimensions for the
-            bar chart. ``"l2"`` renders one bar chart; ``None`` renders two
-            (one per dim).
-        title: Title of the scatter plot.
-        hover_images: Per-sample uint8 image array of shape (n_samples, H, W)
-            or (n_samples, H, W, 3/4). When set, each tooltip shows the
-            sample's image above the default index/group text. Mutually
-            exclusive with ``hover_tooltips`` / ``hover_data``.
-        hover_tooltips: Bokeh-style tooltip HTML template that fully replaces
-            the default tooltip. May reference built-in columns via
-            ``@index`` and ``@group``, plus any keys from ``hover_data``.
-        hover_data: Extra columns merged into the scatter ``ColumnDataSource``
-            for reference from ``hover_tooltips``. Keys must not collide with
-            reserved columns (``x``, ``y``, ``index``, ``group``,
-            ``color_value``).
+        Z:
+            Embedding coordinates of shape ``(n_samples, 2)``.
+        contributions:
+            Per-feature contributions to each embedding dimension, of shape
+            ``(n_samples, 2, n_features)``. Typically the output of
+            :meth:`~glass_box_umap.GlassBoxUMAP.compute_contributions` with
+            ``reduction=None``.
+        group_names:
+            Group label per sample. Any sequence of length ``n_samples``; elements
+            are stringified before use. Up to 10 groups use the Category10 palette;
+            beyond that a tiled Category20 palette is used.
+        feature_names:
+            Human-readable name per feature; length must equal
+            ``contributions.shape[2]``. Defaults to ``"Feature {i}"``.
+        top_k_global:
+            How many features to ship to the browser, ranked by global L2
+            importance. Features beyond this cap never appear in the bar chart, so
+            set it high enough to cover anything worth inspecting but low enough
+            that the page stays responsive.
+        top_k_display:
+            How many features the bar chart shows at any one time. The selected
+            features are reordered as the scatter selection or view toggle changes.
+        title:
+            Scatter-plot title.
+        hover_images:
+            Per-sample image to display in the tooltip, as a uint8 array of shape
+            ``(n_samples, H, W)`` (grayscale) or ``(n_samples, H, W, 3 | 4)``
+            (RGB / RGBA). Each image is resized to a small thumbnail and PNG-encoded
+            into the tooltip above the default index/group text. Mutually exclusive
+            with ``hover_tooltips`` and ``hover_data``.
+        hover_tooltips:
+            Bokeh tooltip HTML template that fully replaces the default. May
+            reference ``@index``, ``@group``, and any keys from ``hover_data``.
+        hover_data:
+            Extra columns merged into the scatter ``ColumnDataSource`` for reference
+            from ``hover_tooltips``. Keys must not collide with the reserved columns
+            ``x``, ``y``, ``index``, ``group``, ``color_value``.
+
+    Returns:
+        A Bokeh layout — scatter on the left, linked bar chart with a view toggle
+        on the right. Pass it to :func:`bokeh.io.show` or :func:`bokeh.io.save`.
     """
     _validate_shapes(Z, contributions, feature_names=feature_names, group_names=group_names)
     n_samples = Z.shape[0]
 
-    top = _select_top_features(contributions, feature_names, top_k_global, top_k_display, reduction)
+    top = _select_top_features(contributions, feature_names, top_k_global, top_k_display)
+    views = _compute_bar_views(contributions, top)
 
     tooltip_html, hover_extras = _resolve_hover(
         default_body="index: @index &nbsp;&middot;&nbsp; group: @group",
@@ -504,9 +596,8 @@ def plot_embedding_by_group(
         )
 
     bars = _build_bars(
-        contributions=contributions,
+        views=views,
         top=top,
-        reduction=reduction,
         n_samples=n_samples,
         scatter_source=scatter_source,
     )
@@ -521,7 +612,6 @@ def plot_embedding_by_feature_gradient(
     feature_names: list[str] | None = None,
     top_k_global: int = 200,
     top_k_display: int = 20,
-    reduction: Literal["l2"] | None = "l2",
     title: str = "",
     *,
     hover_images: NDArray[np.uint8],
@@ -535,7 +625,6 @@ def plot_embedding_by_feature_gradient(
     feature_names: list[str] | None = None,
     top_k_global: int = 200,
     top_k_display: int = 20,
-    reduction: Literal["l2"] | None = "l2",
     title: str = "",
     *,
     hover_tooltips: str | None = None,
@@ -549,54 +638,60 @@ def plot_embedding_by_feature_gradient(
     feature_names: list[str] | None = None,
     top_k_global: int = 200,
     top_k_display: int = 20,
-    reduction: Literal["l2"] | None = "l2",
     title: str = "",
     *,
     hover_images: NDArray[np.uint8] | None = None,
     hover_tooltips: str | None = None,
     hover_data: Mapping[str, Sequence[Any]] | None = None,
 ) -> LayoutDOM:
-    """Embedding colored by per-feature contribution with a fuzzy-search picker.
+    """Embedding scatter colored by a single feature's contribution, with picker.
 
-    A single gradient (Viridis) colors points by the L2-reduced contribution
-    of the selected feature. An autocomplete input above the scatter lets the
-    user pick a feature (substring match, case-insensitive). Bar charts to the
-    right work the same as in :func:`plot_embedding_by_group`.
-
-    Note: gradient coloring always uses the per-sample L2 scalar, independent
-    of ``reduction``. The ``reduction`` argument only controls the bar charts.
+    Renders a 2D scatter of ``Z`` colored by the L2-reduced contribution of one
+    feature, using a Viridis gradient. An autocomplete input above the scatter
+    selects which feature drives the coloring (substring match against feature
+    names, case-insensitive). The bar chart on the right has the same view
+    toggle described in :func:`plot_embedding_by_group`; lasso- or box-selecting
+    points in the scatter updates the bars to summarize only the selection.
 
     Args:
-        Z: Embedding coordinates with shape (n_samples, 2).
-        contributions: Array of shape (n_samples, 2, n_features).
-        feature_names: Optional human-readable names for each feature.
-        top_k_global: Number of globally most-important features shipped to
-            the browser. Caps the size of the autocomplete list.
-        top_k_display: Number of features drawn in the bar chart(s) at a time.
-        reduction: Per-sample reduction across embedding dimensions for the
-            bar chart. See :func:`plot_embedding_by_group`.
-        title: Title of the scatter plot.
-        hover_images: Per-sample uint8 image array of shape (n_samples, H, W)
-            or (n_samples, H, W, 3/4). When set, each tooltip shows the
-            sample's image above the default index text. Mutually exclusive
-            with ``hover_tooltips`` / ``hover_data``.
-        hover_tooltips: Bokeh-style tooltip HTML template that fully replaces
-            the default tooltip. May reference ``@index`` plus any keys from
-            ``hover_data``.
-        hover_data: Extra columns merged into the scatter ``ColumnDataSource``
-            for reference from ``hover_tooltips``. Keys must not collide with
-            reserved columns (``x``, ``y``, ``index``, ``group``,
-            ``color_value``).
+        Z:
+            Embedding coordinates of shape ``(n_samples, 2)``.
+        contributions:
+            Per-feature contributions of shape ``(n_samples, 2, n_features)``.
+        feature_names:
+            Human-readable name per feature; length must equal
+            ``contributions.shape[2]``. Populates the autocomplete completion
+            list. Defaults to ``"Feature {i}"``.
+        top_k_global:
+            How many features to ship to the browser, ranked by global L2
+            importance. Caps the size of the autocomplete list — features
+            beyond this cap cannot be selected for coloring.
+        top_k_display:
+            How many features the bar chart shows at any one time.
+        title:
+            Scatter-plot title.
+        hover_images:
+            See :func:`plot_embedding_by_group`. Mutually exclusive with
+            ``hover_tooltips`` and ``hover_data``.
+        hover_tooltips:
+            Bokeh tooltip HTML template that fully replaces the default. May
+            reference ``@index`` plus any keys from ``hover_data``.
+        hover_data:
+            Extra columns merged into the scatter ``ColumnDataSource`` for
+            reference from ``hover_tooltips``. Keys must not collide with the
+            reserved columns ``x``, ``y``, ``index``, ``group``, ``color_value``.
+
+    Returns:
+        A Bokeh layout — feature picker on top, scatter + linked bar chart with a
+        view toggle below. Pass it to :func:`bokeh.io.show` or :func:`bokeh.io.save`.
     """
     _validate_shapes(Z, contributions, feature_names=feature_names)
     n_samples = Z.shape[0]
 
-    top = _select_top_features(contributions, feature_names, top_k_global, top_k_display, reduction)
+    top = _select_top_features(contributions, feature_names, top_k_global, top_k_display)
+    views = _compute_bar_views(contributions, top)
 
-    reduced_l2 = (
-        top.reduced if top.reduced is not None else reduce_contributions(contributions, "l2")
-    )
-    reduced_kept = reduced_l2[:, top.keep_idx].astype(np.float32)
+    reduced_kept = views.l2
     initial_color = reduced_kept[:, 0]
 
     tooltip_html, hover_extras = _resolve_hover(
@@ -676,9 +771,8 @@ def plot_embedding_by_feature_gradient(
     )
 
     bars = _build_bars(
-        contributions=contributions,
+        views=views,
         top=top,
-        reduction=reduction,
         n_samples=n_samples,
         scatter_source=scatter_source,
     )
@@ -694,7 +788,6 @@ def plot_embedding_by_top_feature(
     top_n: int = 20,
     top_k_global: int = 200,
     top_k_display: int = 20,
-    reduction: Literal["l2"] | None = "l2",
     title: str = "",
     *,
     hover_images: NDArray[np.uint8],
@@ -709,7 +802,6 @@ def plot_embedding_by_top_feature(
     top_n: int = 20,
     top_k_global: int = 200,
     top_k_display: int = 20,
-    reduction: Literal["l2"] | None = "l2",
     title: str = "",
     *,
     hover_tooltips: str | None = None,
@@ -724,43 +816,57 @@ def plot_embedding_by_top_feature(
     top_n: int = 20,
     top_k_global: int = 200,
     top_k_display: int = 20,
-    reduction: Literal["l2"] | None = "l2",
     title: str = "",
     *,
     hover_images: NDArray[np.uint8] | None = None,
     hover_tooltips: str | None = None,
     hover_data: Mapping[str, Sequence[Any]] | None = None,
 ) -> LayoutDOM:
-    """Embedding where each point is colored by its top-contributing feature.
+    """Embedding scatter colored by each sample's most-contributing feature.
 
-    Points whose top-contributing feature is not among the ``top_n`` most
-    common top features are filtered out. Delegates rendering to
-    :func:`plot_embedding_by_group`.
+    For every sample, the feature with the largest L2-reduced contribution is
+    chosen as that sample's group. Samples whose top feature is not among the
+    ``top_n`` most-frequently-occurring top features across the dataset are
+    dropped — this keeps the color count manageable when many features each
+    "win" for only a handful of samples. The remaining samples are rendered
+    via :func:`plot_embedding_by_group`, so all interactions and arguments
+    there apply here.
 
     Args:
-        Z: Embedding coordinates with shape (n_samples, 2).
-        contributions: Array of shape (n_samples, 2, n_features).
-        feature_names: Optional human-readable names for each feature.
-        top_n: Number of most-common top features to keep.
-        top_k_global: Passed through to :func:`plot_embedding_by_group`.
-        top_k_display: Passed through to :func:`plot_embedding_by_group`.
-        reduction: Must not be ``None``. Top-feature ranking is undefined for
-            2D contributions.
-        title: Title of the scatter plot.
-        hover_images: See :func:`plot_embedding_by_group`. Filtered alongside
-            ``Z`` to match the kept points.
-        hover_tooltips: See :func:`plot_embedding_by_group`.
-        hover_data: See :func:`plot_embedding_by_group`. Each column is
-            filtered alongside ``Z`` to match the kept points.
+        Z:
+            Embedding coordinates of shape ``(n_samples, 2)``.
+        contributions:
+            Per-feature contributions of shape ``(n_samples, 2, n_features)``.
+        feature_names:
+            Human-readable name per feature; length must equal
+            ``contributions.shape[2]``. Used both to identify each sample's
+            top feature and as the group label. Defaults to ``"Feature {i}"``.
+        top_n:
+            Cap on the number of distinct top-feature groups in the plot.
+            Samples whose top-contributing feature falls outside the most-common
+            ``top_n`` are filtered out. Reducing ``top_n`` hides rare top
+            features and shrinks the dataset rendered.
+        top_k_global:
+            Forwarded to :func:`plot_embedding_by_group`.
+        top_k_display:
+            Forwarded to :func:`plot_embedding_by_group`.
+        title:
+            Scatter-plot title; defaults to ``"Top-feature groups"``.
+        hover_images:
+            See :func:`plot_embedding_by_group`. Filtered alongside ``Z`` so
+            the hover image matches each kept point.
+        hover_tooltips:
+            See :func:`plot_embedding_by_group`.
+        hover_data:
+            See :func:`plot_embedding_by_group`. Each column is filtered
+            alongside ``Z``.
+
+    Returns:
+        The Bokeh layout produced by :func:`plot_embedding_by_group` — scatter
+        on the left, linked bar chart with a view toggle on the right. Pass it to
+        :func:`bokeh.io.show` or :func:`bokeh.io.save`.
     """
     _validate_shapes(Z, contributions, feature_names=feature_names)
-
-    if reduction is None:
-        raise ValueError(
-            "plot_embedding_by_top_feature requires reduction to be set "
-            "(top-feature ranking is undefined for 2D contributions). "
-            "Pass reduction='l2'."
-        )
 
     n_features = contributions.shape[-1]
     names_arr = (
@@ -780,7 +886,6 @@ def plot_embedding_by_top_feature(
         feature_names=list(names_arr),
         top_k_global=top_k_global,
         top_k_display=top_k_display,
-        reduction=reduction,
         title=title or "Top-feature groups",
     )
 
@@ -799,102 +904,3 @@ def plot_embedding_by_top_feature(
     )
 
 
-def _build_reduced_bars(
-    reduced: NDArray[np.floating],
-    top: TopFeatures,
-    n_samples: int,
-    scatter_source: ColumnDataSource,
-    reduction: str,
-) -> LayoutDOM:
-    totals = reduced.sum(axis=1, keepdims=True)
-    totals = np.where(totals == 0, 1, totals)
-    normalized = reduced / totals
-    kept = normalized[:, top.keep_idx].astype(np.float32)
-    contrib_source = ColumnDataSource({f"c{k}": kept[:, k] for k in range(top.n_kept)})
-
-    init_mean = kept.mean(axis=0)
-    init_top = np.argsort(init_mean)[::-1][: top.display_k][::-1]
-    init_feat = [top.kept_names[i] for i in init_top]
-    bar_source = ColumnDataSource(
-        data=dict(feature=init_feat, mean=[float(init_mean[i]) for i in init_top])
-    )
-
-    p_bar = figure(
-        title=f"Mean fractional contribution ({reduction})",
-        width=400,
-        height=600,
-        y_range=FactorRange(factors=init_feat),
-        tools="",
-        toolbar_location=None,
-    )
-    p_bar.hbar(y="feature", right="mean", height=0.8, source=bar_source, color=BAR_COLOR_REDUCED)
-    p_bar.xgrid.grid_line_color = None
-
-    cb = _linked_bars_callback(
-        scatter_source=scatter_source,
-        contrib_sources=[contrib_source],
-        bar_sources=[bar_source],
-        bar_ranges=[p_bar.y_range],
-        top=top,
-        n_samples=n_samples,
-    )
-    scatter_source.selected.js_on_change("indices", cb)
-
-    return p_bar
-
-
-def _build_two_dim_bars(
-    contributions: NDArray[np.floating],
-    top: TopFeatures,
-    n_samples: int,
-    scatter_source: ColumnDataSource,
-) -> LayoutDOM:
-    kept = contributions[:, :, top.keep_idx].astype(np.float32)
-    contrib_x_source = ColumnDataSource({f"c{k}": kept[:, 0, k] for k in range(top.n_kept)})
-    contrib_y_source = ColumnDataSource({f"c{k}": kept[:, 1, k] for k in range(top.n_kept)})
-
-    init_mean_x = kept[:, 0, :].mean(axis=0)
-    init_mean_y = kept[:, 1, :].mean(axis=0)
-    init_score = np.maximum(np.abs(init_mean_x), np.abs(init_mean_y))
-    init_top = np.argsort(init_score)[::-1][: top.display_k][::-1]
-    init_feat = [top.kept_names[i] for i in init_top]
-    bar_x_source = ColumnDataSource(
-        data=dict(feature=init_feat, mean=[float(init_mean_x[i]) for i in init_top])
-    )
-    bar_y_source = ColumnDataSource(
-        data=dict(feature=init_feat, mean=[float(init_mean_y[i]) for i in init_top])
-    )
-
-    p_bar_x = figure(
-        title="Mean contribution — dim 1",
-        width=400,
-        height=300,
-        y_range=FactorRange(factors=init_feat),
-        tools="",
-        toolbar_location=None,
-    )
-    p_bar_x.hbar(y="feature", right="mean", height=0.8, source=bar_x_source, color=BAR_COLOR_DIM_X)
-    p_bar_x.xgrid.grid_line_color = None
-
-    p_bar_y = figure(
-        title="Mean contribution — dim 2",
-        width=400,
-        height=300,
-        y_range=FactorRange(factors=init_feat),
-        tools="",
-        toolbar_location=None,
-    )
-    p_bar_y.hbar(y="feature", right="mean", height=0.8, source=bar_y_source, color=BAR_COLOR_DIM_Y)
-    p_bar_y.xgrid.grid_line_color = None
-
-    cb = _linked_bars_callback(
-        scatter_source=scatter_source,
-        contrib_sources=[contrib_x_source, contrib_y_source],
-        bar_sources=[bar_x_source, bar_y_source],
-        bar_ranges=[p_bar_x.y_range, p_bar_y.y_range],
-        top=top,
-        n_samples=n_samples,
-    )
-    scatter_source.selected.js_on_change("indices", cb)
-
-    return column(p_bar_x, p_bar_y)
