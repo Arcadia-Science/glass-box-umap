@@ -67,45 +67,6 @@ def reduce_contributions(
             return np.linalg.norm(contributions, axis=1)
 
 
-def groups_from_top_features(
-    contributions: NDArray[np.floating],
-    feature_names: NDArray[np.str_] | None = None,
-    top_n: int = 60,
-) -> tuple[NDArray[np.integer], list[str], NDArray[np.bool_]]:
-    """Assign each point to its highest-contributing feature, keeping only the most common.
-
-    Args:
-        contributions:
-            Per-feature contribution scores with shape (n_samples, n_features) or
-            (n_samples, n_components, n_features). If 3D, L2 reduction is applied
-            across embedding dimensions.
-        feature_names:
-            Feature names with shape (n_features,), matching columns of contributions.
-            If None, defaults to "0", "1", "2", etc.
-        top_n:
-            Number of most frequent top features to keep.
-
-    Returns:
-        group_ids: Integer group ID per kept point, shape (n_kept,).
-        group_names: Name for each group, indexed by group ID.
-        mask: Boolean mask of shape (n_samples,) indicating which points are kept.
-    """
-    if contributions.ndim == 3:
-        contributions = reduce_contributions(contributions)
-
-    if feature_names is None:
-        feature_names = np.array([str(i) for i in range(contributions.shape[1])])
-
-    top_feature_per_point = feature_names[contributions.argmax(axis=1)]
-    unique_features, counts = np.unique(top_feature_per_point, return_counts=True)
-    top_features = unique_features[np.argsort(counts)[::-1][:top_n]]
-
-    mask = np.isin(top_feature_per_point, top_features)
-    feature_to_id = {name: i for i, name in enumerate(top_features)}
-    group_ids = np.array([feature_to_id[f] for f in top_feature_per_point[mask]])
-    group_names = list(top_features)
-
-    return group_ids, group_names, mask
 
 
 @dataclass
