@@ -28,14 +28,14 @@ def make_cmap(n_colors: int = 40, seed: int = 42) -> ListedColormap:
     return ListedColormap(colors)
 
 
-def plot_embedding(
+def plot_embedding_static(
     Z: NDArray[np.floating],
     group_ids: NDArray[np.integer] | None = None,
     group_names: list[str] | None = None,
     cmap: ListedColormap | None = None,
     marker_size: float = 2.0,
 ) -> Figure:
-    """Scatter plot of a 2D embedding, optionally colored by group.
+    """Static (matplotlib) scatter plot of a 2D embedding, optionally colored by group.
 
     Args:
         Z:
