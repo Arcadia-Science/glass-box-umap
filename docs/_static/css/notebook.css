@@ -5,3 +5,7 @@
 .cell_input {
     margin-bottom: 1rem;
 }
+
+.cell_output .output.text_html {
+    overflow-x: auto;
+}

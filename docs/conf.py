@@ -41,6 +41,7 @@ extensions = [
     "resolve_missing_references",
     "fix_dataclass_defaults",
     "restructure_class_layout",
+    "patch_type_alias_subscript",
 ]
 
 
@@ -116,7 +117,8 @@ copybutton_exclude = ".linenos, .gp, .go"
 # -- myst options
 myst_enable_extensions = ["colon_fence", "dollarmath", "amsmath"]
 
-togglebutton_hint = "Click to expand"
+togglebutton_hint = ""
+togglebutton_hint_hide = ""
 
 # -- autoapi configuration ---------------------------------------------------
 
@@ -127,6 +129,17 @@ autodoc_typehints_description_target = "documented_params"  # autoapi respects t
 python_use_unqualified_type_names = True
 autodoc_class_signature = "mixed"
 autoclass_content = "class"
+autodoc_type_aliases = {
+    "NDArray": "numpy.typing.NDArray",
+    "np.bool_": "numpy.bool_",
+    "np.float32": "numpy.float32",
+    "np.float64": "numpy.float64",
+    "np.floating": "numpy.floating",
+    "np.integer": "numpy.integer",
+    "np.intp": "numpy.intp",
+    "np.str_": "numpy.str_",
+    "np.uint8": "numpy.uint8",
+}
 
 autoapi_type = "python"
 autoapi_dirs = ["../src"]
