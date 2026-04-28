@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -15,7 +16,7 @@ GLASSBOX_DEFAULT_ENCODER_NAME = "glassbox_default_encoder"
 register_encoder(GLASSBOX_DEFAULT_ENCODER_NAME)(DeepPReLUNet)
 
 
-@dataclass
+@dataclass(eq=False)
 class GlassBoxUMAP(ParametricUMAP):
     """Glass Box UMAP model.
 

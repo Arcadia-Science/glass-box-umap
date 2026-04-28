@@ -1,3 +1,4 @@
+from __future__ import annotations
 import tempfile
 from contextlib import ExitStack
 from dataclasses import asdict, dataclass, field, fields
@@ -15,6 +16,7 @@ from torch import Tensor
 from typing_extensions import Self
 
 from ..utils import device_to_lightning_acceleration_config, get_default_device
+from ._equality import parametric_umap_equal
 from .data import UMAPDataset
 from .graph import get_umap_graph
 from .lightning import UMAPDataModule, UMAPLightningModule
@@ -28,7 +30,7 @@ def _to_numpy_float32(X: NDArray[np.floating] | Tensor) -> NDArray[np.float32]:
     return cast(NDArray[np.float32], X.astype(np.float32))
 
 
-@dataclass
+@dataclass(eq=False)
 class ParametricUMAP:
     """Parametric UMAP model.
 
@@ -105,6 +107,17 @@ class ParametricUMAP:
     _pca: PCA | None = field(init=False, default=None)
     _mean: NDArray[np.floating] | None = field(init=False, default=None)
     _device: torch.device = field(init=False, default_factory=get_default_device)
+
+    def __eq__(self, other: ParametricUMAP) -> bool:
+        """Semantic equality of ParametricUMAP objects.
+
+        See Also:
+            - :func:`parametric_umap_equal` for definition.
+        """
+        if other.__class__ is not self.__class__:
+            return NotImplemented
+
+        return parametric_umap_equal(self, other)
 
     @property
     def _fitted_model(self) -> UMAPLightningModule:
