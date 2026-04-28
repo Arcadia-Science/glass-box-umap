@@ -64,6 +64,12 @@ smartquotes_action = "qe"
 nb_execution_mode = "off"
 nb_execution_allow_errors = True
 
+nb_mime_priority_overrides = [
+    ("html", "application/javascript", 5),
+    ("html", "application/vnd.bokehjs_load.v0+json", 100),
+    ("html", "application/vnd.bokehjs_exec.v0+json", 100),
+]
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -167,4 +173,5 @@ html_css_files = [
     "css/notebook.css",
     "css/rubric.css",
     "css/sidebar.css",
+    "css/admonitions.css",
 ]
