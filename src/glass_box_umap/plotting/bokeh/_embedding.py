@@ -17,7 +17,7 @@ from ._data import (
     validate_shapes,
 )
 from ._hover import HoverTooltips, resolve_hover
-from ._scatter import build_scatter, make_scatter_source
+from ._scatter import OutputBackend, build_scatter, make_scatter_source
 
 
 def plot_embedding(
@@ -31,6 +31,7 @@ def plot_embedding(
     hover_images: NDArray[np.uint8] | None = None,
     hover_tooltips: str | None = None,
     hover_data: Mapping[str, Sequence[Any]] | None = None,
+    output_backend: OutputBackend = "webgl",
 ) -> LayoutDOM:
     """Interactive 2D embedding scatter linked to a feature-contribution bar chart.
 
@@ -98,6 +99,14 @@ def plot_embedding(
             ``x``, ``y``, ``index``, ``group``, ``color_value``,
             ``top_feature_group``, ``top_feature_name``, ``top_data_value``,
             ``picker_data_value``, ``sample_rank``.
+        output_backend:
+            Bokeh rendering backend for the scatter. Defaults to ``"webgl"``,
+            which offloads rendering to the GPU and stays smooth at high
+            sample counts. Switch to ``"canvas"`` if the GPU/driver/browser
+            combination renders the plot incorrectly (e.g. blank canvas,
+            wrong-sized points, or color banding) — canvas is slower but
+            uses CPU rasterization and works on any setup that supports
+            Bokeh at all.
 
     Returns:
         A Bokeh layout — color-by controls + scatter on the left, linked bar
@@ -184,6 +193,7 @@ def plot_embedding(
         initial_gradient=initial_gradient,
         initial_mode=initial_mode,
         group_names=group_names,
+        output_backend=output_backend,
     )
 
     controls = build_controls(

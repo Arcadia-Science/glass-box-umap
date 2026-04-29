@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from bokeh.models import (
@@ -20,6 +20,8 @@ from numpy.typing import NDArray
 from ._colors import nondegenerate_range, pick_palette
 from ._hover import HoverTooltips
 from ._js import NAMED_FILTER
+
+OutputBackend = Literal["canvas", "webgl"]
 
 
 @dataclass(frozen=True)
@@ -57,12 +59,13 @@ class ScatterArtifacts:
     gradient_mapper: LinearColorMapper
 
 
-def _base_figure() -> figure:
+def _base_figure(output_backend: OutputBackend) -> figure:
     tools = "pan,wheel_zoom,box_zoom,reset,lasso_select,box_select"
     return figure(
         title="Embedding — lasso or box-select to filter",
         sizing_mode="stretch_both",
         tools=tools,
+        output_backend=output_backend,
     )
 
 
@@ -87,6 +90,7 @@ def build_scatter(
     initial_gradient: NDArray[np.floating],
     initial_mode: str,
     group_names: Sequence[Any] | NDArray | None,
+    output_backend: OutputBackend,
 ) -> ScatterArtifacts:
     """Assemble the scatter figure with all glyphs, color mapper, color bar, and hover tools.
 
@@ -96,7 +100,7 @@ def build_scatter(
     are visible at first paint; the color-by toggle in :mod:`._controls`
     flips visibility on user interaction.
     """
-    p_scatter = _base_figure()
+    p_scatter = _base_figure(output_backend)
 
     other_view = CDSView(
         filter=GroupFilter(column_name="top_feature_group", group="(other)"),
