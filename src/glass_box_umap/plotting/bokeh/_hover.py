@@ -9,21 +9,7 @@ from numpy.typing import NDArray
 from PIL import Image
 
 _HOVER_IMAGE_LONGEST_SIDE = 64
-_RESERVED_HOVER_KEYS = frozenset(
-    {
-        "x",
-        "y",
-        "index",
-        "group",
-        "color_value",
-        "top_feature_group",
-        "top_feature_name",
-        "top_data_value",
-        "picker_data_value",
-        "sample_rank",
-        "__hover_image",
-    }
-)
+_HOVER_IMAGE_KEY = "__hover_image"
 
 
 @dataclass(frozen=True)
@@ -74,6 +60,8 @@ def resolve_hover(
     hover_images: NDArray[np.uint8] | None,
     hover_tooltips: str | None,
     hover_data: Mapping[str, Sequence[Any]] | None,
+    n_samples: int,
+    occupied_keys: set[str],
 ) -> tuple[HoverTooltips, dict[str, NDArray[Any]]]:
     """Resolve hover customization into per-mode tooltip templates and CDS extras.
 
@@ -95,31 +83,52 @@ def resolve_hover(
         hover_tooltips: Tooltip HTML that fully replaces the defaults across
             all modes.
         hover_data: Extra CDS columns referenced by ``@field`` in
-            ``hover_tooltips``. Keys must not collide with reserved columns.
+            ``hover_tooltips``. Each value must have length ``n_samples``.
+            Keys must not collide with ``occupied_keys``.
+        n_samples: Expected length of every ``hover_data`` value and of
+            ``hover_images`` along axis 0.
+        occupied_keys: CDS column names already taken by the orchestrator —
+            ``hover_data`` keys are checked against this set so user columns
+            can't shadow built-in ones. The hover module's own
+            ``__hover_image`` key is also reserved.
 
     Raises:
-        ValueError: If ``hover_images`` is combined with the other two, or if
-            ``hover_data`` contains a reserved key.
+        ValueError: If ``hover_images`` is combined with the other two, if
+            ``hover_data`` contains a reserved key, if ``hover_data`` values
+            don't all have length ``n_samples``, or if ``hover_images`` doesn't
+            have length ``n_samples`` along axis 0.
     """
     if hover_images is not None and (hover_tooltips is not None or hover_data is not None):
         raise ValueError("Pass either hover_images or hover_tooltips/hover_data, not both.")
 
     if hover_images is not None:
+        if hover_images.shape[0] != n_samples:
+            raise ValueError(
+                f"hover_images has length {hover_images.shape[0]} along axis 0, "
+                f"but expected {n_samples}."
+            )
         uris = [_to_hover_uri(img) for img in hover_images]
-        img_prefix = "<img src='@__hover_image' style='display:block; margin-bottom:4px'/>"
+        img_prefix = f"<img src='@{_HOVER_IMAGE_KEY}' style='display:block; margin-bottom:4px'/>"
         tooltips = HoverTooltips(
             group=f"<div>{img_prefix}{default_bodies.group}</div>",
             feature=f"<div>{img_prefix}{default_bodies.feature}</div>",
             top=f"<div>{img_prefix}{default_bodies.top}</div>",
         )
-        return tooltips, {"__hover_image": np.asarray(uris, dtype=object)}
+        return tooltips, {_HOVER_IMAGE_KEY: np.asarray(uris, dtype=object)}
 
     extras: dict[str, NDArray[Any]] = {}
     if hover_data is not None:
-        collisions = set(hover_data) & _RESERVED_HOVER_KEYS
+        reserved = occupied_keys | {_HOVER_IMAGE_KEY}
+        collisions = set(hover_data) & reserved
         if collisions:
             raise ValueError(
                 f"hover_data keys collide with reserved CDS columns: {sorted(collisions)}"
+            )
+        bad_lengths = {k: len(v) for k, v in hover_data.items() if len(v) != n_samples}
+        if bad_lengths:
+            raise ValueError(
+                f"hover_data values must all have length {n_samples}; "
+                f"got mismatched lengths: {bad_lengths}"
             )
         extras = {k: np.asarray(v) for k, v in hover_data.items()}
 

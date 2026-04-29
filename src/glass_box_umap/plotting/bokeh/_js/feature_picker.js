@@ -9,9 +9,9 @@ for (let i = 0; i < col.length; i++) {
     if (v < lo) lo = v;
     if (v > hi) hi = v;
 }
-if (hi - lo < 1e-12) {
+if (hi - lo < degenerate_eps) {
     const mid = (lo + hi) / 2;
-    const span = Math.max(Math.abs(mid) * 0.05, 1e-6);
+    const span = Math.max(Math.abs(mid) * degenerate_frac, degenerate_min_span);
     lo = mid - span;
     hi = mid + span;
 }

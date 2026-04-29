@@ -12,6 +12,13 @@ from bokeh.models import (
 )
 from numpy.typing import NDArray
 
+from ._colors import (
+    DEGENERATE_RANGE_EPS,
+    DEGENERATE_RANGE_FRAC,
+    DEGENERATE_RANGE_MIN_SPAN,
+    LABEL_COLOR,
+    LABEL_FONT_SIZE,
+)
 from ._data import BarViews, TopFeatures
 from ._js import COLOR_BY_MODE, FEATURE_PICKER, TOP_N_SLIDER
 from ._scatter import ScatterArtifacts
@@ -60,7 +67,7 @@ def build_controls(
     """
     color_by_prefix = Div(
         text="<b>Color by:</b>",
-        styles={"color": "#444444", "font-size": "13px", "padding-top": "8px"},
+        styles={"color": LABEL_COLOR, "font-size": LABEL_FONT_SIZE, "padding-top": "8px"},
     )
     color_by_widget = RadioButtonGroup(labels=color_modes, active=0)
     feature_picker = AutocompleteInput(
@@ -74,8 +81,8 @@ def build_controls(
         max_completions=15,
         width=260,
         visible=(initial_mode == "Feature"),
-        styles={"color": "#444444"},
-        stylesheets=[InlineStyleSheet(css=".bk-input { color: #444444; }")],
+        styles={"color": LABEL_COLOR},
+        stylesheets=[InlineStyleSheet(css=f".bk-input {{ color: {LABEL_COLOR}; }}")],
     )
     top_n_slider = Slider(
         start=1,
@@ -85,7 +92,7 @@ def build_controls(
         title="Top features",
         width=260,
         visible=(initial_mode == "Top feature"),
-        styles={"color": "#444444"},
+        styles={"color": LABEL_COLOR},
     )
 
     color_by_widget.js_on_change(
@@ -122,6 +129,9 @@ def build_controls(
                 values_source=feature_values_kept_source,
                 mapper=scatter.gradient_mapper,
                 feature_names=top.kept_names,
+                degenerate_eps=DEGENERATE_RANGE_EPS,
+                degenerate_frac=DEGENERATE_RANGE_FRAC,
+                degenerate_min_span=DEGENERATE_RANGE_MIN_SPAN,
             ),
             code=FEATURE_PICKER,
         ),

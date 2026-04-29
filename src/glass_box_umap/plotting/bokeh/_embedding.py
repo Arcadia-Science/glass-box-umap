@@ -92,10 +92,11 @@ def plot_embedding(
             provided), and any keys from ``hover_data``.
         hover_data:
             Extra columns merged into the scatter ``ColumnDataSource`` for
-            reference from ``hover_tooltips``. Keys must not collide with the
-            reserved columns ``x``, ``y``, ``index``, ``group``,
-            ``color_value``, ``top_feature_group``, ``top_feature_name``,
-            ``top_data_value``, ``picker_data_value``, ``sample_rank``.
+            reference from ``hover_tooltips``. Each value must have length
+            ``n_samples``. Keys must not collide with the reserved columns
+            ``x``, ``y``, ``index``, ``group``, ``color_value``,
+            ``top_feature_group``, ``top_feature_name``, ``top_data_value``,
+            ``picker_data_value``, ``sample_rank``.
 
     Returns:
         A Bokeh layout — color-by controls + scatter on the left, linked bar
@@ -130,13 +131,19 @@ def plot_embedding(
     initial_gradient = views.l2[:, 0].astype(np.float32).copy()
     top_feature_name = np.asarray([top.kept_names[int(k)] for k in top_kept_idx])
 
+    extras: dict[str, NDArray[Any]] = {
+        "color_value": initial_gradient,
+        "top_feature_group": initial_top_group,
+        "top_feature_name": top_feature_name,
+        "sample_rank": sample_rank,
+    }
     feature_values_kept: NDArray[np.floating] | None = None
-    top_data_value: NDArray[np.floating] | None = None
-    picker_data_value: NDArray[np.floating] | None = None
     if has_values:
         feature_values_kept = feature_values[:, top.keep_idx].astype(np.float32)
-        top_data_value = feature_values_kept[np.arange(n_samples), top_kept_idx]
-        picker_data_value = feature_values_kept[:, 0].copy()
+        extras["top_data_value"] = feature_values_kept[np.arange(n_samples), top_kept_idx]
+        extras["picker_data_value"] = feature_values_kept[:, 0].copy()
+    if has_groups:
+        extras["group"] = np.asarray([str(g) for g in group_names])
 
     base_body = "index: @index"
     if has_groups:
@@ -154,22 +161,12 @@ def plot_embedding(
         hover_images=hover_images,
         hover_tooltips=hover_tooltips,
         hover_data=hover_data,
+        n_samples=n_samples,
+        occupied_keys=set(extras.keys()) | {"x", "y", "index"},
     )
+    extras.update(hover_extras)
 
-    extras: dict[str, NDArray[Any]] = {
-        "color_value": initial_gradient,
-        "top_feature_group": initial_top_group,
-        "top_feature_name": top_feature_name,
-        "sample_rank": sample_rank,
-        **hover_extras,
-    }
-    if has_values:
-        extras["top_data_value"] = top_data_value  # type: ignore
-        extras["picker_data_value"] = picker_data_value  # type: ignore
-    if has_groups:
-        extras["group"] = np.asarray([str(g) for g in group_names])
-
-    scatter_source = make_scatter_source(Z, n_samples, extras)
+    scatter_source = make_scatter_source(Z, extras)
 
     scatter = build_scatter(
         scatter_source=scatter_source,

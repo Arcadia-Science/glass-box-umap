@@ -68,16 +68,15 @@ def _base_figure() -> figure:
 
 def make_scatter_source(
     Z: NDArray[np.floating],
-    n_samples: int,
     extras: dict[str, NDArray[Any]],
 ) -> ColumnDataSource:
-    data: dict[str, NDArray[Any]] = {
+    data: dict[str, Any] = {
         "x": Z[:, 0].astype(np.float32),
         "y": Z[:, 1].astype(np.float32),
-        "index": np.arange(n_samples),
+        "index": np.arange(Z.shape[0]),
         **extras,
     }
-    return ColumnDataSource(data)  # pyright: ignore[reportArgumentType]
+    return ColumnDataSource(data)
 
 
 def build_scatter(

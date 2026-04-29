@@ -4,7 +4,7 @@ from bokeh.models import ColumnDataSource, CustomJS, Div, FactorRange, RadioButt
 from bokeh.models.layouts import LayoutDOM
 from bokeh.plotting import figure
 
-from ._colors import BAR_COLOR_REDUCED
+from ._colors import BAR_COLOR_REDUCED, LABEL_COLOR, LABEL_FONT_SIZE
 from ._data import BarViews, TopFeatures
 from ._js import LINKED_BARS
 
@@ -58,7 +58,7 @@ def build_bars(
 
     heading_div = Div(
         text=f"<b>Mean contribution — {_VIEW_LABELS[0]}</b>",
-        styles={"color": "#444444", "font-size": "13px"},
+        styles={"color": LABEL_COLOR, "font-size": LABEL_FONT_SIZE},
     )
     view_widget = RadioButtonGroup(labels=list(_VIEW_LABELS), active=0)
 
