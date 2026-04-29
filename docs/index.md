@@ -24,8 +24,10 @@ For a detailed explanation of the methodology, see the [Methodology](resources/m
    :hidden:
    :caption: User Guide
 
-   getting_started/install
-   getting_started/quickstart
+   user_guide/install
+   user_guide/basic_usage
+   user_guide/saving_and_loading
+   user_guide/embedding_comparison
 
 .. toctree::
    :hidden:

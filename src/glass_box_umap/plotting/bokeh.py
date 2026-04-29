@@ -18,12 +18,13 @@ from bokeh.models import (
     FactorRange,
     GroupFilter,
     HoverTool,
+    InlineStyleSheet,
     LinearColorMapper,
     RadioButtonGroup,
     Slider,
 )
 from bokeh.models.layouts import LayoutDOM
-from bokeh.palettes import Category10, Category20, Viridis256
+from bokeh.palettes import Viridis256
 from bokeh.plotting import figure
 from numpy.typing import NDArray
 from PIL import Image
@@ -32,10 +33,22 @@ from ..jacobian import reduce_contributions
 
 BAR_COLOR_REDUCED = "#756bb1"
 
-_COLUMN_HEIGHT = 720
+_TOP_K_DISPLAY = 36
 _HOVER_IMAGE_LONGEST_SIDE = 64
 _RESERVED_HOVER_KEYS = frozenset(
-    {"x", "y", "index", "group", "color_value", "top_feature_group", "sample_rank", "__hover_image"}
+    {
+        "x",
+        "y",
+        "index",
+        "group",
+        "color_value",
+        "top_feature_group",
+        "top_feature_name",
+        "top_data_value",
+        "picker_data_value",
+        "sample_rank",
+        "__hover_image",
+    }
 )
 
 _VIEW_LABELS = ("L2", "normed L2", "Dim 1", "Dim 2")
@@ -136,6 +149,26 @@ class TopFeatures:
 
 
 @dataclass(frozen=True)
+class HoverTooltips:
+    """Per-color-mode tooltip HTML used by the scatter's HoverTools.
+
+    Each glyph set in the scatter is paired with one of these templates so the
+    tooltip surfaces info relevant to the current "Color by" mode. When the
+    user passes ``hover_tooltips``, all three fields hold the same override
+    string.
+
+    Attributes:
+        group: Tooltip used by the per-group glyphs ("Color by" → Group).
+        feature: Tooltip used by the gradient glyph ("Color by" → Feature).
+        top: Tooltip used by the top-feature glyphs ("Color by" → Top feature).
+    """
+
+    group: str
+    feature: str
+    top: str
+
+
+@dataclass(frozen=True)
 class BarViews:
     """Three pre-computed ``(n_samples, n_kept)`` views of the kept-feature pool.
 
@@ -160,10 +193,18 @@ class BarViews:
     d1: NDArray[np.floating]
 
 
+_GLASBEY_CATEGORY10: list[str] = [
+    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b",
+    "#e377c2", "#7f7f7f", "#bcbd22", "#17becf", "#3a0183", "#004301",
+    "#0fffa9", "#5e0040", "#bcbcff", "#d8afa2", "#b80080", "#004e53",
+    "#6b6500", "#7d0200", "#6126ff", "#ffff9a", "#574964", "#8cb894",
+    "#94fcff", "#028268", "#91ff00", "#8300a0", "#ad8944", "#5b3400",
+    "#ffc0f3", "#ff6f76",
+]
+
+
 def _pick_palette(n: int) -> list[str]:
-    if n <= 10:
-        return list(Category10[10])[:n]
-    base = list(Category20[20])
+    base = _GLASBEY_CATEGORY10
     tiles = (n + len(base) - 1) // len(base)
     return (base * tiles)[:n]
 
@@ -173,14 +214,15 @@ def _validate_shapes(
     contributions: NDArray[np.floating],
     feature_names: list[str] | None = None,
     group_names: Sequence[Any] | NDArray | None = None,
+    feature_values: NDArray[np.floating] | None = None,
 ) -> None:
     """Validate shape/length invariants shared by the public plot functions.
 
     Raises:
         ValueError: If ``Z`` is not ``(n_samples, 2)``, ``contributions`` is
             not ``(n_samples, 2, n_features)`` with ``n_features >= 1``, or
-            ``feature_names`` / ``group_names`` (when provided) don't match
-            the corresponding axes.
+            ``feature_names`` / ``group_names`` / ``feature_values`` (when
+            provided) don't match the corresponding axes.
     """
     if Z.ndim != 2 or Z.shape[1] != 2:
         raise ValueError(f"Z must have shape (n_samples, 2); got {Z.shape}.")
@@ -211,6 +253,12 @@ def _validate_shapes(
     if group_names is not None and len(group_names) != n_samples:
         raise ValueError(
             f"group_names has length {len(group_names)}, but Z has {n_samples} samples."
+        )
+
+    if feature_values is not None and feature_values.shape != (n_samples, n_features):
+        raise ValueError(
+            f"feature_values has shape {feature_values.shape}, but expected "
+            f"({n_samples}, {n_features})."
         )
 
 
@@ -280,7 +328,7 @@ def _compute_bar_views(
 def _precompute_top_features(
     kept_l2: NDArray[np.floating],
     kept_names: list[str],
-) -> tuple[list[str], NDArray[np.integer]]:
+) -> tuple[list[str], NDArray[np.integer], NDArray[np.integer]]:
     """Per-sample top kept feature, ranked by frequency.
 
     For each sample, the kept feature with the largest L2-reduced contribution
@@ -295,12 +343,14 @@ def _precompute_top_features(
         kept_names: Feature names matching ``kept_l2``'s column axis.
 
     Returns:
-        A ``(top_feature_names_by_rank, sample_rank)`` pair:
+        A ``(top_feature_names_by_rank, sample_rank, top_kept_idx)`` tuple:
 
         - ``top_feature_names_by_rank``: distinct kept-feature names ordered
           by descending frequency of being a sample's top feature.
         - ``sample_rank``: per-sample integer rank into
           ``top_feature_names_by_rank`` (always ``< len(top_feature_names_by_rank)``).
+        - ``top_kept_idx``: per-sample column index into ``kept_l2`` of the
+          sample's top feature (i.e. ``kept_l2.argmax(axis=1)``).
     """
     top_kept_idx = kept_l2.argmax(axis=1)
     unique, counts = np.unique(top_kept_idx, return_counts=True)
@@ -308,15 +358,14 @@ def _precompute_top_features(
     top_feature_names_by_rank = [kept_names[i] for i in rank_order]
     rank_of: dict[int, int] = {int(idx): r for r, idx in enumerate(rank_order)}
     sample_rank = np.array([rank_of[int(i)] for i in top_kept_idx], dtype=np.int64)
-    return top_feature_names_by_rank, sample_rank
+    return top_feature_names_by_rank, sample_rank, top_kept_idx
 
 
 def _base_figure() -> figure:
     tools = "pan,wheel_zoom,box_zoom,reset,lasso_select,box_select"
     return figure(
         title="Embedding — lasso or box-select to filter",
-        width=600,
-        sizing_mode="stretch_height",
+        sizing_mode="stretch_both",
         tools=tools,
     )
 
@@ -375,30 +424,30 @@ def _to_hover_uri(arr: NDArray[np.uint8]) -> str:
 
 
 def _resolve_hover(
-    default_body: str,
+    default_bodies: HoverTooltips,
     hover_images: NDArray[np.uint8] | None,
     hover_tooltips: str | None,
     hover_data: Mapping[str, Sequence[Any]] | None,
-) -> tuple[str, dict[str, NDArray[Any]]]:
-    """Resolve hover customization into a tooltip template and CDS extras.
+) -> tuple[HoverTooltips, dict[str, NDArray[Any]]]:
+    """Resolve hover customization into per-mode tooltip templates and CDS extras.
 
     Three modes, determined by which kwargs are set:
 
-    - None set: returns ``(<div>{default_body}</div>, {})`` — the plot's
-      built-in tooltip.
-    - ``hover_images`` set: image is PNG-encoded and prepended to the default
-      tooltip body.
+    - None set: each ``default_bodies`` field is wrapped in ``<div>...</div>``.
+    - ``hover_images`` set: each default body is wrapped in a ``<div>`` with
+      a PNG-encoded image prefix.
     - ``hover_tooltips`` and/or ``hover_data`` set: user-supplied template
-      fully replaces the default; user columns are merged into the scatter
-      ``ColumnDataSource``.
+      fully replaces the defaults (same template for all three modes); user
+      columns are merged into the scatter ``ColumnDataSource``.
 
     Args:
-        default_body: HTML fragment (no outer ``<div>``) representing the
-            plot's built-in tooltip body — used when no customization is
-            passed and as the suffix when ``hover_images`` is passed.
+        default_bodies: Per-mode HTML body fragments (no outer ``<div>``)
+            representing the plot's built-in tooltip bodies — used when no
+            override is passed and as the suffix when ``hover_images`` is set.
         hover_images: Uint8 array of shape (n_samples, H, W) or
             (n_samples, H, W, 3/4). Mutually exclusive with the other two.
-        hover_tooltips: Tooltip HTML that fully replaces the default.
+        hover_tooltips: Tooltip HTML that fully replaces the defaults across
+            all modes.
         hover_data: Extra CDS columns referenced by ``@field`` in
             ``hover_tooltips``. Keys must not collide with reserved columns.
 
@@ -411,13 +460,13 @@ def _resolve_hover(
 
     if hover_images is not None:
         uris = [_to_hover_uri(img) for img in hover_images]
-        tooltip = (
-            "<div>"
-            "<img src='@__hover_image' style='display:block; margin-bottom:4px'/>"
-            f"{default_body}"
-            "</div>"
+        img_prefix = "<img src='@__hover_image' style='display:block; margin-bottom:4px'/>"
+        tooltips = HoverTooltips(
+            group=f"<div>{img_prefix}{default_bodies.group}</div>",
+            feature=f"<div>{img_prefix}{default_bodies.feature}</div>",
+            top=f"<div>{img_prefix}{default_bodies.top}</div>",
         )
-        return tooltip, {"__hover_image": np.asarray(uris, dtype=object)}
+        return tooltips, {"__hover_image": np.asarray(uris, dtype=object)}
 
     extras: dict[str, NDArray[Any]] = {}
     if hover_data is not None:
@@ -428,8 +477,15 @@ def _resolve_hover(
             )
         extras = {k: np.asarray(v) for k, v in hover_data.items()}
 
-    tooltip = hover_tooltips if hover_tooltips is not None else f"<div>{default_body}</div>"
-    return tooltip, extras
+    if hover_tooltips is not None:
+        tooltips = HoverTooltips(group=hover_tooltips, feature=hover_tooltips, top=hover_tooltips)
+    else:
+        tooltips = HoverTooltips(
+            group=f"<div>{default_bodies.group}</div>",
+            feature=f"<div>{default_bodies.feature}</div>",
+            top=f"<div>{default_bodies.top}</div>",
+        )
+    return tooltips, extras
 
 
 def _build_bars(
@@ -459,8 +515,7 @@ def _build_bars(
     )
 
     p_bar = figure(
-        width=400,
-        sizing_mode="stretch_height",
+        sizing_mode="stretch_both",
         y_range=FactorRange(factors=init_feat),
         tools="",
         toolbar_location=None,
@@ -498,8 +553,12 @@ def _build_bars(
         view_widget,
         heading_div,
         p_bar,
-        height=_COLUMN_HEIGHT,
-        styles={"background-color": "white"},
+        sizing_mode="stretch_both",
+        styles={
+            "background-color": "white",
+            "flex": "0 0 40%",
+            "min-width": "0",
+        },
     )
 
 
@@ -509,8 +568,8 @@ def plot_embedding(
     *,
     group_names: Sequence[Any] | NDArray | None = None,
     feature_names: list[str] | None = None,
+    feature_values: NDArray[np.floating] | None = None,
     top_k_global: int = 200,
-    top_k_display: int = 20,
     hover_images: NDArray[np.uint8] | None = None,
     hover_tooltips: str | None = None,
     hover_data: Mapping[str, Sequence[Any]] | None = None,
@@ -551,12 +610,20 @@ def plot_embedding(
             Human-readable name per feature; length must equal
             ``contributions.shape[2]``. Defaults to ``"Feature {i}"``
             (0-indexed).
+        feature_values:
+            Per-sample feature values of shape
+            ``(n_samples, n_features)``. When provided, the default tooltip
+            for ``Feature`` mode adds ``value: <X>`` (the picker-selected
+            feature's value), and the default tooltip for ``Top feature``
+            mode adds ``value: <X>`` (the top feature's value). Whatever
+            scaling the caller passes is what the tooltip displays — pass
+            raw values for human-readable tooltips, or the same
+            standardized array fed to the embedder for consistency with
+            contributions space. Ignored when ``hover_tooltips`` is set.
         top_k_global:
             How many features to ship to the browser, ranked by global L2
             importance. Caps everything: the bar chart, the feature-picker
             autocomplete, and the candidate set for top-feature ranking.
-        top_k_display:
-            How many features the bar chart shows at any one time.
         hover_images:
             Per-sample uint8 image array of shape ``(n_samples, H, W)`` or
             ``(n_samples, H, W, 3 | 4)``. When set, each tooltip shows the
@@ -570,22 +637,32 @@ def plot_embedding(
             Extra columns merged into the scatter ``ColumnDataSource`` for
             reference from ``hover_tooltips``. Keys must not collide with the
             reserved columns ``x``, ``y``, ``index``, ``group``,
-            ``color_value``, ``top_feature_group``, ``sample_rank``.
+            ``color_value``, ``top_feature_group``, ``top_feature_name``,
+            ``top_data_value``, ``picker_data_value``, ``sample_rank``.
 
     Returns:
         A Bokeh layout — color-by controls + scatter on the left, linked bar
         chart with view toggle on the right. Pass it to :func:`bokeh.io.show`
         or :func:`bokeh.io.save`.
     """
-    _validate_shapes(Z, contributions, feature_names=feature_names, group_names=group_names)
+    _validate_shapes(
+        Z,
+        contributions,
+        feature_names=feature_names,
+        group_names=group_names,
+        feature_values=feature_values,
+    )
     n_samples = Z.shape[0]
 
-    top = _select_top_features(contributions, feature_names, top_k_global, top_k_display)
+    top = _select_top_features(contributions, feature_names, top_k_global, _TOP_K_DISPLAY)
     views = _compute_bar_views(contributions, top)
-    top_feature_names_by_rank, sample_rank = _precompute_top_features(views.l2, top.kept_names)
+    top_feature_names_by_rank, sample_rank, top_kept_idx = _precompute_top_features(
+        views.l2, top.kept_names
+    )
     n_distinct = len(top_feature_names_by_rank)
 
     has_groups = group_names is not None
+    has_values = feature_values is not None
     color_modes = (["Group"] if has_groups else []) + ["Feature", "Top feature"]
     initial_mode = color_modes[0]
 
@@ -594,12 +671,26 @@ def plot_embedding(
         [top_feature_names_by_rank[r] if r < initial_t else "(other)" for r in sample_rank]
     )
     initial_gradient = views.l2[:, 0].astype(np.float32).copy()
+    top_feature_name = np.asarray([top.kept_names[int(k)] for k in top_kept_idx])
 
-    default_hover_body = "index: @index"
+    if has_values:
+        feature_values_kept = feature_values[:, top.keep_idx].astype(np.float32)
+        top_data_value = feature_values_kept[np.arange(n_samples), top_kept_idx]
+        picker_data_value = feature_values_kept[:, 0].copy()
+
+    base_body = "index: @index"
     if has_groups:
-        default_hover_body += " &nbsp;&middot;&nbsp; group: @group"
-    tooltip_html, hover_extras = _resolve_hover(
-        default_body=default_hover_body,
+        base_body += " &nbsp;&middot;&nbsp; group: @group"
+    sep = " &nbsp;&middot;&nbsp; "
+    feature_body = base_body
+    top_body = base_body
+    if has_values:
+        feature_body += sep + "value: @picker_data_value{0.000}"
+        top_body += sep + "value: @top_data_value{0.000}"
+    top_body += sep + "feature: @top_feature_name"
+    default_bodies = HoverTooltips(group=base_body, feature=feature_body, top=top_body)
+    tooltips, hover_extras = _resolve_hover(
+        default_bodies=default_bodies,
         hover_images=hover_images,
         hover_tooltips=hover_tooltips,
         hover_data=hover_data,
@@ -608,20 +699,28 @@ def plot_embedding(
     extras: dict[str, NDArray[Any]] = {
         "color_value": initial_gradient,
         "top_feature_group": initial_top_group,
+        "top_feature_name": top_feature_name,
         "sample_rank": sample_rank,
         **hover_extras,
     }
+    if has_values:
+        extras["top_data_value"] = top_data_value
+        extras["picker_data_value"] = picker_data_value
     if has_groups:
         extras["group"] = np.asarray([str(g) for g in group_names])
 
     scatter_source = _make_scatter_source(Z, n_samples, extras)
 
     p_scatter = _base_figure()
-    p_scatter.add_tools(HoverTool(tooltips=tooltip_html))
 
     reduced_kept_source = ColumnDataSource(
         {f"f{k}": views.l2[:, k] for k in range(top.n_kept)}
     )
+    feature_values_kept_source: ColumnDataSource | None = None
+    if has_values:
+        feature_values_kept_source = ColumnDataSource(
+            {f"f{k}": feature_values_kept[:, k] for k in range(top.n_kept)}
+        )
 
     other_view = CDSView(
         filter=GroupFilter(column_name="top_feature_group", group="(other)")
@@ -703,6 +802,13 @@ def plot_embedding(
     )
     p_scatter.add_layout(color_bar, "right")
 
+    p_scatter.add_tools(HoverTool(tooltips=tooltips.feature, renderers=[gradient_glyph]))
+    p_scatter.add_tools(
+        HoverTool(tooltips=tooltips.top, renderers=[top_named_glyph, top_other_glyph])
+    )
+    if has_groups:
+        p_scatter.add_tools(HoverTool(tooltips=tooltips.group, renderers=group_glyphs))
+
     color_by_widget = RadioButtonGroup(labels=color_modes, active=0)
     color_by_prefix = Div(
         text="<b>Color by:</b>",
@@ -720,6 +826,7 @@ def plot_embedding(
         width=260,
         visible=(initial_mode == "Feature"),
         styles={"color": "#444444"},
+        stylesheets=[InlineStyleSheet(css=".bk-input { color: #444444; }")],
     )
     top_n_slider = Slider(
         start=1,
@@ -767,6 +874,7 @@ def plot_embedding(
             args=dict(
                 scatter_source=scatter_source,
                 reduced_source=reduced_kept_source,
+                values_source=feature_values_kept_source,
                 mapper=gradient_mapper,
                 feature_names=top.kept_names,
             ),
@@ -789,6 +897,12 @@ def plot_embedding(
                 hi = mid + span;
             }
             scatter_source.data["color_value"] = copy;
+            if (values_source !== null) {
+                const vcol = values_source.data["f" + idx];
+                const vcopy = new Float64Array(vcol.length);
+                for (let i = 0; i < vcol.length; i++) vcopy[i] = vcol[i];
+                scatter_source.data["picker_data_value"] = vcopy;
+            }
             scatter_source.change.emit();
             mapper.low = lo;
             mapper.high = hi;
@@ -829,10 +943,19 @@ def plot_embedding(
             feature_picker,
             top_n_slider,
             p_scatter,
-            height=_COLUMN_HEIGHT,
-            styles={"background-color": "white"},
+            sizing_mode="stretch_both",
+            styles={
+                "background-color": "white",
+                "flex": "0 0 60%",
+                "min-width": "0",
+            },
         ),
         bars,
+        sizing_mode="stretch_both",
+        styles={
+            "max-width": "1100px",
+            "aspect-ratio": "1100 / 720",
+            "min-height": "500px",
+            "max-height": "800px",
+        },
     )
-
-
