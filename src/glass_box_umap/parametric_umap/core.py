@@ -181,7 +181,7 @@ class ParametricUMAP:
 
             best_checkpoint = ModelCheckpoint(
                 dirpath=ckpt_dir / "checkpoints",
-                monitor="umap_loss_epoch",
+                monitor="loss_epoch",
                 mode="min",
                 save_top_k=1,
                 save_on_train_epoch_end=True,
