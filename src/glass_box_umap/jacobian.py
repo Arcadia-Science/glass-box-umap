@@ -67,8 +67,6 @@ def reduce_contributions(
             return np.linalg.norm(contributions, axis=1)
 
 
-
-
 @dataclass
 class JacobianVerification:
     """Result of verifying that ``f(x) ≈ J(x) @ x``.
