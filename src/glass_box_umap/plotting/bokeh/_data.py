@@ -154,7 +154,11 @@ def select_top_features(
     global_importance = reduced.mean(axis=0)
 
     n_kept = min(top_k_global, n_features)
-    keep_idx = np.argsort(global_importance)[::-1][:n_kept]
+    if n_kept == n_features:
+        keep_idx = np.argsort(-global_importance)
+    else:
+        partitioned = np.argpartition(-global_importance, n_kept - 1)[:n_kept]
+        keep_idx = partitioned[np.argsort(-global_importance[partitioned])]
     kept_names = [names[i] for i in keep_idx]
     display_k = min(top_k_display, n_kept)
     return TopFeatures(
@@ -209,5 +213,5 @@ def precompute_top_features(
     rank_order = unique[np.argsort(counts)[::-1]]
     top_feature_names_by_rank = [kept_names[i] for i in rank_order]
     rank_of: dict[int, int] = {int(idx): r for r, idx in enumerate(rank_order)}
-    sample_rank = np.array([rank_of[int(i)] for i in top_kept_idx], dtype=np.int64)
+    sample_rank = np.array([rank_of[int(i)] for i in top_kept_idx], dtype=np.int32)
     return top_feature_names_by_rank, sample_rank, top_kept_idx

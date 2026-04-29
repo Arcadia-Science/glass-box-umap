@@ -73,7 +73,7 @@ def make_scatter_source(
     data: dict[str, Any] = {
         "x": Z[:, 0].astype(np.float32),
         "y": Z[:, 1].astype(np.float32),
-        "index": np.arange(Z.shape[0]),
+        "index": np.arange(Z.shape[0], dtype=np.int32),
         **extras,
     }
     return ColumnDataSource(data)

@@ -1,6 +1,6 @@
 const idx = feature_names.indexOf(cb_obj.value);
 if (idx < 0) { return; }
-const col = reduced_source.data["f" + idx];
+const col = reduced_source.data["c" + idx];
 const copy = new Float64Array(col.length);
 let lo = Infinity, hi = -Infinity;
 for (let i = 0; i < col.length; i++) {
@@ -17,7 +17,7 @@ if (hi - lo < degenerate_eps) {
 }
 scatter_source.data["color_value"] = copy;
 if (values_source !== null) {
-    const vcol = values_source.data["f" + idx];
+    const vcol = values_source.data["c" + idx];
     const vcopy = new Float64Array(vcol.length);
     for (let i = 0; i < vcol.length; i++) vcopy[i] = vcol[i];
     scatter_source.data["picker_data_value"] = vcopy;

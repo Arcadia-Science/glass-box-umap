@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import numpy as np
 from bokeh.models import (
     AutocompleteInput,
     ColumnDataSource,
@@ -10,7 +9,6 @@ from bokeh.models import (
     RadioButtonGroup,
     Slider,
 )
-from numpy.typing import NDArray
 
 from ._colors import (
     DEGENERATE_RANGE_EPS,
@@ -19,7 +17,7 @@ from ._colors import (
     LABEL_COLOR,
     LABEL_FONT_SIZE,
 )
-from ._data import BarViews, TopFeatures
+from ._data import TopFeatures
 from ._js import COLOR_BY_MODE, FEATURE_PICKER, TOP_N_SLIDER
 from ._scatter import ScatterArtifacts
 
@@ -51,8 +49,8 @@ def build_controls(
     initial_t: int,
     n_distinct: int,
     top: TopFeatures,
-    views: BarViews,
-    feature_values_kept: NDArray[np.floating] | None,
+    l2_source: ColumnDataSource,
+    feature_values_source: ColumnDataSource | None,
     top_feature_names_by_rank: list[str],
     scatter_source: ColumnDataSource,
     scatter: ScatterArtifacts,
@@ -112,21 +110,13 @@ def build_controls(
         ),
     )
 
-    reduced_kept_source = ColumnDataSource({f"f{k}": views.l2[:, k] for k in range(top.n_kept)})
-    feature_values_kept_source: ColumnDataSource | None = None
-
-    if feature_values_kept is not None:
-        feature_values_kept_source = ColumnDataSource(
-            {f"f{k}": feature_values_kept[:, k] for k in range(top.n_kept)}
-        )
-
     feature_picker.js_on_change(
         "value",
         CustomJS(
             args=dict(
                 scatter_source=scatter_source,
-                reduced_source=reduced_kept_source,
-                values_source=feature_values_kept_source,
+                reduced_source=l2_source,
+                values_source=feature_values_source,
                 mapper=scatter.gradient_mapper,
                 feature_names=top.kept_names,
                 degenerate_eps=DEGENERATE_RANGE_EPS,

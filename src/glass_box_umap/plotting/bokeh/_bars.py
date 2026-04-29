@@ -16,6 +16,7 @@ def build_bars(
     top: TopFeatures,
     n_samples: int,
     scatter_source: ColumnDataSource,
+    l2_source: ColumnDataSource,
 ) -> LayoutDOM:
     """Single bar chart with a view toggle on top.
 
@@ -23,9 +24,13 @@ def build_bars(
     scatter selection (or all samples if none selected). The ``normed L2`` view
     is computed JS-side on first selection (per-sample fractions of L2) and
     cached.
+
+    ``l2_source`` is the ``c{k}``-keyed L2 view shared with the feature picker
+    in :mod:`._controls` — a single ``ColumnDataSource`` shipped to the browser
+    once.
     """
     contrib_sources = [
-        ColumnDataSource({f"c{k}": views.l2[:, k] for k in range(top.n_kept)}),
+        l2_source,
         ColumnDataSource({f"c{k}": views.d0[:, k] for k in range(top.n_kept)}),
         ColumnDataSource({f"c{k}": views.d1[:, k] for k in range(top.n_kept)}),
     ]

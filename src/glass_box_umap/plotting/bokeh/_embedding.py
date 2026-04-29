@@ -3,6 +3,7 @@ from typing import Any
 
 import numpy as np
 from bokeh.layouts import column, row
+from bokeh.models import ColumnDataSource
 from bokeh.models.layouts import LayoutDOM
 from numpy.typing import NDArray
 
@@ -125,11 +126,11 @@ def plot_embedding(
     initial_mode = color_modes[0]
 
     initial_t = min(20, n_distinct)
-    initial_top_group = np.asarray(
-        [top_feature_names_by_rank[r] if r < initial_t else "(other)" for r in sample_rank]
-    )
+    names_with_other = np.asarray([*top_feature_names_by_rank, "(other)"])
+    clipped_rank = np.where(sample_rank < initial_t, sample_rank, len(top_feature_names_by_rank))
+    initial_top_group = names_with_other[clipped_rank]
     initial_gradient = views.l2[:, 0].astype(np.float32).copy()
-    top_feature_name = np.asarray([top.kept_names[int(k)] for k in top_kept_idx])
+    top_feature_name = np.asarray(top.kept_names)[top_kept_idx]
 
     extras: dict[str, NDArray[Any]] = {
         "color_value": initial_gradient,
@@ -143,7 +144,7 @@ def plot_embedding(
         extras["top_data_value"] = feature_values_kept[np.arange(n_samples), top_kept_idx]
         extras["picker_data_value"] = feature_values_kept[:, 0].copy()
     if has_groups:
-        extras["group"] = np.asarray([str(g) for g in group_names])
+        extras["group"] = np.asarray(group_names).astype(str)
 
     base_body = "index: @index"
     if has_groups:
@@ -168,6 +169,13 @@ def plot_embedding(
 
     scatter_source = make_scatter_source(Z, extras)
 
+    l2_source = ColumnDataSource({f"c{k}": views.l2[:, k] for k in range(top.n_kept)})
+    feature_values_source: ColumnDataSource | None = None
+    if feature_values_kept is not None:
+        feature_values_source = ColumnDataSource(
+            {f"c{k}": feature_values_kept[:, k] for k in range(top.n_kept)}
+        )
+
     scatter = build_scatter(
         scatter_source=scatter_source,
         tooltips=tooltips,
@@ -184,8 +192,8 @@ def plot_embedding(
         initial_t=initial_t,
         n_distinct=n_distinct,
         top=top,
-        views=views,
-        feature_values_kept=feature_values_kept,
+        l2_source=l2_source,
+        feature_values_source=feature_values_source,
         top_feature_names_by_rank=top_feature_names_by_rank,
         scatter_source=scatter_source,
         scatter=scatter,
@@ -196,6 +204,7 @@ def plot_embedding(
         top=top,
         n_samples=n_samples,
         scatter_source=scatter_source,
+        l2_source=l2_source,
     )
 
     return row(
