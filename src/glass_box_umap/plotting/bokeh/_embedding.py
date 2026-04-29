@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -18,6 +19,8 @@ from ._data import (
 )
 from ._hover import HoverTooltips, resolve_hover
 from ._scatter import OutputBackend, build_scatter, make_scatter_source
+
+_LARGE_DATASET_WARN_THRESHOLD = 100_000
 
 
 def plot_embedding(
@@ -121,6 +124,14 @@ def plot_embedding(
         feature_values=feature_values,
     )
     n_samples = Z.shape[0]
+    if n_samples >= _LARGE_DATASET_WARN_THRESHOLD:
+        warnings.warn(
+            f"plot_embedding received {n_samples:,} samples; at this size browser "
+            f"memory and lasso/box-select responsiveness may suffer. Consider "
+            f"lowering top_k_global or downsampling Z.",
+            UserWarning,
+            stacklevel=2,
+        )
 
     top = select_top_features(contributions, feature_names, top_k_global, TOP_K_DISPLAY)
     views = compute_bar_views(contributions, top)
