@@ -51,7 +51,9 @@ class ParametricUMAP:
             Additional keyword arguments passed to the encoder constructor.
         pca_components:
             Number of PCA components for input preprocessing. If ``None``, no PCA is
-            applied.
+            applied. PCA requires 2D input ``(n_samples, n_features)``; leave this
+            ``None`` when fitting on multi-dimensional data (e.g. images for a
+            convolutional encoder).
         lr:
             Learning rate for the optimizer.
         epochs:
@@ -210,8 +212,11 @@ class ParametricUMAP:
                 enable_model_summary=not self.quiet,
             )
 
+            # NNDescent requires 2D (n_samples, n_features). Flatten any
+            # higher-dim input (e.g. images for ConvEncoder) for graph
+            # construction only; UMAPDataset still receives the original X.
             graph = get_umap_graph(
-                X,
+                X.reshape(X.shape[0], -1) if X.ndim > 2 else X,
                 n_neighbors=self.n_neighbors,
                 metric=self.metric,
                 random_state=self.random_state,

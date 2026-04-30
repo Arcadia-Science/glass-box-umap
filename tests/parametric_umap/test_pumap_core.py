@@ -169,6 +169,35 @@ def test_mean_roundtrip_serialization(mnist_images: Tensor, tmp_path: Path):
     np.testing.assert_array_almost_equal(embedding_before, embedding_after, decimal=4)
 
 
+def test_conv_encoder_fits_4d_image_input():
+    """Ensure encoder_name='default_conv' fits and transforms 4D image input.
+
+    This is the only end-to-end test that exercises a multi-dimensional
+    input path through ParametricUMAP.fit. It guards both the registry
+    wiring (``encoder_name='default_conv'`` instantiates ConvEncoder with
+    the right ``input_dims`` and threads through fit/transform) and the
+    fit-time flatten in ``get_umap_graph`` that lets NNDescent see a 2D
+    view while the encoder keeps the original 4D shape. The isolated
+    encoder tests in ``test_models.py`` do not cover either path.
+    """
+    n_samples = 32
+    input_dims = (1, 8, 8)
+    n_components = 2
+
+    X = torch.randn(n_samples, *input_dims)
+
+    model = ParametricUMAP(
+        encoder_name="default_conv",
+        n_neighbors=5,
+        epochs=2,
+        n_components=n_components,
+    )
+    model.fit(X)
+    embedding = model.transform(X)
+
+    assert embedding.shape == (n_samples, n_components)
+
+
 def test_quiet_suppresses_output(mnist_images: Tensor, capfd):
     """Ensure quiet=True silences all stdout/stderr output during fit."""
     model = ParametricUMAP(epochs=1, n_neighbors=5, quiet=True)

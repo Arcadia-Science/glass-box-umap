@@ -32,7 +32,9 @@ class GlassBoxUMAP(ParametricUMAP):
         encoder_kwargs: Additional keyword arguments passed to the encoder
             constructor.
         pca_components: Number of PCA components for input preprocessing.
-            If ``None``, no PCA is applied.
+            If ``None``, no PCA is applied. PCA requires 2D input
+            ``(n_samples, n_features)``; leave this ``None`` when fitting on
+            multi-dimensional data (e.g. images for a convolutional encoder).
         lr: Learning rate for the optimizer.
         epochs: Number of training epochs.
         batch_size: Batch size for training and (default) inference.
