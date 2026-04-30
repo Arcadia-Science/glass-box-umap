@@ -35,6 +35,11 @@ clean:
 build: clean
 	uv build
 
+.PHONY: notebooks
+notebooks:
+	uv run jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=600 docs/user_guide/*.ipynb
+	uv run jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=600 docs/examples/*.ipynb
+
 .PHONY: docs
 docs:
 	$(MAKE) -C docs/ clean-and-build-html
@@ -44,6 +49,9 @@ docs:
 docs-live:
 	$(MAKE) -C docs/ clean-and-build-html
 	$(MAKE) -C docs/ live
+
+.PHONY: docs-with-notebooks
+docs-with-notebooks: notebooks docs
 
 .PHONY: build-and-test-publish
 build-and-test-publish: build
