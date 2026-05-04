@@ -27,6 +27,7 @@ For a detailed explanation of the methodology, see the [Methodology](resources/m
    user_guide/install
    user_guide/basic_usage
    user_guide/saving_and_loading
+   user_guide/monitoring_training
    user_guide/embedding_comparison
 
 .. toctree::
