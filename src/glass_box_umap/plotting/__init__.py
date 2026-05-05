@@ -5,10 +5,11 @@ for req in get_plotting_requirements():
 
 from bokeh.io import output_notebook, show
 
-from .bokeh import plot_embedding
+from .bokeh import LiveEmbeddingCallback, plot_embedding
 from .mpl import plot_embedding_static
 
 __all__ = [
+    "LiveEmbeddingCallback",
     "output_notebook",
     "plot_embedding",
     "plot_embedding_static",

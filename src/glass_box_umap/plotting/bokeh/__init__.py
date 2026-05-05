@@ -1,3 +1,4 @@
 from ._embedding import plot_embedding
+from ._live import LiveEmbeddingCallback
 
-__all__ = ["plot_embedding"]
+__all__ = ["LiveEmbeddingCallback", "plot_embedding"]

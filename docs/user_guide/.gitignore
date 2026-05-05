@@ -1,2 +1,4 @@
-*.py
-*.pt
+*
+!*.ipynb
+!*.md
+!.gitignore
