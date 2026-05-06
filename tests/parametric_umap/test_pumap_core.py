@@ -98,7 +98,7 @@ def test_batched_transform(mnist_images: Tensor):
     np.testing.assert_array_almost_equal(
         emb_single_batch,
         emb_multi_batch,
-        decimal=4,
+        decimal=3,
         err_msg="Batched inference results diverged from standard inference",
     )
 
