@@ -13,7 +13,7 @@ def test_roundtrip_serialization_default_encoder(mnist_images: Tensor, tmp_path:
         n_neighbors=5,
         epochs=1,
         n_components=2,
-    )
+    ).to("cpu")
 
     model.fit(mnist_images)
     embedding_before = model.transform(mnist_images)
@@ -21,7 +21,7 @@ def test_roundtrip_serialization_default_encoder(mnist_images: Tensor, tmp_path:
     save_path = tmp_path / "model.pt"
     model.save(save_path)
 
-    loaded_model = ParametricUMAP.load(save_path)
+    loaded_model = ParametricUMAP.load(save_path).to("cpu")
     embedding_after = loaded_model.transform(mnist_images)
 
     assert loaded_model.encoder_name == "default"
@@ -87,7 +87,7 @@ def test_batched_transform(mnist_images: Tensor):
     mnist_images = mnist_images
     n_samples = len(mnist_images)
 
-    model = ParametricUMAP(epochs=1, n_components=2)
+    model = ParametricUMAP(epochs=1, n_components=2).to("cpu")
     model.fit(mnist_images)
 
     emb_single_batch = model.transform(mnist_images, batch_size=10000)
@@ -98,7 +98,7 @@ def test_batched_transform(mnist_images: Tensor):
     np.testing.assert_array_almost_equal(
         emb_single_batch,
         emb_multi_batch,
-        decimal=3,
+        decimal=4,
         err_msg="Batched inference results diverged from standard inference",
     )
 
@@ -129,14 +129,14 @@ def test_pca_disabled_by_default(mnist_images: Tensor):
 def test_pca_roundtrip_serialization(mnist_images: Tensor, tmp_path: Path):
     """Ensure PCA state is preserved through save/load."""
     n_pcs = 15
-    model = ParametricUMAP(pca_components=n_pcs, epochs=1, n_components=2)
+    model = ParametricUMAP(pca_components=n_pcs, epochs=1, n_components=2).to("cpu")
     model.fit(mnist_images)
     embedding_before = model.transform(mnist_images)
 
     save_path = tmp_path / "model_with_pca.pt"
     model.save(save_path)
 
-    loaded_model = ParametricUMAP.load(save_path)
+    loaded_model = ParametricUMAP.load(save_path).to("cpu")
 
     assert model._pca is not None
     assert loaded_model._pca is not None
@@ -152,14 +152,14 @@ def test_pca_roundtrip_serialization(mnist_images: Tensor, tmp_path: Path):
 
 def test_mean_roundtrip_serialization(mnist_images: Tensor, tmp_path: Path):
     """Ensure mean is preserved through save/load."""
-    model = ParametricUMAP(epochs=1, n_components=2)
+    model = ParametricUMAP(epochs=1, n_components=2).to("cpu")
     model.fit(mnist_images)
     embedding_before = model.transform(mnist_images)
 
     save_path = tmp_path / "model.pt"
     model.save(save_path)
 
-    loaded_model = ParametricUMAP.load(save_path)
+    loaded_model = ParametricUMAP.load(save_path).to("cpu")
 
     assert model._mean is not None
     assert loaded_model._mean is not None
