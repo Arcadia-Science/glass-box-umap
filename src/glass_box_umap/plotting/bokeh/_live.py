@@ -149,11 +149,7 @@ class LiveEmbeddingCallback(pl.Callback):
             )
         )
 
-        title_text = (
-            "Glass Box UMAP — initializing"
-            if initial_epoch < 0
-            else f"Glass Box UMAP — epoch {initial_epoch}"
-        )
+        title_text = "Initializing" if initial_epoch < 0 else f"Epoch {initial_epoch}"
         p = figure(
             title=title_text,
             sizing_mode="stretch_both",
@@ -243,7 +239,7 @@ class LiveEmbeddingCallback(pl.Callback):
                 display_source.data['x'] = x;
                 display_source.data['y'] = y;
                 display_source.change.emit();
-                title.text = `Glass Box UMAP — epoch ${i}`;
+                title.text = `Epoch ${i}`;
                 epoch_span.location = i;
             """,
         )
@@ -297,7 +293,7 @@ class LiveEmbeddingCallback(pl.Callback):
                         display_source.data['x'] = frames_source.data.x[idx];
                         display_source.data['y'] = frames_source.data.y[idx];
                         display_source.change.emit();
-                        title.text = `Glass Box UMAP — epoch ${idx}`;
+                        title.text = `Epoch ${idx}`;
                         epoch_span.location = idx;
                     }
                 """,
@@ -327,7 +323,7 @@ class LiveEmbeddingCallback(pl.Callback):
         layout, _, _ = self._build_layout(frames_snapshot, losses_snapshot, is_live=False)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = Path(f"glassbox_live_{timestamp}.html").resolve()
-        html = file_html(layout, INLINE, title="Glass Box UMAP")
+        html = file_html(layout, INLINE, title="Glass box UMAP")
         filename.write_text(html)
         print(f"Saved {filename}")
 
