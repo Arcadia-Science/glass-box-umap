@@ -39,10 +39,17 @@ class UMAPDataset(Dataset[tuple[Tensor, Tensor]]):
         data: NDArray[np.floating],
         graph: csr_matrix,
         edge_pruning_factor: float = 0.025,
+        random_state: int | None = None,
     ) -> None:
-        _, self.vertices_a, self.vertices_b, self.edge_weights, _ = get_graph_elements(
-            graph, edge_pruning_factor
-        )
+        _, vertices_a, vertices_b, edge_weights, _ = get_graph_elements(graph, edge_pruning_factor)
+        # Permute edges so that any contiguous slice is a random sample of
+        # the graph. Required by SplitAndMergeWeightedSampler to keep
+        # cross-chunk allocation unbiased when num_edges > 2**24.
+        rng = np.random.default_rng(random_state)
+        perm = rng.permutation(vertices_a.shape[0])
+        self.vertices_a = vertices_a[perm]
+        self.vertices_b = vertices_b[perm]
+        self.edge_weights = edge_weights[perm]
         self.data = torch.as_tensor(data, dtype=torch.float32)
 
     @property

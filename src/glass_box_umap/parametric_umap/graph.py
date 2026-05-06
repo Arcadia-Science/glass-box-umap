@@ -10,9 +10,9 @@ from umap.umap_ import fuzzy_simplicial_set
 
 GraphElements = tuple[
     coo_matrix,
-    NDArray[np.intp],
-    NDArray[np.intp],
-    NDArray[np.float64],
+    NDArray[np.int32],
+    NDArray[np.int32],
+    NDArray[np.float32],
     int,
 ]
 
@@ -98,8 +98,8 @@ def get_graph_elements(graph: csr_matrix, edge_pruning_factor: float) -> GraphEl
     graph_coo.data[graph_coo.data < (graph_coo.data.max() * float(edge_pruning_factor))] = 0.0
     graph_coo.eliminate_zeros()
 
-    vertices_a = graph_coo.row.astype(np.intp)
-    vertices_b = graph_coo.col.astype(np.intp)
-    edge_weights = graph_coo.data.astype(np.float64)
+    vertices_a = cast(NDArray[np.int32], graph_coo.row.astype(np.int32))
+    vertices_b = cast(NDArray[np.int32], graph_coo.col.astype(np.int32))
+    edge_weights = cast(NDArray[np.float32], graph_coo.data.astype(np.float32))
 
     return graph_coo, vertices_a, vertices_b, edge_weights, num_vertices

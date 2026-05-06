@@ -225,7 +225,7 @@ class ParametricUMAP:
             )
 
             datamodule = UMAPDataModule(
-                UMAPDataset(X, graph),
+                UMAPDataset(X, graph, random_state=self.random_state),
                 self.batch_size,
                 self.num_workers,
             )
