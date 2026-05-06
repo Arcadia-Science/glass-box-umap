@@ -19,7 +19,7 @@ from ..utils import device_to_lightning_acceleration_config, get_default_device
 from ._equality import parametric_umap_equal
 from .data import UMAPDataset
 from .graph import get_umap_graph
-from .lightning import UMAPDataModule, UMAPLightningModule
+from .lightning import MemoryLoggerCallback, UMAPDataModule, UMAPLightningModule
 from .logging_config import get_progress_bar, suppress_lightning_logs
 from .registry import create_encoder
 
@@ -202,6 +202,7 @@ class ParametricUMAP:
                 limit_train_batches=self.num_batches,
                 callbacks=[
                     best_checkpoint,
+                    MemoryLoggerCallback(),
                     *([progress_bar] if progress_bar is not None else []),
                     *self.extra_callbacks,
                 ],

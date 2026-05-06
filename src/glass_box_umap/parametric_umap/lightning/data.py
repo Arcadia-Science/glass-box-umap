@@ -37,4 +37,10 @@ class UMAPDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             persistent_workers=self.num_workers > 0,
+            # TODO: a tiny tail batch (e.g. 1 edge when num_edges = batch_size + 1)
+            # produces a high-variance gradient step with the same LR weight as a
+            # full batch. drop_last=True would fix this, but it also wipes out the
+            # only batch when len(dataset) < batch_size (e.g. small test fixtures),
+            # so we need a smarter approach (e.g. rounding num_samples up to a
+            # multiple of batch_size in the sampler).
         )
