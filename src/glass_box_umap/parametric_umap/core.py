@@ -230,6 +230,9 @@ class ParametricUMAP:
                 self.num_workers,
             )
 
+            if not self.quiet:
+                print(f"View progress with `tensorboard --logdir {logger.log_dir}`")
+
             trainer.fit(model=self._model, datamodule=datamodule)
 
             if self.restore_best_weights:

@@ -8,9 +8,12 @@ from ...utils import current_device_memory_bytes
 
 
 class MemoryLoggerCallback(pl.Callback):
-    """Logs per-step memory usage.
+    """Logs memory usage.
 
-    Reports two metrics:
+    For each metric, the per-step value is logged under ``<name>_step`` and
+    the per-epoch peak (``max`` reduction) is logged under ``<name>``.
+    Only the epoch peak is shown in the progress bar.
+
         - ``device_mem_mb``: bytes held by live tensors in PyTorch's allocator
           on the active device (CUDA VRAM, MPS unified RAM). Omitted on CPU.
         - ``rss_mb``: process-wide resident set size, capturing the dataset,
@@ -36,17 +39,25 @@ class MemoryLoggerCallback(pl.Callback):
     ) -> None:
         device_bytes = current_device_memory_bytes(pl_module.device)
         if device_bytes is not None:
+            device_mb = device_bytes / 1024**2
+            pl_module.log(
+                "device_mem_mb_step", device_mb, on_step=True, on_epoch=False, prog_bar=False
+            )
             pl_module.log(
                 "device_mem_mb",
-                device_bytes / 1024**2,
+                device_mb,
                 on_step=False,
                 on_epoch=True,
                 prog_bar=True,
+                reduce_fx="max",
             )
+        rss_mb = self._process.memory_info().rss / 1024**2
+        pl_module.log("rss_mb_step", rss_mb, on_step=True, on_epoch=False, prog_bar=False)
         pl_module.log(
             "rss_mb",
-            self._process.memory_info().rss / 1024**2,
+            rss_mb,
             on_step=False,
             on_epoch=True,
             prog_bar=True,
+            reduce_fx="max",
         )
