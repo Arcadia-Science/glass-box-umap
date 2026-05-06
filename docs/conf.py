@@ -64,6 +64,8 @@ smartquotes_action = "qe"
 nb_execution_mode = "off"
 nb_execution_allow_errors = True
 
+suppress_warnings = ["mystnb.unknown_mime_type"]
+
 nb_mime_priority_overrides = [
     ("html", "application/javascript", 5),
     ("html", "application/vnd.bokehjs_load.v0+json", 100),
