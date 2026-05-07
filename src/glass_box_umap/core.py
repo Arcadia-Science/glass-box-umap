@@ -11,7 +11,7 @@ from .parametric_umap import ParametricUMAP
 from .parametric_umap.core import _to_numpy_float32
 
 
-@dataclass(eq=False)
+@dataclass(eq=False, kw_only=True)
 class GlassBoxUMAP(ParametricUMAP):
     """Glass Box UMAP model.
 

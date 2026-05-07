@@ -30,7 +30,7 @@ def _to_numpy_float32(X: NDArray[np.floating] | Tensor) -> NDArray[np.float32]:
     return cast(NDArray[np.float32], X.astype(np.float32))
 
 
-@dataclass(eq=False)
+@dataclass(eq=False, kw_only=True)
 class ParametricUMAP:
     """Parametric UMAP model.
 
@@ -43,17 +43,19 @@ class ParametricUMAP:
             Distance metric used for computing nearest neighbors.
         n_components:
             Dimensionality of the learned embedding.
-        random_state:
-            Random seed for reproducibility. If ``None``, no seed is set.
-        encoder_name:
-            Name of the registered encoder architecture.
-        encoder_kwargs:
-            Additional keyword arguments passed to the encoder constructor.
+        negative_sample_rate:
+            Number of negative samples per positive edge in the UMAP loss.
+        repulsion_strength:
+            Weighting of the repulsive term in the UMAP loss.
         pca_components:
             Number of PCA components for input preprocessing. If ``None``, no PCA is
             applied. PCA requires 2D input ``(n_samples, n_features)``; leave this
             ``None`` when fitting on multi-dimensional data (e.g. images for a
             convolutional encoder).
+        encoder_name:
+            Name of the registered encoder architecture.
+        encoder_kwargs:
+            Additional keyword arguments passed to the encoder constructor.
         lr:
             Learning rate for the optimizer.
         epochs:
@@ -64,10 +66,6 @@ class ParametricUMAP:
             Cap the number of batches per epoch. Useful for large graphs where
             a full pass would be prohibitively long. If ``None``, trains on
             all batches.
-        negative_sample_rate:
-            Number of negative samples per positive edge in the UMAP loss.
-        repulsion_strength:
-            Weighting of the repulsive term in the UMAP loss.
         num_workers:
             Number of data loading workers.
         checkpoint_dir:
@@ -77,34 +75,44 @@ class ParametricUMAP:
             If ``True``, restore the model weights from the epoch with the
             lowest loss after training. If ``False``, keep the weights from
             the final epoch.
+        random_state:
+            Random seed for reproducibility. If ``None``, no seed is set.
+        quiet:
+            If ``True``, suppress Lightning logs and progress output.
+        extra_callbacks:
+            Additional Lightning callbacks to attach to the trainer.
     """
 
+    # UMAP algorithm
     n_neighbors: int = 15
     min_dist: float = 0.1
     metric: str = "euclidean"
     n_components: int = 2
-    random_state: int | None = None
+    negative_sample_rate: int = 5
+    repulsion_strength: float = 1.0
+
+    # Preprocessing & encoder
+    pca_components: int | None = None
     encoder_name: str = DEFAULT_ENCODER
     encoder_kwargs: dict[str, Any] = field(default_factory=dict)
 
-    # Preprocessing
-    pca_components: int | None = None
-
-    # Train config
+    # Optimization
     lr: float = 1e-3
-    epochs: int = 100
+    epochs: int = 200
     batch_size: int = 10_000
     num_batches: int | None = None
-    negative_sample_rate: int = 5
-    repulsion_strength: float = 1.0
+
+    # Training infra
     num_workers: int = 0
     checkpoint_dir: Path | None = None
     restore_best_weights: bool = True
 
-    # Extras
+    # Runtime
+    random_state: int | None = None
     quiet: bool = False
     extra_callbacks: list[pl.Callback] = field(default_factory=list)
 
+    # Internal state
     _model: UMAPLightningModule | None = field(init=False, default=None)
     _pca: PCA | None = field(init=False, default=None)
     _mean: NDArray[np.floating] | None = field(init=False, default=None)
