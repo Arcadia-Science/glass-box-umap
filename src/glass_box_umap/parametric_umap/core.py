@@ -21,7 +21,7 @@ from .data import UMAPDataset
 from .graph import get_umap_graph
 from .lightning import MemoryLoggerCallback, UMAPDataModule, UMAPLightningModule
 from .logging_config import get_progress_bar, suppress_lightning_logs
-from .registry import create_encoder
+from .registry import DEFAULT_ENCODER, create_encoder
 
 
 def _to_numpy_float32(X: NDArray[np.floating] | Tensor) -> NDArray[np.float32]:
@@ -84,7 +84,7 @@ class ParametricUMAP:
     metric: str = "euclidean"
     n_components: int = 2
     random_state: int | None = None
-    encoder_name: str = "default"
+    encoder_name: str = DEFAULT_ENCODER
     encoder_kwargs: dict[str, Any] = field(default_factory=dict)
 
     # Preprocessing

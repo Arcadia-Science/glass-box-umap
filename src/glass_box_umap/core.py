@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
@@ -9,11 +9,6 @@ from numpy.typing import NDArray
 from .jacobian import compute_jacobian, project_jacobian, reduce_contributions
 from .parametric_umap import ParametricUMAP
 from .parametric_umap.core import _to_numpy_float32
-from .parametric_umap.models import DeepPReLUNet
-from .parametric_umap.registry import register_encoder
-
-GLASSBOX_DEFAULT_ENCODER_NAME = "glassbox_default_encoder"
-register_encoder(GLASSBOX_DEFAULT_ENCODER_NAME)(DeepPReLUNet)
 
 
 @dataclass(eq=False)
@@ -45,9 +40,6 @@ class GlassBoxUMAP(ParametricUMAP):
         checkpoint_dir: Directory for saving training checkpoints. If ``None``,
             a temporary directory is used.
     """
-
-    # Overwrite base class default with `GLASSBOX_DEFAULT_ENCODER_NAME`.
-    encoder_name: str = field(default=GLASSBOX_DEFAULT_ENCODER_NAME)
 
     def compute_contributions(
         self,
