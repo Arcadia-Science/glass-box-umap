@@ -44,6 +44,20 @@ def compute_jacobian(
 
 
 def project_jacobian(jacobian: torch.Tensor, proj_tensor: torch.Tensor) -> torch.Tensor:
+    """Map a Jacobian's input axis through a linear projection.
+
+    Used to express a Jacobian computed in a reduced input space (e.g. PCA components)
+    in terms of the original features, by right-multiplying with the projection matrix
+    that maps reduced-space inputs back to original features.
+
+    Args:
+        jacobian: Jacobian tensor of shape ``(n, out_dim, in_dim_reduced)``.
+        proj_tensor: Projection matrix of shape ``(in_dim_reduced, in_dim_original)``,
+            e.g. ``pca.components_``.
+
+    Returns:
+        Jacobian of shape ``(n, out_dim, in_dim_original)``.
+    """
     return torch.einsum("bij,jk->bik", jacobian, proj_tensor)
 
 

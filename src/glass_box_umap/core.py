@@ -103,4 +103,8 @@ class GlassBoxUMAP(ParametricUMAP):
         return feature_contributions
 
     def compute_jacobian(self, x: torch.Tensor, batch_size: int = 1024) -> torch.Tensor:
+        """Compute the Jacobian of a model using ``vmap`` + ``jacrev`` with ``functional_call``.
+
+        See :func:`glass_box_umap.jacobian.compute_jacobian` for details.
+        """
         return compute_jacobian(self._fitted_model.encoder, x, batch_size)
