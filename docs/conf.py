@@ -84,8 +84,9 @@ GOOGLE_FONTS_URL = (
     "family=Merriweather:ital,wght@0,300..900;1,300..900&"
     "display=swap"
 )
-html_logo = "_assets/lockup.png"
 html_theme_options = {
+    "light_logo": "lockup.png",
+    "dark_logo": "dark_lockup.png",
     "light_css_variables": {
         "font-stack": '"Atkinson Hyperlegible Next", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
         "font-stack--monospace": 'Menlo, ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", monospace',
@@ -97,7 +98,7 @@ html_theme_options = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+html_static_path = ["_static", "_assets"]
 
 # -- Napoleon options
 napoleon_include_init_with_doc = False

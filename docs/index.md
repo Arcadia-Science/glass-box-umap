@@ -1,12 +1,8 @@
-# Glass Box UMAP
+# Overview
 
-Glass Box UMAP augments UMAP by computing exact feature contributions to the UMAP embedding.
+Standard UMAP produces embeddings but offers no insight into why points land where they do. Glass Box UMAP solves this by using a specially designed neural network that enables exact computation of feature contributions.
 
-## Overview
-
-Standard UMAP produces embeddings but offers no insight into why points land where they do. Glass Box UMAP solves this by using a specially designed neural network that enables exact computation of feature contributions—no approximations needed.
-
-The key insight is that certain neural network architectures are *locally linear*: for any input, the network's output can be expressed exactly as a matrix multiplication of that input. Glass Box UMAP exploits this property by using PReLU activations and zero-bias linear layers, allowing us to compute the Jacobian of the embedding with respect to input features. Multiplying this Jacobian by the input gives exact feature contributions that sum precisely to the embedding coordinates.
+The key insight is that certain neural network architectures are *locally linear*: for any input, the network's output can be expressed exactly as a matrix multiplication of that input. Glass Box UMAP exploits this property by using PReLU activations and zero-bias linear layers, allowing us to compute the Jacobian of the embedding with respect to input features. Multiplying this Jacobian by the input gives exact feature contributions that sum to the embedding coordinates.
 
 Glass Box UMAP's feature contributions are mathematically exact, validated to near machine precision. This makes it possible to understand exactly which features drive the structure in your embeddings.
 
