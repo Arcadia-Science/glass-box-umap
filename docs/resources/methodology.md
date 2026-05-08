@@ -32,17 +32,6 @@ Given the locally linear property, computing exact feature contributions is stra
 
 The contribution $C_{ij}$ tells you exactly how much feature $j$ contributes to embedding dimension $i$ for this sample.
 
-## Handling PCA Preprocessing
-
-For high-dimensional data, Glass Box UMAP optionally applies PCA before the neural network encoder. The Jacobian computation accounts for this:
-
-1. The input $x$ is centered and projected to PCA space: $x_{pca} = P \cdot (x - \mu)$
-2. The encoder operates on $x_{pca}$: $y = f(x_{pca})$
-3. The Jacobian w.r.t. PCA features is $J_{pca} = \partial y / \partial x_{pca}$
-4. To get contributions in original feature space, project back: $J_{raw} = J_{pca} \cdot P$
-
-This ensures contributions are always expressed in terms of the original input features, not PCA components.
-
 ## Validation: Machine-Precision Accuracy
 
 The locally linear property can be verified empirically. For any sample, the sum of feature contributions should equal the embedding exactly. In practice, Glass Box UMAP achieves reconstruction errors on the order of $3 \times 10^{-14}$—machine precision for 64-bit floating point.
