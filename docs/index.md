@@ -28,7 +28,7 @@ For a detailed explanation of the methodology, see the [Methodology](resources/m
    user_guide/embedding_refinement
    user_guide/pca_preprocessing
    user_guide/custom_encoders
-   user_guide/scaling
+   user_guide/performance
 
 .. toctree::
    :hidden:

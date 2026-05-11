@@ -2,3 +2,6 @@
 !*.ipynb
 !*.md
 !.gitignore
+!performance_data/
+!performance_data/**
+performance_data/__pycache__/
