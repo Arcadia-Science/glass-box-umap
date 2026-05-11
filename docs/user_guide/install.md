@@ -1,11 +1,3 @@
-:::{admonition} Glass Box UMAP isn't live!
-:class: Danger
-
-These installation instructions will fail because Glass Box UMAP is not yet on PyPI!
-:::
-
----
-
 # Installation
 
 Glass Box UMAP is available on the [Python Package Index (PyPI)](https://pypi.org/project/glass-box-umap/).
@@ -91,3 +83,15 @@ Glass Box UMAP requires [PyTorch](https://pytorch.org/).
             # Then install glass-box-umap
             pip install glass-box-umap
 ```
+
+## From source
+
+To install Glass Box UMAP from source, clone the repository and install it with [uv](https://docs.astral.sh/uv/):
+
+```bash
+git clone https://github.com/Arcadia-Science/glass-box-umap.git
+cd glass-box-umap
+uv sync
+```
+
+For developers/contributors, add the flags `--extra plotting --group dev --group docs` and see [Contributing](../meta/contributing.md).

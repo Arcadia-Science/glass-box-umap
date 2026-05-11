@@ -40,6 +40,17 @@ notebooks:
 	uv run jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=600 docs/user_guide/*.ipynb
 	uv run jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=600 docs/examples/*.ipynb
 
+.PHONY: notebook
+notebook:
+	@nb="$(filter %.ipynb,$(MAKECMDGOALS))"; \
+	if [ -z "$$nb" ]; then \
+		echo "usage: make notebook PATH/TO/NOTEBOOK.ipynb"; exit 1; \
+	fi; \
+	uv run jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=600 $$nb
+
+%.ipynb:
+	@:
+
 .PHONY: docs
 docs:
 	$(MAKE) -C docs/ clean-and-build-html

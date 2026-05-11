@@ -1,9 +1,7 @@
 # Examples
 
-```{toctree}
-:maxdepth: 1
+```{base-gallery}
+:tooltip:
 
-example
-mnist
 gene_expression
 ```

@@ -27,6 +27,7 @@ project = "glass-box-umap"
 # ones.
 extensions = [
     "myst_nb",
+    "myst_sphinx_gallery",
     "sphinx.ext.napoleon",
     "sphinx.ext.mathjax",
     "sphinx.ext.doctest",

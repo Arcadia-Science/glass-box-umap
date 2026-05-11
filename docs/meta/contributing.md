@@ -14,9 +14,11 @@ If it's not, install it:
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Then install the project with all development dependencies:
+Then clone the repository and install the project with all development dependencies:
 
 ```bash
+git clone https://github.com/Arcadia-Science/glass-box-umap.git
+cd glass-box-umap
 uv sync --extra plotting --group dev --group docs
 ```
 
