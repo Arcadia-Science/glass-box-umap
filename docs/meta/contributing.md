@@ -2,16 +2,16 @@
 
 ## Environment setup
 
-We use [uv](https://docs.astral.sh/uv/) for dependency management and build tooling. First, install uv:
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-Verify uv is installed:
+We use [uv](https://docs.astral.sh/uv/) for dependency management and build tooling. First, verify that uv is installed:
 
 ```bash
 uv --version
+```
+
+If it's not, install it:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 Then install the project with all development dependencies:
@@ -19,6 +19,10 @@ Then install the project with all development dependencies:
 ```bash
 uv sync --extra plotting --group dev --group docs
 ```
+
+:::{important}
+It's essential that you include the `--extra` and `--group` parameters.
+:::
 
 This creates a virtual environment in `.venv` and installs all dependencies. The package itself is automatically installed in editable mode.
 
@@ -90,26 +94,20 @@ Whenever you add or update a dependency, uv will automatically update both `pypr
 
 ## Building documentation
 
-We use Sphinx with the [furo](https://github.com/pradyunsg/furo) theme. First, install `pandoc` (required by nbsphinx):
+We use Sphinx with the [furo](https://github.com/pradyunsg/furo) theme. First, install `pandoc` (required by nbsphinx).
 
 ```bash
+# macOS
 brew install pandoc
+
+# Windows/Linux ???
 ```
 
 Then build the docs:
 
 ```bash
-uv run make docs
+make docs
 ```
-
-### Sphinx extensions
-
-- **sphinx-autoapi**: Generates API docs from docstrings. Requires Google or NumPy style docstrings.
-- **napoleon**: Converts Google/NumPy-style docstrings to RST at build time.
-- **myst-parser**: Lets us write docs in Markdown instead of RST.
-- **nbsphinx**: Executes and renders Jupyter notebooks in the docs.
-
-To remove an unused extension, delete it from the `extensions` list in `docs/conf.py` and from the `docs` dependency group in `pyproject.toml`.
 
 ## Publishing to PyPI
 
@@ -157,7 +155,7 @@ pip install --index-url https://pypi.org/simple/ --extra-index-url https://test.
 make build-and-publish
 ```
 
-8. Verify installation from production:
+8. Verify installation from production in a fresh, isolated environment:
 
 ```bash
 pip install glass-box-umap==${RELEASE_VERSION}
