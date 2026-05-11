@@ -36,8 +36,11 @@ def _is_notebook() -> bool:
 class _EpochFractionProgressBar(TQDMProgressBar):
     def on_train_epoch_start(self, trainer: "pl.Trainer", *_: Any) -> None:
         super().on_train_epoch_start(trainer, *_)
+        bar = self.train_progress_bar
+        if bar.total is not None and getattr(bar, "container", None) is not None:
+            bar.container.children[1].max = bar.total
         total = trainer.max_epochs or "?"
-        self.train_progress_bar.set_description(f"Epoch {trainer.current_epoch + 1}/{total}")
+        bar.set_description(f"Epoch {trainer.current_epoch + 1}/{total}")
 
 
 def get_progress_bar() -> TQDMProgressBar | None:
