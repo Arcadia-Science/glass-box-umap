@@ -101,6 +101,8 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static", "_assets"]
 
+html_favicon = "_assets/favicon-32.png"
+
 # -- Napoleon options
 napoleon_include_init_with_doc = False
 napoleon_use_admonition_for_examples = True
