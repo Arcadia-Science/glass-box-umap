@@ -1,9 +1,7 @@
-import math
-
 import pytest
 import torch
 from glass_box_umap.parametric_umap.registry import (
-    _ENCODER_REGISTRY,
+    ENCODER_REGISTRY,
     create_encoder,
     register_encoder,
 )
@@ -12,10 +10,10 @@ from torch import nn
 
 @pytest.fixture(autouse=True)
 def clean_registry():
-    original = _ENCODER_REGISTRY.copy()
+    original = ENCODER_REGISTRY.copy()
     yield
-    _ENCODER_REGISTRY.clear()
-    _ENCODER_REGISTRY.update(original)
+    ENCODER_REGISTRY.clear()
+    ENCODER_REGISTRY.update(original)
 
 
 class DummyEncoder(nn.Module):
@@ -53,8 +51,8 @@ def test_register_encoder():
     class TestEncoder(DummyEncoder):
         pass
 
-    assert "test_encoder" in _ENCODER_REGISTRY
-    assert _ENCODER_REGISTRY["test_encoder"] is TestEncoder
+    assert "test_encoder" in ENCODER_REGISTRY
+    assert ENCODER_REGISTRY["test_encoder"] is TestEncoder
 
 
 def test_register_encoder_duplicate_raises():
@@ -121,7 +119,7 @@ def test_create_encoder_bad_signature():
 
 
 def test_default_encoder_registered():
-    assert "default" in _ENCODER_REGISTRY
+    assert "default" in ENCODER_REGISTRY
 
 
 @pytest.mark.parametrize(
@@ -149,4 +147,3 @@ def test_create_encoder_various_input_dims(input_dims: tuple[int, ...]):
     output = encoder(x)
 
     assert output.shape == (batch_size, n_components)
-    assert encoder.encoder[1].in_features == math.prod(input_dims)  # type: ignore

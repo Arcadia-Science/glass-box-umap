@@ -2,8 +2,8 @@ import pytest
 import torch
 from glass_box_umap.parametric_umap.models import (
     ConvEncoder,
+    DeepPReLUNet,
     DefaultDecoder,
-    DefaultEncoder,
 )
 
 
@@ -22,29 +22,24 @@ def test_default_encoder_output_shape(
     n_components: int,
     batch_size: int,
 ):
-    encoder = DefaultEncoder(input_dims=input_dims, n_components=n_components)
+    encoder = DeepPReLUNet(input_dims=input_dims, n_components=n_components)
     x = torch.randn(batch_size, *input_dims)
     output = encoder(x)
     assert output.shape == (batch_size, n_components)
 
 
 @pytest.mark.parametrize(
-    "hidden_dims",
-    [
-        [64],
-        [128, 64],
-        [256, 128, 64],
-        [100, 100, 100, 100],
-    ],
+    "hidden_size",
+    [64, 128, 256],
 )
-def test_default_encoder_custom_hidden_dims(hidden_dims: list[int]):
+def test_default_encoder_custom_hidden_size(hidden_size: int):
     input_dims = (784,)
     n_components = 2
     batch_size = 4
-    encoder = DefaultEncoder(
+    encoder = DeepPReLUNet(
         input_dims=input_dims,
         n_components=n_components,
-        hidden_dims=hidden_dims,
+        hidden_size=hidden_size,
     )
     x = torch.randn(batch_size, *input_dims)
     output = encoder(x)

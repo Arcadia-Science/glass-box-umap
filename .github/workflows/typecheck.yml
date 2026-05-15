@@ -26,7 +26,7 @@ jobs:
 
       # --frozen ensures CI fails if uv.lock is out of sync with pyproject.toml
       - name: Install dependencies
-        run: uv sync --frozen --group dev
+        run: uv sync --frozen --extra plotting --group dev
 
       - name: Run type check
         run: uv run --no-sync make typecheck

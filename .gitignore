@@ -64,3 +64,10 @@ venv/
 
 # OS
 .DS_Store
+
+# Images
+*.png
+!docs/_assets/*.png
+
+# Lightning logs
+*tmp*

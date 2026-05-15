@@ -26,7 +26,8 @@ project = "glass-box-umap"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "nbsphinx",
+    "myst_nb",
+    "myst_sphinx_gallery",
     "sphinx.ext.napoleon",
     "sphinx.ext.mathjax",
     "sphinx.ext.doctest",
@@ -36,12 +37,12 @@ extensions = [
     "autoapi.extension",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
-    "myst_parser",
     "sphinx_togglebutton",
     "custom_skip_members",
     "resolve_missing_references",
     "fix_dataclass_defaults",
     "restructure_class_layout",
+    "patch_type_alias_subscript",
 ]
 
 
@@ -61,14 +62,16 @@ smartquotes_action = "qe"
 
 # -- Notebook rendering -------------------------------------------------
 
-# Something to consider: https://dokk.org/documentation/nbsphinx/0.9.3/prolog-and-epilog/
-nbsphinx_epilog = """"""
-nbsphinx_prolog = """"""
+nb_execution_mode = "off"
+nb_execution_allow_errors = True
 
-nbsphinx_allow_errors = True
-nbsphinx_input_prompt = "%.0s"
-nbsphinx_output_prompt = "%.0s"
-nbsphinx_prompt_width = "0"
+suppress_warnings = ["mystnb.unknown_mime_type"]
+
+nb_mime_priority_overrides = [
+    ("html", "application/javascript", 5),
+    ("html", "application/vnd.bokehjs_load.v0+json", 100),
+    ("html", "application/vnd.bokehjs_exec.v0+json", 100),
+]
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -82,8 +85,9 @@ GOOGLE_FONTS_URL = (
     "family=Merriweather:ital,wght@0,300..900;1,300..900&"
     "display=swap"
 )
-html_logo = "_assets/logo.png"
 html_theme_options = {
+    "light_logo": "lockup.png",
+    "dark_logo": "dark_lockup.png",
     "light_css_variables": {
         "font-stack": '"Atkinson Hyperlegible Next", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
         "font-stack--monospace": 'Menlo, ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", monospace',
@@ -95,7 +99,9 @@ html_theme_options = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+html_static_path = ["_static", "_assets"]
+
+html_favicon = "_assets/favicon-32.png"
 
 # -- Napoleon options
 napoleon_include_init_with_doc = False
@@ -123,7 +129,8 @@ copybutton_exclude = ".linenos, .gp, .go"
 # -- myst options
 myst_enable_extensions = ["colon_fence", "dollarmath", "amsmath"]
 
-togglebutton_hint = "Click to expand"
+togglebutton_hint = ""
+togglebutton_hint_hide = ""
 
 # -- autoapi configuration ---------------------------------------------------
 
@@ -134,6 +141,17 @@ autodoc_typehints_description_target = "documented_params"  # autoapi respects t
 python_use_unqualified_type_names = True
 autodoc_class_signature = "mixed"
 autoclass_content = "class"
+autodoc_type_aliases = {
+    "NDArray": "numpy.typing.NDArray",
+    "np.bool_": "numpy.bool_",
+    "np.float32": "numpy.float32",
+    "np.float64": "numpy.float64",
+    "np.floating": "numpy.floating",
+    "np.integer": "numpy.integer",
+    "np.intp": "numpy.intp",
+    "np.str_": "numpy.str_",
+    "np.uint8": "numpy.uint8",
+}
 
 autoapi_type = "python"
 autoapi_dirs = ["../src"]
@@ -157,6 +175,9 @@ html_css_files = [
     "css/label.css",
     "css/sphinx-togglebutton.css",
     "css/headings.css",
-    "css/cards.css",
+    "css/pub_card.css",
+    "css/notebook.css",
     "css/rubric.css",
+    "css/sidebar.css",
+    "css/admonitions.css",
 ]

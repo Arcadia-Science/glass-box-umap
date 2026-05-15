@@ -17,15 +17,15 @@ format:
 
 .PHONY: typecheck
 typecheck:
-	pyright --project pyproject.toml src/ tests/
+	uv run pyright --project pyproject.toml src/ tests/
 
 .PHONY: pre-commit
 pre-commit:
-	pre-commit run --all-files
+	uv run pre-commit run --all-files
 
 .PHONY: test
 test:
-	pytest -v .
+	uv run pytest -v .
 
 .PHONY: clean
 clean:
@@ -34,6 +34,22 @@ clean:
 .PHONY: build
 build: clean
 	uv build
+
+.PHONY: notebooks
+notebooks:
+	uv run jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=600 docs/user_guide/*.ipynb
+	uv run jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=600 docs/examples/*.ipynb
+
+.PHONY: notebook
+notebook:
+	@nb="$(filter %.ipynb,$(MAKECMDGOALS))"; \
+	if [ -z "$$nb" ]; then \
+		echo "usage: make notebook PATH/TO/NOTEBOOK.ipynb"; exit 1; \
+	fi; \
+	uv run jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=600 $$nb
+
+%.ipynb:
+	@:
 
 .PHONY: docs
 docs:
@@ -44,6 +60,9 @@ docs:
 docs-live:
 	$(MAKE) -C docs/ clean-and-build-html
 	$(MAKE) -C docs/ live
+
+.PHONY: docs-with-notebooks
+docs-with-notebooks: notebooks docs
 
 .PHONY: build-and-test-publish
 build-and-test-publish: build

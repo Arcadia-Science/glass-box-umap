@@ -1,6 +1,7 @@
 # Examples
 
-```{eval-rst}
-.. nbgallery::
-   example.ipynb
+```{base-gallery}
+:tooltip:
+
+gene_expression
 ```

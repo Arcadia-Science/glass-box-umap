@@ -10,19 +10,19 @@ from umap.umap_ import fuzzy_simplicial_set
 
 GraphElements = tuple[
     coo_matrix,
-    NDArray[np.floating],
-    NDArray[np.intp],
-    NDArray[np.intp],
-    NDArray[np.floating],
+    NDArray[np.int32],
+    NDArray[np.int32],
+    NDArray[np.float32],
     int,
 ]
 
 
 def get_umap_graph(
     X: NDArray[np.floating],
-    n_neighbors: int = 10,
-    metric: str = "cosine",
+    n_neighbors: int = 15,
+    metric: str = "euclidean",
     random_state: RandomState | int | None = None,
+    quiet: bool = False,
 ) -> csr_matrix:
     """Build a UMAP graph from input data using nearest neighbor descent.
 
@@ -39,17 +39,18 @@ def get_umap_graph(
         Sparse CSR matrix representing the UMAP graph with edge weights.
     """
     rng = check_random_state(random_state)
-    n_trees = 5 + int(round((X.shape[0]) ** 0.5 / 20.0))
+    n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
     n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
     nnd = NNDescent(
         X,
         n_neighbors=n_neighbors,
         metric=metric,
+        random_state=random_state,
         n_trees=n_trees,
         n_iters=n_iters,
         max_candidates=60,
-        verbose=True,
+        verbose=not quiet,
     )
 
     assert nnd.neighbor_graph is not None
@@ -70,36 +71,35 @@ def get_umap_graph(
     return umap_graph
 
 
-def get_graph_elements(graph: csr_matrix, n_epochs: int) -> GraphElements:
-    """Extract graph elements from a sparse UMAP graph for edge sampling.
+def get_graph_elements(graph: csr_matrix, edge_pruning_factor: float) -> GraphElements:
+    """Extract and prune edges from a sparse UMAP graph.
 
-    Converts a sparse graph representation into arrays of edge indices and weights
-    suitable for training a parametric UMAP model.
+    Removes weak edges below a relative weight threshold and returns the
+    remaining edge indices, weights, and vertex counts.
 
     Args:
         graph: Sparse CSR matrix representing the UMAP graph with edge weights.
-        n_epochs: Number of training epochs, used to determine sampling frequency.
+        edge_pruning_factor: Relative threshold for discarding weak edges. Edges with
+            weight less than ``max_weight * edge_pruning_factor`` are removed.
 
     Returns:
         A tuple containing:
-            - graph: The COO format graph with low-probability edges removed
-            - epochs_per_sample: Number of times each edge should be sampled per epoch
-            - head: Source vertex indices for each edge
-            - tail: Target vertex indices for each edge
-            - weight: Edge weights
-            - n_vertices: Total number of vertices in the graph
+            - graph: The COO format graph with low-weight edges removed
+            - vertices_a: Source vertex indices for each edge (rows in COO matrix)
+            - vertices_b: Destination vertex indices for each edge (cols in COO matrix)
+            - edge_weights: Edge weights
+            - num_vertices: Total number of vertices in the graph
     """
     graph_coo = cast(coo_matrix, graph.tocoo())
     graph_coo.sum_duplicates()
 
-    n_vertices = graph_coo.get_shape()[0]
+    num_vertices = int(graph_coo.get_shape()[0])
 
-    graph_coo.data[graph_coo.data < (graph_coo.data.max() / float(n_epochs))] = 0.0
+    graph_coo.data[graph_coo.data < (graph_coo.data.max() * float(edge_pruning_factor))] = 0.0
     graph_coo.eliminate_zeros()
 
-    epochs_per_sample = (n_epochs * graph_coo.data).astype(np.float32)
-    head = graph_coo.row
-    tail = graph_coo.col
-    weight = graph_coo.data
+    vertices_a = cast(NDArray[np.int32], graph_coo.row.astype(np.int32))
+    vertices_b = cast(NDArray[np.int32], graph_coo.col.astype(np.int32))
+    edge_weights = cast(NDArray[np.float32], graph_coo.data.astype(np.float32))
 
-    return graph_coo, epochs_per_sample, head, tail, weight, n_vertices
+    return graph_coo, vertices_a, vertices_b, edge_weights, num_vertices

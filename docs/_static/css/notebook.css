@@ -1,0 +1,14 @@
+.cell_input div[class*=highlight] > pre {
+    padding: 15px !important;
+}
+
+.cell_output .output.text_html {
+    overflow-x: auto;
+}
+
+.cell_output .output.text_plain,
+.cell_output .output.traceback,
+.cell_output .output.stream,
+.cell_output .output.stderr {
+    margin-top: 0 !important;
+}

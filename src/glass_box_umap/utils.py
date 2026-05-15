@@ -13,6 +13,15 @@ def get_default_device() -> torch.device:
     return torch.device("cpu")
 
 
+def current_device_memory_bytes(device: torch.device) -> int | None:
+    """Bytes currently held by live tensors on ``device``. ``None`` on CPU."""
+    if device.type == "cuda":
+        return torch.cuda.memory_allocated(device)
+    if device.type == "mps":
+        return torch.mps.current_allocated_memory()
+    return None
+
+
 def device_to_lightning_acceleration_config(
     device: torch.device,
 ) -> tuple[str | Accelerator, int | list[int] | str]:
