@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from glass_box_umap.components import VmapPReLU
-from torch.func import functional_call, jacrev, vmap
+from torch.func import functional_call, jacrev, vmap  # pyright: ignore[reportPrivateImportUsage]
 
 
 def test_train_mode_matches_prelu():

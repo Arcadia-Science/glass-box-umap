@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from numpy.typing import NDArray
-from torch.func import functional_call, jacrev, vmap
+from torch.func import functional_call, jacrev, vmap  # pyright: ignore[reportPrivateImportUsage]
 
 
 def compute_jacobian(

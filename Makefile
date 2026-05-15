@@ -17,7 +17,7 @@ format:
 
 .PHONY: typecheck
 typecheck:
-	uv run pyright --project pyproject.toml src/ tests/
+	uv run --no-sync pyright --project pyproject.toml src/ tests/
 
 .PHONY: pre-commit
 pre-commit:
@@ -25,7 +25,7 @@ pre-commit:
 
 .PHONY: test
 test:
-	uv run pytest -v .
+	uv run --no-sync pytest -v .
 
 .PHONY: clean
 clean:
