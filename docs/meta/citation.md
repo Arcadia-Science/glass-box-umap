@@ -1,29 +1,35 @@
 # Citation
 
-If you use Glass Box UMAP, please cite the following papers.
-
-## Software pub
+If you use the Glass Box UMAP software in your work, please cite the following:
 
 <div class="pub-card">
 
 **Citation**
 
-*TODO*
+*Golden JR, Kiefl E, York R. (2026). Glass Box UMAP: A Python package for interpretable UMAP via exact feature contributions. https://doi.org/10.57844/arcadia-4ye8-8tun*
 
 **Link**
 
-*TODO*
+[https://thestacks.org/publications/resource-glass-box-umap-software/v1](https://thestacks.org/publications/resource-glass-box-umap-software/v1)
 
 **BibTeX**
 
 ```bibtex
-@article{TODO,
+@article{Golden2026Glass,
+	author = {Golden, James R. and Kiefl, Evan and York, Ryan},
+	journal = {The Stacks},
+	doi = {10.57844/arcadia-4ye8-8tun},
+	year = {2026},
+	month = {may 15},
+	publisher = {The Stacks},
+	title = {Glass {Box} {UMAP}: A {Python} package for interpretable {UMAP} via exact feature contributions},
+	url = {https://thestacks.org/publications/resource-glass-box-umap-software/v1},
 }
 ```
 
 </div>
 
-## Notebook pub
+If you reference Glass Box UMAP as an algorithm in your work, please cite the following:
 
 <div class="pub-card">
 
