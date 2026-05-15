@@ -1,10 +1,10 @@
 <a href="https://glass-box-umap.readthedocs.io">
-  <img src="docs/_assets/lockup.png" width="400" alt="logo">
+  <img src="docs/_assets/lockup.png" width="500" alt="logo">
 </a>
 
 [![Documentation Status](https://readthedocs.org/projects/glass-box-umap/badge/?version=latest)](https://glass-box-umap.readthedocs.io/en/latest/?badge=latest)
 [![PyPI - Version](https://img.shields.io/pypi/v/glass-box-umap)](https://pypi.org/project/glass-box-umap/)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/glass-box-umap)](https://pypi.org/project/glass-box-umap/)
+[![Python Version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FArcadia-Science%2Fglass-box-umap%2Fmain%2Fpyproject.toml)](https://pypi.org/project/glass-box-umap/)
 [![GitHub license](https://img.shields.io/github/license/Arcadia-Science/glass-box-umap)](https://github.com/Arcadia-Science/glass-box-umap/blob/main/LICENSE)
 
 # Glass Box UMAP
@@ -29,6 +29,5 @@ All resources are hosted at [https://glass-box-umap.readthedocs.io](https://glas
 
 # Acknowledgements
 
-Thank you to Leland McInnes, Tim Sainburg, Timothy Gentner, and Francois Chollet for their work on parametric UMAP. Special thanks to Leland McInnes for maintaining [umap-learn](https://umap-learn.readthedocs.io/en/latest/), and all other contributors, whose work has made this project possible.
-
-Glass Box UMAP is part of [Arcadia Science's](https://www.arcadiascience.com/) commitment to open, reproducible research tools.
+* Thank you to Leland McInnes, Tim Sainburg, Timothy Gentner, and Francois Chollet for their work on [parametric UMAP](https://arxiv.org/abs/2009.12981). Special thanks to Leland McInnes for maintaining [umap-learn](https://umap-learn.readthedocs.io/en/latest/), and all other contributors, whose work has made this project possible.
+* Glass Box UMAP is part of [Arcadia Science's](https://www.arcadiascience.com/) commitment to open, reproducible research tools.
