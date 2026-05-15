@@ -18,7 +18,7 @@ python docs/user_guide/performance_data/bench_memory_grid.py
 
 ### `num_workers` sweep — `workers.csv`, `workers_t4.csv`, `workers_h100.csv`
 
-Fits glass box UMAP on full MNIST (70k rows, 784 features) for one epoch at each value of `num_workers`, recording fit time, graph time, and train time.
+Fits Glass Box UMAP on full MNIST (70k rows, 784 features) for one epoch at each value of `num_workers`, recording fit time, graph time, and train time.
 
 ```bash
 python docs/user_guide/performance_data/bench_workers.py
@@ -28,7 +28,7 @@ modal run docs/user_guide/performance_data/bench_workers_h100_modal.py
 
 ### Encoder-size sweep — `encoder_size.csv`, `encoder_size_t4.csv`, `encoder_size_h100.csv`
 
-Fits glass box UMAP on full MNIST for one epoch at each of five encoder sizes (133K, 463K, 2M, 5M, 18M parameters), reached by widening `hidden_size` and deepening `n_hidden_layers`. Records fit time and parameter count per row. Uses device-near-optimal `num_workers` (2 on CPU and MPS, 8 on T4 and H100) so that the comparison is apples-to-apples across devices.
+Fits Glass Box UMAP on full MNIST for one epoch at each of five encoder sizes (133K, 463K, 2M, 5M, 18M parameters), reached by widening `hidden_size` and deepening `n_hidden_layers`. Records fit time and parameter count per row. Uses device-near-optimal `num_workers` (2 on CPU and MPS, 8 on T4 and H100) so that the comparison is apples-to-apples across devices.
 
 ```bash
 python docs/user_guide/performance_data/bench_encoder_size.py

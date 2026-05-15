@@ -323,7 +323,7 @@ class LiveEmbeddingCallback(pl.Callback):
         layout, _, _ = self._build_layout(frames_snapshot, losses_snapshot, is_live=False)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = Path(f"glassbox_live_{timestamp}.html").resolve()
-        html = file_html(layout, INLINE, title="Glass box UMAP")
+        html = file_html(layout, INLINE, title="Glass Box UMAP")
         filename.write_text(html)
         print(f"Saved {filename}")
 
