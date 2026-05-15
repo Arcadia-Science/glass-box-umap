@@ -18,22 +18,17 @@ authors = [
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10,<3.14"
-# TODO: We'll eventually want to increase dependency resolution radius
 dependencies = [
     "numpy>=1.26.4,<3",
     "pandas>=2.2.3,<3",
-    "leidenalg>=0.10.2,<0.11",
-    "lightning-utilities>=0.15.2,<0.16",
-    "dill>=0.4.0,<0.5",
-    "einops>=0.8.1,<0.9",
-    "torch>=2.5.1",
-    "pytorch-lightning>=2.6.0",
-    "umap-learn>=0.5.7",
-    "pynndescent>=0.5.13",
+    "torch>=2.1.0",
+    "pytorch-lightning>=2.4.0",
+    "umap-learn>=0.5.10",
+    "pynndescent>=0.5.1",
     "scikit-learn>=1.6.0",
-    "tensorboard>=2.20.0",
-    "packaging>=23.0",
-    "psutil>=5.9",
+    "tensorboard>=2.18",
+    "packaging>=21.3",
+    "psutil>=5.0",
 ]
 
 [project.optional-dependencies]
