@@ -9,7 +9,7 @@ Documentation = "https://github.com/Arcadia-Science/glass-box-umap/blob/main/REA
 
 [project]
 name = "glass-box-umap"
-version = "0.1.0a1"
+version = "0.1.0"
 description = "This package augments UMAP by computing exact feature contributions to the UMAP embedding."
 authors = [
   {name = "James Golden", email = "james.golden@arcadiascience.com"},
