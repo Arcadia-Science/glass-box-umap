@@ -4,10 +4,14 @@ from .core import GlassBoxUMAP
 from .parametric_umap import ParametricUMAP
 from .parametric_umap import logging_config as logging_config
 
-__version__ = importlib.metadata.version("glass-box-umap")
+
+def __getattr__(name: str) -> str:
+    if name == "__version__":
+        return importlib.metadata.version("glass-box-umap")
+    raise AttributeError(name)
+
 
 __all__ = [
     "GlassBoxUMAP",
     "ParametricUMAP",
-    "__version__",
 ]
