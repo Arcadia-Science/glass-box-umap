@@ -23,8 +23,8 @@ All resources are hosted at [https://glass-box-umap.readthedocs.io](https://glas
 
 **Quick links**:
 
-1. [**Installation**](https://glass-box-umap.readthedocs.io/en/latest/getting_started/install.html)
-1. [Quickstart](https://glass-box-umap.readthedocs.io/en/latest/getting_started/quickstart.html)
+1. [**Installation**](https://glass-box-umap.readthedocs.io/en/latest/user_guide/install.html)
+1. [Basic usage](https://glass-box-umap.readthedocs.io/en/latest/user_guide/basic_usage.html)
 1. [Citation](https://glass-box-umap.readthedocs.io/en/latest/meta/citation.html)
 
 # Acknowledgements
