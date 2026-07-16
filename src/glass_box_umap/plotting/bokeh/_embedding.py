@@ -31,6 +31,7 @@ def plot_embedding(
     label_sets: Mapping[str, Sequence[Any] | NDArray] | None = None,
     feature_names: list[str] | None = None,
     feature_values: NDArray[np.floating] | None = None,
+    feature_color_views: Mapping[str, NDArray[np.floating]] | None = None,
     top_k_global: int = 200,
     hover_images: NDArray[np.uint8] | None = None,
     hover_tooltips: str | None = None,
@@ -89,6 +90,11 @@ def plot_embedding(
             raw values for human-readable tooltips, or the same
             standardized array fed to the embedder for consistency with
             contributions space. Ignored when ``hover_tooltips`` is set.
+        feature_color_views:
+            Optional named ``(n_samples, n_features)`` reduced-contribution
+            matrices for the Feature color map. The default ``Raw`` view is
+            always available. These views do not change the exact bar chart
+            or per-point contribution values.
         top_k_global:
             How many features to ship to the browser, ranked by global L2
             importance. Caps everything: the bar chart, the feature-picker
@@ -132,6 +138,13 @@ def plot_embedding(
         feature_values=feature_values,
     )
     n_samples = Z.shape[0]
+    if feature_color_views is not None:
+        for name, view in feature_color_views.items():
+            if view.shape != (n_samples, contributions.shape[2]):
+                raise ValueError(
+                    f"feature color view {name!r} has shape {view.shape}; expected "
+                    f"{(n_samples, contributions.shape[2])}."
+                )
     if n_samples >= _LARGE_DATASET_WARN_THRESHOLD:
         warnings.warn(
             f"plot_embedding received {n_samples:,} samples; at this size browser "
@@ -211,6 +224,14 @@ def plot_embedding(
     scatter_source = make_scatter_source(Z, extras)
 
     l2_source = ColumnDataSource({f"c{k}": views.l2[:, k] for k in range(top.n_kept)})
+    feature_view_sources = {"Raw": l2_source}
+    if feature_color_views is not None:
+        for name, view in feature_color_views.items():
+            if name == "Raw":
+                raise ValueError("feature_color_views must not redefine the reserved 'Raw' view.")
+            feature_view_sources[name] = ColumnDataSource(
+                {f"c{k}": view[:, top.keep_idx].astype(np.float32) for k in range(top.n_kept)}
+            )
     feature_values_source: ColumnDataSource | None = None
     if feature_values_kept is not None:
         feature_values_source = ColumnDataSource(
@@ -234,9 +255,14 @@ def plot_embedding(
         initial_mode=initial_mode,
         initial_t=initial_t,
         label_modes=list(named_labels),
+        label_factors={
+            name: sorted({str(value) for value in labels})
+            for name, labels in named_labels.items()
+        },
         n_distinct=n_distinct,
         top=top,
         l2_source=l2_source,
+        feature_view_sources=feature_view_sources,
         feature_values_source=feature_values_source,
         top_feature_names_by_rank=top_feature_names_by_rank,
         scatter_source=scatter_source,
@@ -255,8 +281,11 @@ def plot_embedding(
         column(
             row(controls.color_by_prefix, controls.color_by_widget),
             controls.feature_picker,
+            controls.feature_view_picker,
             controls.label_picker,
+            controls.label_class_filter,
             controls.top_n_slider,
+            row(controls.point_size_slider, controls.point_alpha_slider),
             scatter.p_scatter,
             sizing_mode="stretch_both",
             styles={

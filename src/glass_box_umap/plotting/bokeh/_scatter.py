@@ -55,6 +55,7 @@ class ScatterArtifacts:
     gradient_glyph: Any
     color_bar: ColorBar
     label_glyphs: dict[str, list[Any]]
+    point_glyphs: list[Any]
     gradient_mapper: LinearColorMapper
 
 
@@ -186,6 +187,9 @@ def build_scatter(
     for glyphs in label_glyphs.values():
         p_scatter.add_tools(HoverTool(tooltips=tooltips.group, renderers=glyphs))
 
+    point_glyphs = [top_other_glyph, top_named_glyph, gradient_glyph]
+    point_glyphs.extend(glyph for glyphs in label_glyphs.values() for glyph in glyphs)
+
     return ScatterArtifacts(
         p_scatter=p_scatter,
         top_other_glyph=top_other_glyph,
@@ -193,5 +197,6 @@ def build_scatter(
         gradient_glyph=gradient_glyph,
         color_bar=color_bar,
         label_glyphs=label_glyphs,
+        point_glyphs=point_glyphs,
         gradient_mapper=gradient_mapper,
     )
