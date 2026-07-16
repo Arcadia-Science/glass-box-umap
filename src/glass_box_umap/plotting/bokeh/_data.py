@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -66,6 +66,7 @@ def validate_shapes(
     contributions: NDArray[np.floating],
     feature_names: list[str] | None = None,
     group_names: Sequence[Any] | NDArray | None = None,
+    label_sets: Mapping[str, Sequence[Any] | NDArray] | None = None,
     feature_values: NDArray[np.floating] | None = None,
 ) -> None:
     """Validate shape/length invariants shared by the public plot functions.
@@ -73,7 +74,7 @@ def validate_shapes(
     Raises:
         ValueError: If ``Z`` is not ``(n_samples, 2)``, ``contributions`` is
             not ``(n_samples, 2, n_features)`` with ``n_features >= 1``, or
-            ``feature_names`` / ``group_names`` / ``feature_values`` (when
+        ``feature_names`` / ``group_names`` / ``label_sets`` / ``feature_values`` (when
             provided) don't match the corresponding axes.
     """
     if Z.ndim != 2 or Z.shape[1] != 2:
@@ -106,6 +107,15 @@ def validate_shapes(
         raise ValueError(
             f"group_names has length {len(group_names)}, but Z has {n_samples} samples."
         )
+
+    if label_sets is not None:
+        for name, labels in label_sets.items():
+            if not name:
+                raise ValueError("label_sets keys must be non-empty strings.")
+            if len(labels) != n_samples:
+                raise ValueError(
+                    f"label set {name!r} has length {len(labels)}, but Z has {n_samples} samples."
+                )
 
     if feature_values is not None and feature_values.shape != (n_samples, n_features):
         raise ValueError(

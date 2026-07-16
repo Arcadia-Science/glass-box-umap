@@ -7,6 +7,7 @@ from bokeh.models import (
     Div,
     InlineStyleSheet,
     RadioButtonGroup,
+    Select,
     Slider,
 )
 
@@ -41,12 +42,14 @@ class ControlsArtifacts:
     color_by_widget: RadioButtonGroup
     feature_picker: AutocompleteInput
     top_n_slider: Slider
+    label_picker: Select
 
 
 def build_controls(
     color_modes: list[str],
     initial_mode: str,
     initial_t: int,
+    label_modes: list[str],
     n_distinct: int,
     top: TopFeatures,
     l2_source: ColumnDataSource,
@@ -68,6 +71,14 @@ def build_controls(
         styles={"color": LABEL_COLOR, "font-size": LABEL_FONT_SIZE, "padding-top": "8px"},
     )
     color_by_widget = RadioButtonGroup(labels=color_modes, active=0)
+    label_picker = Select(
+        title="Label",
+        options=label_modes,
+        value=label_modes[0] if label_modes else "",
+        width=260,
+        visible=(initial_mode == "Label"),
+        styles={"color": LABEL_COLOR},
+    )
     feature_picker = AutocompleteInput(
         title="Search for feature",
         completions=top.kept_names,
@@ -84,7 +95,8 @@ def build_controls(
     )
     top_n_slider = Slider(
         start=1,
-        end=max(n_distinct, 1),
+        # Bokeh rejects a slider whose start and end are equal.
+        end=max(n_distinct, 2),
         value=max(initial_t, 1),
         step=1,
         title="Top features",
@@ -98,7 +110,8 @@ def build_controls(
         CustomJS(
             args=dict(
                 color_modes=color_modes,
-                group_glyphs=scatter.group_glyphs,
+                label_glyphs=scatter.label_glyphs,
+                label_picker=label_picker,
                 top_other_glyph=scatter.top_other_glyph,
                 top_named_glyph=scatter.top_named_glyph,
                 gradient_glyph=scatter.gradient_glyph,
@@ -107,6 +120,20 @@ def build_controls(
                 top_n_slider=top_n_slider,
             ),
             code=COLOR_BY_MODE,
+        ),
+    )
+
+    label_picker.js_on_change(
+        "value",
+        CustomJS(
+            args=dict(color_by_widget=color_by_widget, color_modes=color_modes,
+                      label_glyphs=scatter.label_glyphs, label_picker=label_picker),
+            code="""
+const is_label = color_modes[color_by_widget.active] === "Label";
+for (const [label_mode, glyphs] of Object.entries(label_glyphs)) {
+  for (const glyph of glyphs) glyph.visible = is_label && label_mode === label_picker.value;
+}
+""",
         ),
     )
 
@@ -143,4 +170,5 @@ def build_controls(
         color_by_widget=color_by_widget,
         feature_picker=feature_picker,
         top_n_slider=top_n_slider,
+        label_picker=label_picker,
     )

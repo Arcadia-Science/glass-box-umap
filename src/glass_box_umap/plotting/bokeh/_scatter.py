@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -42,9 +42,8 @@ class ScatterArtifacts:
         gradient_glyph: The single Viridis-mapped glyph used in "Feature" mode.
         color_bar: ColorBar paired with ``gradient_glyph``; visibility tracks
             the "Feature" mode toggle.
-        group_glyphs: One glyph per unique group label (empty when no
-            ``group_names`` were passed); visibility tracks the "Group" mode
-            toggle.
+        label_glyphs: Glyphs for each named categorical label set; visibility
+            tracks the corresponding color mode.
         gradient_mapper: ``LinearColorMapper`` driving ``gradient_glyph``;
             mutated by the feature picker callback when the user changes
             features.
@@ -55,7 +54,7 @@ class ScatterArtifacts:
     top_named_glyph: Any
     gradient_glyph: Any
     color_bar: ColorBar
-    group_glyphs: list[Any]
+    label_glyphs: dict[str, list[Any]]
     gradient_mapper: LinearColorMapper
 
 
@@ -89,7 +88,8 @@ def build_scatter(
     n_distinct: int,
     initial_gradient: NDArray[np.floating],
     initial_mode: str,
-    group_names: Sequence[Any] | NDArray | None,
+    initial_label_mode: str | None,
+    label_sets: Mapping[str, tuple[str, Sequence[Any] | NDArray]],
     output_backend: OutputBackend,
 ) -> ScatterArtifacts:
     """Assemble the scatter figure with all glyphs, color mapper, color bar, and hover tools.
@@ -136,14 +136,14 @@ def build_scatter(
         visible=(initial_mode == "Top feature"),
     )
 
-    has_groups = group_names is not None
-    group_glyphs: list[Any] = []
-    if has_groups:
-        factors = sorted({str(g) for g in group_names})
+    label_glyphs: dict[str, list[Any]] = {}
+    for mode, (field, labels) in label_sets.items():
+        factors = sorted({str(g) for g in labels})
         group_palette = pick_palette(len(factors))
+        glyphs: list[Any] = []
         for factor, color in zip(factors, group_palette, strict=False):
-            view = CDSView(filter=GroupFilter(column_name="group", group=factor))
-            group_glyphs.append(
+            view = CDSView(filter=GroupFilter(column_name=field, group=factor))
+            glyphs.append(
                 p_scatter.scatter(
                     "x",
                     "y",
@@ -153,9 +153,10 @@ def build_scatter(
                     alpha=0.6,
                     nonselection_alpha=0.1,
                     color=color,
-                    visible=(initial_mode == "Group"),
+                    visible=(initial_mode == "Label" and initial_label_mode == mode),
                 )
             )
+        label_glyphs[mode] = glyphs
 
     init_lo, init_hi = nondegenerate_range(
         float(initial_gradient.min()), float(initial_gradient.max())
@@ -182,8 +183,8 @@ def build_scatter(
     p_scatter.add_tools(
         HoverTool(tooltips=tooltips.top, renderers=[top_named_glyph, top_other_glyph]),
     )
-    if has_groups:
-        p_scatter.add_tools(HoverTool(tooltips=tooltips.group, renderers=group_glyphs))
+    for glyphs in label_glyphs.values():
+        p_scatter.add_tools(HoverTool(tooltips=tooltips.group, renderers=glyphs))
 
     return ScatterArtifacts(
         p_scatter=p_scatter,
@@ -191,6 +192,6 @@ def build_scatter(
         top_named_glyph=top_named_glyph,
         gradient_glyph=gradient_glyph,
         color_bar=color_bar,
-        group_glyphs=group_glyphs,
+        label_glyphs=label_glyphs,
         gradient_mapper=gradient_mapper,
     )

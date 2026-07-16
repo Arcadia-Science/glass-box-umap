@@ -28,6 +28,7 @@ def plot_embedding(
     contributions: NDArray[np.floating],
     *,
     group_names: Sequence[Any] | NDArray | None = None,
+    label_sets: Mapping[str, Sequence[Any] | NDArray] | None = None,
     feature_names: list[str] | None = None,
     feature_values: NDArray[np.floating] | None = None,
     top_k_global: int = 200,
@@ -40,8 +41,8 @@ def plot_embedding(
 
     A single radio toggle above the scatter chooses how to color the points:
 
-    - ``Group`` (only available when ``group_names`` is provided): categorical
-      coloring by user-supplied labels.
+    - Named categorical labels (available through ``group_names`` or
+      ``label_sets``): coloring by user-supplied labels.
     - ``Feature``: a Viridis gradient over the L2-reduced contribution of one
       feature, picked via an autocomplete input that appears below the toggle
       (substring match, case-insensitive).
@@ -68,6 +69,12 @@ def plot_embedding(
             color mode is added to the radio and used as the default; when
             ``None`` (default), the radio shows only ``Feature`` / ``Top
             feature`` and starts in ``Feature`` mode.
+        label_sets:
+            Optional named categorical label sets. Each mapping value is a
+            sequence of length ``n_samples``. Each name becomes a separate
+            color mode, allowing the same embedding to be colored by several
+            annotations. ``group_names`` remains supported as a legacy
+            ``"Group"`` label set.
         feature_names:
             Human-readable name per feature; length must equal
             ``contributions.shape[2]``. Defaults to ``"Feature {i}"``
@@ -121,6 +128,7 @@ def plot_embedding(
         contributions,
         feature_names=feature_names,
         group_names=group_names,
+        label_sets=label_sets,
         feature_values=feature_values,
     )
     n_samples = Z.shape[0]
@@ -140,9 +148,18 @@ def plot_embedding(
     )
     n_distinct = len(top_feature_names_by_rank)
 
-    has_groups = group_names is not None
+    named_labels: dict[str, Sequence[Any] | NDArray] = {}
+    if group_names is not None:
+        named_labels["Group"] = group_names
+    if label_sets is not None:
+        overlap = set(named_labels).intersection(label_sets)
+        if overlap:
+            raise ValueError(f"label_sets duplicates reserved label names: {sorted(overlap)}")
+        named_labels.update(label_sets)
+    label_fields = {name: f"label_set_{i}" for i, name in enumerate(named_labels)}
+    has_groups = bool(named_labels)
     has_values = feature_values is not None
-    color_modes = (["Group"] if has_groups else []) + ["Feature", "Top feature"]
+    color_modes = (["Label"] if has_groups else []) + ["Feature", "Top feature"]
     initial_mode = color_modes[0]
 
     initial_t = min(20, n_distinct)
@@ -164,7 +181,11 @@ def plot_embedding(
         extras["top_data_value"] = feature_values_kept[np.arange(n_samples), top_kept_idx]
         extras["picker_data_value"] = feature_values_kept[:, 0].copy()
     if has_groups:
-        extras["group"] = np.asarray(group_names).astype(str)
+        # ``group`` preserves the legacy tooltip field; named sets also get
+        # independent source columns so their glyph filters can switch live.
+        extras["group"] = np.asarray(next(iter(named_labels.values()))).astype(str)
+        for name, labels in named_labels.items():
+            extras[label_fields[name]] = np.asarray(labels).astype(str)
 
     base_body = "index: @index"
     if has_groups:
@@ -203,7 +224,8 @@ def plot_embedding(
         n_distinct=n_distinct,
         initial_gradient=initial_gradient,
         initial_mode=initial_mode,
-        group_names=group_names,
+        initial_label_mode=next(iter(named_labels), None),
+        label_sets={name: (label_fields[name], labels) for name, labels in named_labels.items()},
         output_backend=output_backend,
     )
 
@@ -211,6 +233,7 @@ def plot_embedding(
         color_modes=color_modes,
         initial_mode=initial_mode,
         initial_t=initial_t,
+        label_modes=list(named_labels),
         n_distinct=n_distinct,
         top=top,
         l2_source=l2_source,
@@ -232,6 +255,7 @@ def plot_embedding(
         column(
             row(controls.color_by_prefix, controls.color_by_widget),
             controls.feature_picker,
+            controls.label_picker,
             controls.top_n_slider,
             scatter.p_scatter,
             sizing_mode="stretch_both",
