@@ -1,4 +1,13 @@
+<<<<<<< Updated upstream
 from collections.abc import Mapping, Sequence
+=======
+<<<<<<< Updated upstream
+from collections.abc import Sequence
+=======
+import re
+from collections.abc import Mapping, Sequence
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 from dataclasses import dataclass
 from typing import Any
 
@@ -45,10 +54,9 @@ class BarViews:
     contributions). The "normed L2" view shown in the bar chart is derived
     JS-side from ``l2`` as ``value / max(Σ_k value, ε)`` per sample (so each
     sample's row sums to 1 across the kept pool), cached after first
-    computation. Note that the scatter's "Top feature" coloring is also
-    decided from ``l2`` (argmax over the kept pool), so a sample's "top
-    feature" reflects magnitude regardless of which view the user toggles
-    in the bar chart.
+    computation. The scatter's "Top feature" coloring is computed separately
+    over all input features and always reflects L2 magnitude, regardless of
+    which bar view the user toggles.
 
     Attributes:
         l2: L2-reduced contributions, sliced to ``top.keep_idx``. Always non-negative.
@@ -59,6 +67,71 @@ class BarViews:
     l2: NDArray[np.floating]
     d0: NDArray[np.floating]
     d1: NDArray[np.floating]
+
+
+@dataclass(frozen=True)
+class CollapsedFeatures:
+    """Contribution arrays after max-collapsing numbered positional slots."""
+
+    contributions: NDArray[np.floating]
+    names: list[str]
+    values: NDArray[np.floating] | None
+
+
+_POSITION_PREFIX = re.compile(r"^\d+_(.+)$")
+
+
+def collapse_position_features(
+    contributions: NDArray[np.floating],
+    feature_names: list[str],
+    feature_values: NDArray[np.floating] | None = None,
+) -> CollapsedFeatures:
+    """Collapse ``0_name`` ... ``N_name`` features with a per-row L2 maximum.
+
+    Unnumbered regional features remain separate. For each numbered family,
+    the member with the largest contribution-vector L2 norm is retained for
+    that sample and named ``max_<base>``. This preserves a real 2-D
+    contribution vector for the signed bar views instead of independently
+    mixing maxima from two different slots.
+    """
+    groups: dict[str, list[int]] = {}
+    output: list[tuple[str, list[int]]] = []
+    for index, name in enumerate(feature_names):
+        match = _POSITION_PREFIX.match(name)
+        if match is None:
+            output.append((name, [index]))
+            continue
+        base = match.group(1)
+        if base not in groups:
+            groups[base] = []
+            output.append((f"max_{base}", groups[base]))
+        groups[base].append(index)
+
+    n_samples, n_components, _ = contributions.shape
+    collapsed = np.empty((n_samples, n_components, len(output)), dtype=contributions.dtype)
+    collapsed_values = (
+        np.empty((n_samples, len(output)), dtype=feature_values.dtype)
+        if feature_values is not None
+        else None
+    )
+    rows = np.arange(n_samples)
+    for out_index, (_, members) in enumerate(output):
+        if len(members) == 1:
+            collapsed[:, :, out_index] = contributions[:, :, members[0]]
+            if collapsed_values is not None:
+                collapsed_values[:, out_index] = feature_values[:, members[0]]
+            continue
+        vectors = contributions[:, :, members]
+        winner = np.square(vectors).sum(axis=1).argmax(axis=1)
+        collapsed[:, :, out_index] = vectors[rows, :, winner]
+        if collapsed_values is not None:
+            collapsed_values[:, out_index] = np.max(feature_values[:, members], axis=1)
+
+    return CollapsedFeatures(
+        contributions=collapsed,
+        names=[name for name, _ in output],
+        values=collapsed_values,
+    )
 
 
 def validate_shapes(
@@ -195,7 +268,7 @@ def precompute_top_features(
     kept_l2: NDArray[np.floating],
     kept_names: list[str],
 ) -> tuple[list[str], NDArray[np.integer], NDArray[np.integer]]:
-    """Per-sample top kept feature, ranked by frequency.
+    """Per-sample top candidate feature, ranked by frequency.
 
     For each sample, the kept feature with the largest L2-reduced contribution
     is its "top feature". Distinct top features are then ranked by how often

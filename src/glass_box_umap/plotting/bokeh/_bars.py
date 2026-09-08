@@ -1,6 +1,12 @@
 import numpy as np
 from bokeh.layouts import column
-from bokeh.models import ColumnDataSource, CustomJS, Div, FactorRange, RadioButtonGroup
+from bokeh.models import (
+    ColumnDataSource,
+    CustomJS,
+    Div,
+    FactorRange,
+    RadioButtonGroup,
+)
 from bokeh.models.layouts import LayoutDOM
 from bokeh.plotting import figure
 
@@ -34,7 +40,6 @@ def build_bars(
         ColumnDataSource({f"c{k}": views.d0[:, k] for k in range(top.n_kept)}),
         ColumnDataSource({f"c{k}": views.d1[:, k] for k in range(top.n_kept)}),
     ]
-
     init_mean = views.l2.mean(axis=0)
     init_top = np.argsort(init_mean)[::-1][: top.display_k][::-1]
     init_feat = [top.kept_names[i] for i in init_top]
@@ -86,6 +91,7 @@ def build_bars(
     )
 
     scatter_source.selected.js_on_change("indices", cb)
+    scatter_source.js_on_change("data", cb)
     view_widget.js_on_change("active", cb)
 
     return column(

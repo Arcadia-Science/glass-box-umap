@@ -57,6 +57,7 @@ class ScatterArtifacts:
     label_glyphs: dict[str, list[Any]]
     point_glyphs: list[Any]
     gradient_mapper: LinearColorMapper
+    hierarchy_glyph: Any | None
 
 
 def _base_figure(output_backend: OutputBackend) -> figure:
@@ -89,8 +90,19 @@ def build_scatter(
     n_distinct: int,
     initial_gradient: NDArray[np.floating],
     initial_mode: str,
+<<<<<<< Updated upstream
     initial_label_mode: str | None,
     label_sets: Mapping[str, tuple[str, Sequence[Any] | NDArray]],
+=======
+<<<<<<< Updated upstream
+    group_names: Sequence[Any] | NDArray | None,
+=======
+    initial_label_mode: str | None,
+    label_sets: Mapping[str, tuple[str, Sequence[Any] | NDArray]],
+    has_hierarchy: bool,
+    hierarchy_tooltip: str,
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
     output_backend: OutputBackend,
 ) -> ScatterArtifacts:
     """Assemble the scatter figure with all glyphs, color mapper, color bar, and hover tools.
@@ -104,7 +116,13 @@ def build_scatter(
     p_scatter = _base_figure(output_backend)
 
     other_view = CDSView(
-        filter=GroupFilter(column_name="top_feature_group", group="(other)"),
+        filter=CustomJSFilter(
+            code="""
+const groups = source.data["top_feature_group"];
+const visible = source.data["subset_visible"];
+return groups.map((group, i) => group === "(other)" && Boolean(visible[i]));
+"""
+        ),
     )
     top_other_glyph = p_scatter.scatter(
         "x",
@@ -167,6 +185,11 @@ def build_scatter(
         "x",
         "y",
         source=scatter_source,
+        view=CDSView(
+            filter=CustomJSFilter(
+                code='return Array.from(source.data["subset_visible"], Boolean);'
+            )
+        ),
         size=5,
         alpha=0.6,
         nonselection_alpha=0.1,
@@ -180,15 +203,50 @@ def build_scatter(
     )
     p_scatter.add_layout(color_bar, "right")
 
+    hierarchy_glyph = None
+    if has_hierarchy:
+        hierarchy_glyph = p_scatter.scatter(
+            "x",
+            "y",
+            source=scatter_source,
+            view=CDSView(
+                filter=CustomJSFilter(
+                    code='return Array.from(source.data["subset_visible"], Boolean);'
+                )
+            ),
+            size=5,
+            alpha=0.6,
+            nonselection_alpha=0.1,
+            color="hierarchy_color",
+            visible=(initial_mode == "Hierarchy"),
+        )
+
     p_scatter.add_tools(HoverTool(tooltips=tooltips.feature, renderers=[gradient_glyph]))
     p_scatter.add_tools(
         HoverTool(tooltips=tooltips.top, renderers=[top_named_glyph, top_other_glyph]),
     )
+<<<<<<< Updated upstream
     for glyphs in label_glyphs.values():
         p_scatter.add_tools(HoverTool(tooltips=tooltips.group, renderers=glyphs))
 
     point_glyphs = [top_other_glyph, top_named_glyph, gradient_glyph]
     point_glyphs.extend(glyph for glyphs in label_glyphs.values() for glyph in glyphs)
+=======
+<<<<<<< Updated upstream
+    if has_groups:
+        p_scatter.add_tools(HoverTool(tooltips=tooltips.group, renderers=group_glyphs))
+=======
+    for glyphs in label_glyphs.values():
+        p_scatter.add_tools(HoverTool(tooltips=tooltips.group, renderers=glyphs))
+    if hierarchy_glyph is not None:
+        p_scatter.add_tools(HoverTool(tooltips=hierarchy_tooltip, renderers=[hierarchy_glyph]))
+
+    point_glyphs = [top_other_glyph, top_named_glyph, gradient_glyph]
+    point_glyphs.extend(glyph for glyphs in label_glyphs.values() for glyph in glyphs)
+    if hierarchy_glyph is not None:
+        point_glyphs.append(hierarchy_glyph)
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
     return ScatterArtifacts(
         p_scatter=p_scatter,
@@ -199,4 +257,5 @@ def build_scatter(
         label_glyphs=label_glyphs,
         point_glyphs=point_glyphs,
         gradient_mapper=gradient_mapper,
+        hierarchy_glyph=hierarchy_glyph,
     )

@@ -35,10 +35,19 @@ if (view === 0) {
 }
 
 const sel = scatter_source.selected.indices;
-const indices = sel.length
+const subset = scatter_source.data["subset_visible"];
+const candidates = sel.length
     ? sel
     : Array.from({length: n_samples}, (_, i) => i);
+const indices = candidates.filter(i => subset[i]);
 const n = indices.length;
+
+if (n === 0) {
+    bar_source.data = { feature: [], mean: [] };
+    bar_range.factors = [];
+    heading_div.text = `<b>Mean contribution — ${view_labels[view]} (empty subset)</b>`;
+    return;
+}
 
 const means = new Float64Array(n_kept);
 for (let k = 0; k < n_kept; k++) {

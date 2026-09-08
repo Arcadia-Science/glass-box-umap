@@ -1,14 +1,18 @@
 import numpy as np
 import pytest
+from bokeh.models import CheckboxGroup, Div, RadioButtonGroup, Select, Slider
 from glass_box_umap.jacobian import reduce_contributions
+from glass_box_umap.plotting import HierarchyLevel, HierarchySpec, plot_embedding
 from glass_box_umap.plotting.bokeh._data import (
     BarViews,
     TopFeatures,
+    collapse_position_features,
     compute_bar_views,
     precompute_top_features,
     select_top_features,
     validate_shapes,
 )
+from glass_box_umap.plotting.bokeh._hierarchy import validate_hierarchies
 from numpy.typing import NDArray
 
 N_SAMPLES = 50
@@ -157,3 +161,102 @@ def test_precompute_top_features_handles_single_winner():
     assert names_by_rank == ["only"]
     np.testing.assert_array_equal(sample_rank, np.zeros(3, dtype=sample_rank.dtype))
     np.testing.assert_array_equal(top_kept_idx, np.zeros(3, dtype=top_kept_idx.dtype))
+
+
+def test_collapse_position_features_uses_max_l2_member_and_keeps_anchor():
+    contributions = np.array(
+        [
+            [[1.0, 3.0, 0.0], [0.0, 0.0, 4.0]],
+            [[2.0, 1.0, 0.0], [0.0, 0.0, 0.5]],
+        ],
+        dtype=np.float32,
+    )
+    values = np.array([[7.0, 2.0, 5.0], [8.0, 6.0, 4.0]], dtype=np.float32)
+    collapsed = collapse_position_features(
+        contributions,
+        ["ref_region_CDS", "1_ref_region_CDS", "2_ref_region_CDS"],
+        values,
+    )
+    assert collapsed.names == ["ref_region_CDS", "max_ref_region_CDS"]
+    np.testing.assert_array_equal(collapsed.contributions[:, :, 0], contributions[:, :, 0])
+    np.testing.assert_array_equal(
+        collapsed.contributions[:, :, 1],
+        np.array([[0.0, 4.0], [1.0, 0.0]], dtype=np.float32),
+    )
+    np.testing.assert_array_equal(collapsed.values[:, 1], np.array([5.0, 6.0]))
+
+
+def _make_hierarchy(n_samples: int = N_SAMPLES) -> HierarchySpec:
+    coarse = np.asarray([f"C{i % 2 + 1}" for i in range(n_samples)])
+    fine = np.asarray([f"C{i % 2 + 1}.{i % 4 // 2 + 1}" for i in range(n_samples)])
+
+    def level(name, labels):
+        unique = sorted(set(labels))
+        return HierarchyLevel(
+            name=name,
+            labels=labels,
+            colors={label: "#336699" for label in unique},
+            metadata={
+                label: {"size": int(np.sum(labels == label)), "top_families": "alpha, beta"}
+                for label in unique
+            },
+        )
+
+    return HierarchySpec(
+        name="Classifier OOF", levels=[level("2 clusters", coarse), level("4 clusters", fine)]
+    )
+
+
+def test_validate_hierarchies_rejects_missing_colors():
+    hierarchy = _make_hierarchy()
+    bad_level = HierarchyLevel(
+        name="bad",
+        labels=hierarchy.levels[0].labels,
+        colors={},
+        metadata=hierarchy.levels[0].metadata,
+    )
+    with pytest.raises(ValueError, match="missing colors"):
+        validate_hierarchies([HierarchySpec(name="bad", levels=[bad_level])], N_SAMPLES)
+
+
+def test_plot_embedding_adds_discrete_hierarchy_controls():
+    Z, contributions, feature_names, group_names = _make_inputs()
+    layout = plot_embedding(
+        Z,
+        contributions,
+        group_names=group_names,
+        feature_names=feature_names,
+        hierarchies=[_make_hierarchy()],
+    )
+    radios = list(layout.select({"type": RadioButtonGroup}))
+    assert any("Hierarchy" in radio.labels for radio in radios)
+    sliders = list(layout.select({"type": Slider}))
+    hierarchy_slider = next(
+        slider for slider in sliders if slider.title.startswith("Cluster depth")
+    )
+    assert hierarchy_slider.start == 0
+    assert hierarchy_slider.end == 1
+    selectors = list(layout.select({"type": Select}))
+    assert any(selector.title == "Hierarchy source" for selector in selectors)
+    divs = list(layout.select({"type": Div}))
+    assert any("Classifier OOF" in div.text and "alpha, beta" in div.text for div in divs)
+    assert layout.styles["width"] == "100%"
+    assert layout.styles["height"] == "100vh"
+    assert "max-width" not in layout.styles
+
+
+def test_plot_embedding_adds_subset_legend_and_collapse_controls():
+    Z, contributions, feature_names, group_names = _make_inputs()
+    feature_names[0] = "1_ref_region_CDS"
+    feature_names[1] = "2_ref_region_CDS"
+    layout = plot_embedding(
+        Z,
+        contributions,
+        group_names=group_names,
+        feature_names=feature_names,
+    )
+    checkboxes = list(layout.select({"type": CheckboxGroup}))
+    assert any(box.labels == ["Select none"] for box in checkboxes)
+    assert any("Collapse numbered features" in box.labels[0] for box in checkboxes)
+    divs = list(layout.select({"type": Div}))
+    assert any("Color key" in div.text for div in divs)
