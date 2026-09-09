@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from typing import Any, cast
 
 import pytorch_lightning as pl
 import torch
@@ -102,10 +103,12 @@ class UMAPDataModule(pl.LightningDataModule):
         )
         return DataLoader(
             dataset=self.dataset,
-            batch_sampler=batch_sampler,
+            # DataLoader accepts tensor batches at runtime and forwards them to
+            # Dataset.__getitems__, but PyTorch's annotation permits lists only.
+            batch_sampler=cast(Any, batch_sampler),
             num_workers=self.num_workers,
             persistent_workers=self.num_workers > 0,
-            collate_fn=_identity_collate,
+            collate_fn=cast(Any, _identity_collate),
             # TODO: a tiny tail batch (e.g. 1 edge when num_edges = batch_size + 1)
             # produces a high-variance gradient step with the same LR weight as a
             # full batch. drop_last=True would fix this, but it also wipes out the

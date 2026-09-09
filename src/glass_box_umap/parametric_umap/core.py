@@ -3,7 +3,7 @@ import tempfile
 from contextlib import ExitStack
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, TypeAlias, cast
 
 import numpy as np
 import pytorch_lightning as pl
@@ -22,6 +22,21 @@ from .graph import get_umap_graph
 from .lightning import MemoryLoggerCallback, UMAPDataModule, UMAPLightningModule
 from .logging_config import get_progress_bar, suppress_lightning_logs
 from .registry import DEFAULT_ENCODER, create_encoder
+
+TrainerPrecision: TypeAlias = Literal[
+    "transformer-engine",
+    "transformer-engine-float16",
+    "16-true",
+    "16-mixed",
+    "bf16-true",
+    "bf16-mixed",
+    "32-true",
+    "64-true",
+    "64",
+    "32",
+    "16",
+    "bf16",
+]
 
 
 def _to_numpy_float32(X: NDArray[np.floating] | Tensor) -> NDArray[np.float32]:
@@ -101,7 +116,7 @@ class ParametricUMAP:
     epochs: int = 200
     batch_size: int = 10_000
     num_batches: int | None = None
-    precision: str = "32-true"
+    precision: TrainerPrecision = "32-true"
 
     # Training infra
     num_workers: int = 0
