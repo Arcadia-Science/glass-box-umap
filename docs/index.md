@@ -29,7 +29,6 @@ For a detailed explanation of the methodology, see the [Methodology](resources/m
    user_guide/pca_preprocessing
    user_guide/custom_encoders
    user_guide/performance
-   user_guide/batch_size
 
 .. toctree::
    :hidden:
