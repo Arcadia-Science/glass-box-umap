@@ -14,4 +14,5 @@ def __getattr__(name: str) -> str:
 __all__ = [
     "GlassBoxUMAP",
     "ParametricUMAP",
+    "recommend_batch_size",
 ]

@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from typing import Any, cast
 
 import pytorch_lightning as pl
 import torch
@@ -35,17 +36,43 @@ class SplitAndMergeWeightedSampler(Sampler[int]):
         base, remainder = divmod(num_samples, n_chunks)
         self._samples_per_chunk = [base + (1 if i < remainder else 0) for i in range(n_chunks)]
 
-    def __iter__(self) -> Iterator[int]:
+    def sample_tensor(self) -> Tensor:
+        """Draw all edge indices while retaining them as one tensor."""
         chunks = []
         for start, end, n_samp in zip(
             self._chunk_starts, self._chunk_ends, self._samples_per_chunk, strict=True
         ):
             local = torch.multinomial(self.weights[start:end], n_samp, replacement=True)
             chunks.append(local + start)
-        yield from iter(torch.cat(chunks).tolist())
+        return torch.cat(chunks)
+
+    def __iter__(self) -> Iterator[int]:
+        yield from iter(self.sample_tensor().tolist())
 
     def __len__(self) -> int:
         return self.num_samples
+
+
+class SplitAndMergeWeightedBatchSampler(Sampler[Tensor]):
+    """Yield sampled edge indices as tensors, one vectorized batch at a time."""
+
+    def __init__(self, weights: Tensor, num_samples: int, batch_size: int) -> None:
+        if batch_size <= 0:
+            raise ValueError("batch_size must be positive")
+        self.sampler = SplitAndMergeWeightedSampler(weights, num_samples)
+        self.num_samples = num_samples
+        self.batch_size = batch_size
+
+    def __iter__(self) -> Iterator[Tensor]:
+        sampled = self.sampler.sample_tensor()
+        yield from sampled.split(self.batch_size)
+
+    def __len__(self) -> int:
+        return (self.num_samples + self.batch_size - 1) // self.batch_size
+
+
+def _identity_collate(batch: tuple[Tensor, Tensor]) -> tuple[Tensor, Tensor]:
+    return batch
 
 
 class UMAPDataModule(pl.LightningDataModule):
@@ -69,16 +96,19 @@ class UMAPDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
 
     def train_dataloader(self) -> DataLoader:
-        sampler = SplitAndMergeWeightedSampler(
+        batch_sampler = SplitAndMergeWeightedBatchSampler(
             weights=torch.as_tensor(self.dataset.edge_weights, dtype=torch.double),
             num_samples=len(self.dataset),
+            batch_size=self.batch_size,
         )
         return DataLoader(
             dataset=self.dataset,
-            sampler=sampler,
-            batch_size=self.batch_size,
+            # DataLoader accepts tensor batches at runtime and forwards them to
+            # Dataset.__getitems__, but PyTorch's annotation permits lists only.
+            batch_sampler=cast(Any, batch_sampler),
             num_workers=self.num_workers,
             persistent_workers=self.num_workers > 0,
+            collate_fn=cast(Any, _identity_collate),
             # TODO: a tiny tail batch (e.g. 1 edge when num_edges = batch_size + 1)
             # produces a high-variance gradient step with the same LR weight as a
             # full batch. drop_last=True would fix this, but it also wipes out the

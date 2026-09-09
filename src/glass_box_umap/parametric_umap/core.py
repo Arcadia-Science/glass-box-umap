@@ -3,7 +3,7 @@ import tempfile
 from contextlib import ExitStack
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, TypeAlias, cast
 
 import numpy as np
 import pytorch_lightning as pl
@@ -22,6 +22,21 @@ from .graph import get_umap_graph
 from .lightning import MemoryLoggerCallback, UMAPDataModule, UMAPLightningModule
 from .logging_config import get_progress_bar, suppress_lightning_logs
 from .registry import DEFAULT_ENCODER, create_encoder
+
+TrainerPrecision: TypeAlias = Literal[
+    "transformer-engine",
+    "transformer-engine-float16",
+    "16-true",
+    "16-mixed",
+    "bf16-true",
+    "bf16-mixed",
+    "32-true",
+    "64-true",
+    "64",
+    "32",
+    "16",
+    "bf16",
+]
 
 
 def _to_numpy_float32(X: NDArray[np.floating] | Tensor) -> NDArray[np.float32]:
@@ -101,6 +116,7 @@ class ParametricUMAP:
     epochs: int = 200
     batch_size: int = 10_000
     num_batches: int | None = None
+    precision: TrainerPrecision = "32-true"
 
     # Training infra
     num_workers: int = 0
@@ -155,6 +171,20 @@ class ParametricUMAP:
 
         return model
 
+    def _build_training_graph(self, X: NDArray[np.float32]):
+        """Build the fuzzy graph consumed by the UMAP training dataset.
+
+        Subclasses can override this single hook to alter training geometry
+        without replacing the encoder, loss, trainer, or attribution path.
+        """
+        return get_umap_graph(
+            X.reshape(X.shape[0], -1) if X.ndim > 2 else X,
+            n_neighbors=self.n_neighbors,
+            metric=self.metric,
+            random_state=self.random_state,
+            quiet=self.quiet,
+        )
+
     def to(self, device: str | torch.device) -> Self:
         """Move the model (if initialized) and update the target device."""
         self._device = torch.device(device)
@@ -208,6 +238,7 @@ class ParametricUMAP:
                 devices=devices,
                 max_epochs=self.epochs,
                 limit_train_batches=self.num_batches,
+                precision=self.precision,
                 callbacks=[
                     best_checkpoint,
                     MemoryLoggerCallback(),
@@ -224,13 +255,7 @@ class ParametricUMAP:
             # NNDescent requires 2D (n_samples, n_features). Flatten any
             # higher-dim input (e.g. images for ConvEncoder) for graph
             # construction only; UMAPDataset still receives the original X.
-            graph = get_umap_graph(
-                X.reshape(X.shape[0], -1) if X.ndim > 2 else X,
-                n_neighbors=self.n_neighbors,
-                metric=self.metric,
-                random_state=self.random_state,
-                quiet=self.quiet,
-            )
+            graph = self._build_training_graph(X)
 
             datamodule = UMAPDataModule(
                 UMAPDataset(X, graph, random_state=self.random_state),

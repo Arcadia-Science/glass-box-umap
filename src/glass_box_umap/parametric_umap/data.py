@@ -47,8 +47,8 @@ class UMAPDataset(Dataset[tuple[Tensor, Tensor]]):
         # cross-chunk allocation unbiased when num_edges > 2**24.
         rng = np.random.default_rng(random_state)
         perm = rng.permutation(vertices_a.shape[0])
-        self.vertices_a = vertices_a[perm]
-        self.vertices_b = vertices_b[perm]
+        self.vertices_a = torch.as_tensor(vertices_a[perm], dtype=torch.long)
+        self.vertices_b = torch.as_tensor(vertices_b[perm], dtype=torch.long)
         self.edge_weights = edge_weights[perm]
         self.data = torch.as_tensor(data, dtype=torch.float32)
 
@@ -67,3 +67,11 @@ class UMAPDataset(Dataset[tuple[Tensor, Tensor]]):
         vertex_a_data = self.data[self.vertices_a[index]]
         vertex_b_data = self.data[self.vertices_b[index]]
         return vertex_a_data, vertex_b_data
+
+    def __getitems__(self, indices: list[int] | Tensor) -> tuple[Tensor, Tensor]:
+        """Gather a complete edge batch without a Python loop over edges."""
+        edge_indices = torch.as_tensor(indices, dtype=torch.long)
+        return (
+            self.data[self.vertices_a[edge_indices]],
+            self.data[self.vertices_b[edge_indices]],
+        )
