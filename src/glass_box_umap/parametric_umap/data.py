@@ -51,6 +51,8 @@ class UMAPDataset(Dataset[tuple[Tensor, Tensor]]):
         self.vertices_b = vertices_b[perm]
         self.edge_weights = edge_weights[perm]
         self.data = torch.as_tensor(data, dtype=torch.float32)
+        self._index_a = torch.from_numpy(self.vertices_a.astype(np.int64))
+        self._index_b = torch.from_numpy(self.vertices_b.astype(np.int64))
 
     @property
     def num_edges(self) -> int:
@@ -67,3 +69,17 @@ class UMAPDataset(Dataset[tuple[Tensor, Tensor]]):
         vertex_a_data = self.data[self.vertices_a[index]]
         vertex_b_data = self.data[self.vertices_b[index]]
         return vertex_a_data, vertex_b_data
+
+    def edge_batch(self, indices: Tensor) -> tuple[Tensor, Tensor]:
+        """Gather the endpoints of many edges at once.
+
+        Returns the same tensors as collating ``[self[i] for i in indices]``, without a
+        Python call per edge.
+
+        Args:
+            indices: Edge indices, an int64 tensor of shape (batch,).
+
+        Returns:
+            The data rows for each edge's two endpoints, each of shape (batch, ...).
+        """
+        return self.data[self._index_a[indices]], self.data[self._index_b[indices]]

@@ -1,9 +1,8 @@
 import pytorch_lightning as pl
 from torch import Tensor, nn
 from torch.optim import AdamW
-from umap.umap_ import find_ab_params
 
-from ..loss import umap_loss
+from ..loss import find_ab_params, umap_loss
 
 
 class UMAPLightningModule(pl.LightningModule):

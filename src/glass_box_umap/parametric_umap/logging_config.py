@@ -1,12 +1,15 @@
+from __future__ import annotations
 import importlib.util
 import logging
 import warnings
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any
+from functools import cache
+from typing import TYPE_CHECKING, Any
 
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks.progress.tqdm_progress import TQDMProgressBar
+if TYPE_CHECKING:
+    import pytorch_lightning as pl
+    from pytorch_lightning.callbacks.progress.tqdm_progress import TQDMProgressBar
 
 _LIGHTNING_LOGGER_NAMES = (
     "pytorch_lightning",
@@ -33,19 +36,26 @@ def _is_notebook() -> bool:
     return shell is not None and shell.__class__.__name__ == "ZMQInteractiveShell"
 
 
-class _EpochFractionProgressBar(TQDMProgressBar):
-    def on_train_epoch_start(self, trainer: "pl.Trainer", *_: Any) -> None:
-        super().on_train_epoch_start(trainer, *_)
-        bar = self.train_progress_bar
-        if bar.total is not None and getattr(bar, "container", None) is not None:
-            bar.container.children[1].max = bar.total
-        total = trainer.max_epochs or "?"
-        bar.set_description(f"Epoch {trainer.current_epoch + 1}/{total}")
+@cache
+def _epoch_fraction_progress_bar_class() -> type[TQDMProgressBar]:
+    # Defined on first use so that importing this module doesn't import Lightning.
+    from pytorch_lightning.callbacks.progress.tqdm_progress import TQDMProgressBar
+
+    class _EpochFractionProgressBar(TQDMProgressBar):
+        def on_train_epoch_start(self, trainer: pl.Trainer, *_: Any) -> None:
+            super().on_train_epoch_start(trainer, *_)
+            bar = self.train_progress_bar
+            if bar.total is not None and getattr(bar, "container", None) is not None:
+                bar.container.children[1].max = bar.total
+            total = trainer.max_epochs or "?"
+            bar.set_description(f"Epoch {trainer.current_epoch + 1}/{total}")
+
+    return _EpochFractionProgressBar
 
 
 def get_progress_bar() -> TQDMProgressBar | None:
     if _is_notebook():
-        return _EpochFractionProgressBar()
+        return _epoch_fraction_progress_bar_class()()
     return None
 
 

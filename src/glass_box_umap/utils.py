@@ -1,7 +1,10 @@
-from typing import cast
+from __future__ import annotations
+from typing import TYPE_CHECKING, cast
 
 import torch
-from pytorch_lightning.accelerators import Accelerator, AcceleratorRegistry
+
+if TYPE_CHECKING:
+    from pytorch_lightning.accelerators import Accelerator
 
 
 def get_default_device() -> torch.device:
@@ -44,6 +47,8 @@ def device_to_lightning_acceleration_config(
     Returns:
         A tuple of (accelerator, devices) ready to be unpacked into pl.Trainer.
     """
+    from pytorch_lightning.accelerators import AcceleratorRegistry
+
     accelerator = device.type
     index = cast(int | None, device.index)
 
