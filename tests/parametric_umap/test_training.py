@@ -3,6 +3,7 @@
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
@@ -73,7 +74,9 @@ def _accelerators() -> list[str]:
 @pytest.mark.parametrize("device", _accelerators())
 def test_torch_trainer_on_accelerator(blobs: np.ndarray, device: str) -> None:
     """Batches copied to the device stay intact (an async copy once corrupted them on MPS)."""
-    kwargs = dict(random_state=0, epochs=3, batch_size=64, n_neighbors=8, quiet=True)
+    kwargs: dict[str, Any] = dict(
+        random_state=0, epochs=3, batch_size=64, n_neighbors=8, quiet=True
+    )
     fast = ParametricUMAP(trainer="torch", **kwargs).to(device).fit(blobs)
     reference = ParametricUMAP(trainer="lightning", **kwargs).to(device).fit(blobs)
     Y = fast.transform(blobs)
