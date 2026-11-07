@@ -32,7 +32,7 @@ All resources are hosted at [https://glass-box-umap.readthedocs.io](https://glas
 If you fit many datasets, these choices matter more than anything else for speed:
 
 - **Reuse one process for many fits.** The first fit in a new Python process compiles pynndescent's and umap-learn's numba code, which takes about 20 seconds even for a five-sample input. Later fits in the same process skip it.
-- **For inputs under a few thousand samples, run several single-thread processes.** Call `torch.set_num_threads(1)` in each worker and run one worker per CPU. Small fits can't use many threads, so this gets two to three times more fits per machine than one multi-threaded fit at a time. From about 5,000 samples, give each fit all the threads instead.
+- **For inputs under a few thousand samples, run several single-thread processes.** Call `torch.set_num_threads(1)` in each worker and run one worker per CPU. Small fits can't use many threads, so this gets about 1.6 times as many fits per machine as running one multi-threaded fit at a time. Larger inputs use threads well: give each fit all of them when you need it to finish quickly.
 - **If each fit has to run in a new process,** pass `neighbor_search="auto"`. Below 4,096 samples it finds exact nearest neighbors with PyTorch instead of pynndescent, so nothing is compiled. Embeddings differ slightly from the default's, because pynndescent's neighbors are approximate.
 
 By default, `fit` trains with a plain PyTorch loop and writes no files. To get TensorBoard logs and checkpoints, set `checkpoint_dir` or pass `trainer="lightning"`; both trainers give the same embedding for the same `random_state`.

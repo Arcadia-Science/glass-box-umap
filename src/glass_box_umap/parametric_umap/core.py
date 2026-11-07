@@ -98,12 +98,12 @@ class ParametricUMAP:
             Additional Lightning callbacks to attach to the trainer. Adding any selects
             the Lightning trainer (see ``trainer``).
         trainer:
-            Which training loop to use. ``"torch"`` is a plain PyTorch loop: it gives the
-            same weights as ``"lightning"``, bit for bit, two to three times faster,
-            with no logging and no files written. ``"lightning"`` trains with PyTorch
-            Lightning and writes checkpoints and TensorBoard logs. ``"auto"`` (the
-            default) uses ``"lightning"`` when ``extra_callbacks`` or ``checkpoint_dir``
-            is set, and ``"torch"`` otherwise.
+            Which training loop to use. ``"torch"`` is a plain PyTorch loop: it gives
+            the same weights as ``"lightning"``, bit for bit, two to three and a half
+            times faster on 8 CPU threads, with no logging and no files written.
+            ``"lightning"`` trains with PyTorch Lightning and writes checkpoints and
+            TensorBoard logs. ``"auto"`` (the default) uses ``"lightning"`` when
+            ``extra_callbacks`` or ``checkpoint_dir`` is set, and ``"torch"`` otherwise.
     """
 
     # UMAP algorithm
