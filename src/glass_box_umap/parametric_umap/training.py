@@ -51,6 +51,7 @@ def train_umap(
     num_batches: int | None = None,
     restore_best_weights: bool = True,
     progress: bool = False,
+    num_workers: int = 0,
 ) -> list[float]:
     """Train ``module`` on the edges of ``dataset``.
 
@@ -67,6 +68,9 @@ def train_umap(
         restore_best_weights: Load the weights from the epoch with the lowest mean loss
             when training ends. Otherwise keep the last epoch's.
         progress: Show a progress bar over epochs.
+        num_workers: The Lightning trainer's ``num_workers``. This loop starts no
+            workers; the value only decides how often it draws the seed the Lightning
+            trainer's DataLoader draws, so that both trainers give the same weights.
 
     Returns:
         Each epoch's mean loss, weighted by batch size.
@@ -93,11 +97,14 @@ def train_umap(
     best_loss: torch.Tensor | None = None
     best_state: dict[str, torch.Tensor] | None = None
 
-    for _ in epoch_iter:
-        # A DataLoader draws one number from the global generator each time it starts an
-        # epoch (its workers' base seed). Draw it too, so the edges sampled next, and so the
-        # map, are the same as the Lightning trainer's.
-        torch.empty((), dtype=torch.int64).random_()
+    for epoch in epoch_iter:
+        # A DataLoader draws one number from the global generator (its workers' base seed)
+        # each time it creates an iterator. Without workers that's every epoch. With
+        # workers, the Lightning trainer's DataLoader keeps them between epochs
+        # (persistent_workers=True), so it draws only in the first. Draw it the same way,
+        # so the edges sampled next, and so the map, are the same as the Lightning trainer's.
+        if epoch == 0 or num_workers == 0:
+            torch.empty((), dtype=torch.int64).random_()
         order = sampler.sample()
 
         # Track the epoch loss as Lightning's `self.log(..., on_epoch=True)` does: a float32

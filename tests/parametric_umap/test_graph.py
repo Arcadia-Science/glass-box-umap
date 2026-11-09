@@ -56,19 +56,31 @@ def test_exact_neighbors_blocks_give_the_same_answer(monkeypatch: pytest.MonkeyP
     np.testing.assert_array_equal(whole[1], blocked[1])
 
 
-def test_exact_neighbors_rejects_more_neighbors_than_samples() -> None:
+def test_exact_neighbors_pad_like_nndescent_when_samples_are_fewer() -> None:
+    from pynndescent import NNDescent
+
+    X = _data(10)
+    idx, dist = exact_nearest_neighbors(X, 15)
+    reference = NNDescent(X, n_neighbors=15, random_state=0, verbose=False).neighbor_graph
+    assert reference is not None
+    assert idx.shape == dist.shape == reference[0].shape == (10, 15)
+    np.testing.assert_array_equal(idx == -1, reference[0] == -1)
+    np.testing.assert_array_equal(np.isinf(dist), np.isinf(reference[1]))
+    assert all(set(row[:10]) == set(range(10)) for row in idx)
+
+
+def test_exact_neighbors_rejects_zero_neighbors() -> None:
     with pytest.raises(ValueError, match="n_neighbors"):
-        exact_nearest_neighbors(_data(5), 6)
+        exact_nearest_neighbors(_data(5), 0)
 
 
-@pytest.mark.parametrize("n_neighbors", [2, 4, 15])
-def test_numpy_fuzzy_graph_matches_umap_learn(n_neighbors: int) -> None:
+def _umap_learn_graph(
+    X: np.ndarray, knn_idx: np.ndarray, knn_dist: np.ndarray, n_neighbors: int
+) -> csr_matrix:
     from sklearn.utils import check_random_state
     from umap.umap_ import fuzzy_simplicial_set
 
-    X = _data(400)
-    knn_idx, knn_dist = exact_nearest_neighbors(X, n_neighbors)
-    expected = _umap_graph(
+    return _umap_graph(
         fuzzy_simplicial_set(
             X=X,
             n_neighbors=n_neighbors,
@@ -78,6 +90,13 @@ def test_numpy_fuzzy_graph_matches_umap_learn(n_neighbors: int) -> None:
             knn_dists=knn_dist,
         )
     )
+
+
+@pytest.mark.parametrize("n_neighbors", [2, 4, 15])
+def test_numpy_fuzzy_graph_matches_umap_learn(n_neighbors: int) -> None:
+    X = _data(400)
+    knn_idx, knn_dist = exact_nearest_neighbors(X, n_neighbors)
+    expected = _umap_learn_graph(X, knn_idx, knn_dist, n_neighbors)
     got = fuzzy_simplicial_set_numpy(knn_idx, knn_dist, n_neighbors)
     assert got.dtype == np.float32
     assert got.shape == expected.shape
@@ -86,23 +105,21 @@ def test_numpy_fuzzy_graph_matches_umap_learn(n_neighbors: int) -> None:
 
 
 def test_numpy_fuzzy_graph_matches_umap_learn_with_duplicates() -> None:
-    from sklearn.utils import check_random_state
-    from umap.umap_ import fuzzy_simplicial_set
-
     X = np.concatenate([_data(60), _data(60)[:20]])
     knn_idx, knn_dist = exact_nearest_neighbors(X, 6)
-    expected = _umap_graph(
-        fuzzy_simplicial_set(
-            X=X,
-            n_neighbors=6,
-            metric="euclidean",
-            random_state=check_random_state(0),
-            knn_indices=knn_idx,
-            knn_dists=knn_dist,
-        )
-    )
+    expected = _umap_learn_graph(X, knn_idx, knn_dist, 6)
     got = fuzzy_simplicial_set_numpy(knn_idx, knn_dist, 6)
     assert abs(got - expected).max() < 1e-6
+
+
+def test_numpy_fuzzy_graph_matches_umap_learn_with_padding() -> None:
+    """With fewer samples than neighbors, both ignore the padded columns."""
+    X = _data(10)
+    knn_idx, knn_dist = exact_nearest_neighbors(X, 15)
+    expected = _umap_learn_graph(X, knn_idx, knn_dist, 15)
+    got = fuzzy_simplicial_set_numpy(knn_idx, knn_dist, 15)
+    assert abs(got - expected).max() < 1e-6
+    np.testing.assert_array_equal(got.toarray() != 0, expected.toarray() != 0)
 
 
 def test_resolve_neighbor_search() -> None:
@@ -147,6 +164,14 @@ def test_glass_box_with_exact_neighbors(neighbor_search: str) -> None:
         neighbor_search=neighbor_search,  # type: ignore[arg-type]
     ).to("cpu")
     np.testing.assert_array_equal(again.fit_transform(X), Y)
+
+
+def test_auto_neighbors_with_fewer_samples_than_neighbors() -> None:
+    """10 samples with the default n_neighbors=15, which NNDescent also accepts."""
+    model = GlassBoxUMAP(random_state=0, quiet=True, epochs=3, neighbor_search="auto")
+    Y = model.to("cpu").fit_transform(_data(10, d=11))
+    assert Y.shape == (10, 2)
+    assert np.isfinite(Y).all()
 
 
 def test_tiny_input_with_exact_neighbors() -> None:

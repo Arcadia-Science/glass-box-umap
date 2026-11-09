@@ -147,7 +147,9 @@ def exact_nearest_neighbors(
 
     Args:
         X: Data of shape (n_samples, n_features).
-        n_neighbors: Neighbors per sample, including the sample itself.
+        n_neighbors: Neighbors per sample, including the sample itself. If it's more than
+            the number of samples, every sample is a neighbor and the remaining columns
+            hold index -1 and distance infinity, as NNDescent pads them.
 
     Returns:
         ``(indices, distances)``, each of shape (n_samples, n_neighbors).
@@ -155,13 +157,12 @@ def exact_nearest_neighbors(
     import torch
 
     n = X.shape[0]
-    if not 1 <= n_neighbors <= n:
-        raise ValueError(
-            f"n_neighbors must be between 1 and the number of samples ({n}), not {n_neighbors}."
-        )
+    if n_neighbors < 1:
+        raise ValueError(f"n_neighbors must be at least 1, not {n_neighbors}.")
+    k = min(n_neighbors, n)
     data = torch.from_numpy(np.ascontiguousarray(X.reshape(n, -1), dtype=np.float32))
-    indices = np.empty((n, n_neighbors), dtype=np.int32)
-    distances = np.empty((n, n_neighbors), dtype=np.float32)
+    indices = np.full((n, n_neighbors), -1, dtype=np.int32)
+    distances = np.full((n, n_neighbors), np.inf, dtype=np.float32)
     rows_per_block = max(1, _EXACT_BLOCK_ELEMENTS // n)
     for start in range(0, n, rows_per_block):
         stop = min(start + rows_per_block, n)
@@ -169,10 +170,10 @@ def exact_nearest_neighbors(
         # Put each sample first among its own neighbors, even when it has duplicates.
         rows = torch.arange(stop - start)
         d[rows, rows + start] = -1.0
-        vals, idx = torch.topk(d, n_neighbors, dim=1, largest=False, sorted=True)
+        vals, idx = torch.topk(d, k, dim=1, largest=False, sorted=True)
         vals[:, 0] = 0.0
-        indices[start:stop] = idx.numpy()
-        distances[start:stop] = vals.numpy()
+        indices[start:stop, :k] = idx.numpy()
+        distances[start:stop, :k] = vals.numpy()
     return indices, distances
 
 
@@ -261,7 +262,8 @@ def fuzzy_simplicial_set_numpy(
 
     shifted = knn_dists - rhos[:, None]
     safe_sigma = np.where(sigmas == 0.0, np.float32(1.0), sigmas)[:, None]
-    with np.errstate(over="ignore"):
+    # Padded neighbors (index -1, distance inf) give inf / inf here; they're zeroed below.
+    with np.errstate(over="ignore", invalid="ignore"):
         vals = np.where(
             (shifted <= 0.0) | (sigmas[:, None] == 0.0),
             np.float32(1.0),

@@ -36,7 +36,8 @@ class GlassBoxUMAP(ParametricUMAP):
         negative_sample_rate: Number of negative samples per positive edge
             in the UMAP loss.
         repulsion_strength: Weighting of the repulsive term in the UMAP loss.
-        num_workers: Number of data loading workers. Used by the Lightning trainer only.
+        num_workers: Number of data loading worker processes for the Lightning
+            trainer. The torch trainer starts none, but gives the same map.
         checkpoint_dir: Directory for the Lightning trainer's checkpoints and
             TensorBoard logs. Setting it selects the Lightning trainer.
         neighbor_search: ``"nndescent"`` (the default), ``"exact"`` or ``"auto"``.

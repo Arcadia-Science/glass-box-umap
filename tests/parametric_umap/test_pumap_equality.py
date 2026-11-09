@@ -29,6 +29,8 @@ def test_save_load_round_trip_equates(mnist_images: Tensor, tmp_path: Path) -> N
         ("num_workers", lambda v: v + 4, True),
         ("checkpoint_dir", lambda v: Path("/tmp/elsewhere"), True),
         ("extra_callbacks", lambda v: [object()], True),
+        ("trainer", lambda v: "lightning", True),
+        ("neighbor_search", lambda v: "exact", False),
         ("lr", lambda v: v + 1.0, False),
         ("epochs", lambda v: v + 1, False),
         ("random_state", lambda v: 999, False),

@@ -1,5 +1,6 @@
 """The plain PyTorch trainer: same weights as the Lightning trainer, chosen by ``trainer``."""
 
+import platform
 import subprocess
 import sys
 from pathlib import Path
@@ -16,6 +17,7 @@ from glass_box_umap.parametric_umap.lightning import UMAPLightningModule
 from glass_box_umap.parametric_umap.loss import find_ab_params
 from glass_box_umap.parametric_umap.module import UMAPModule
 from glass_box_umap.parametric_umap.training import seed_everything
+from glass_box_umap.utils import lightning_training_device
 
 
 @pytest.fixture
@@ -46,6 +48,9 @@ def _assert_same_weights(a: ParametricUMAP, b: ParametricUMAP) -> None:
         {"batch_size": 100, "num_batches": 2},
         {"restore_best_weights": False},
         {"pca_components": 4},
+        # With workers, Lightning's DataLoader keeps its iterator between epochs and draws
+        # its seed once instead of every epoch.
+        {"num_workers": 2},
     ],
 )
 def test_torch_trainer_matches_lightning_trainer(blobs: np.ndarray, kwargs: dict) -> None:
@@ -82,6 +87,26 @@ def test_torch_trainer_on_accelerator(blobs: np.ndarray, device: str) -> None:
     Y = fast.transform(blobs)
     assert np.isfinite(Y).all()
     np.testing.assert_allclose(Y, reference.transform(blobs), atol=1e-4)
+
+
+@pytest.mark.parametrize("disable_mps", ["0", "1"])
+@pytest.mark.parametrize("processor", ["arm", "i386"])
+def test_training_device_follows_lightnings_mps_fallback(
+    monkeypatch: pytest.MonkeyPatch, disable_mps: str, processor: str
+) -> None:
+    """The torch trainer trains where Lightning would: on the CPU when it rejects MPS."""
+    from lightning_fabric.accelerators.mps import MPSAccelerator
+
+    is_available = MPSAccelerator.is_available
+    monkeypatch.setenv("DISABLE_MPS", disable_mps)
+    monkeypatch.setattr(platform, "processor", lambda: processor)
+    is_available.cache_clear()  # type: ignore[attr-defined]
+    try:
+        expected = "mps" if is_available() else "cpu"
+    finally:
+        is_available.cache_clear()  # type: ignore[attr-defined]
+    assert lightning_training_device(torch.device("mps")) == torch.device(expected)
+    assert lightning_training_device(torch.device("cpu")) == torch.device("cpu")
 
 
 def test_restores_the_best_epoch(blobs: np.ndarray) -> None:

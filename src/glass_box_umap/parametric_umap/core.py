@@ -11,7 +11,7 @@ from numpy.typing import NDArray
 from torch import Tensor
 from typing_extensions import Self
 
-from ..utils import get_default_device
+from ..utils import get_default_device, lightning_training_device
 from ._equality import parametric_umap_equal
 from .data import UMAPDataset
 from .graph import NeighborSearch, get_umap_graph
@@ -53,8 +53,8 @@ class ParametricUMAP:
             process is about 20 seconds faster, but maps differ slightly from
             ``"nndescent"``'s because approximate and exact neighbors differ. It supports
             ``metric="euclidean"`` only, and its time grows with the square of the
-            number of samples. ``"auto"`` uses ``"exact"`` below 4,096 samples, as
-            umap-learn does, and ``"nndescent"`` above.
+            number of samples. ``"auto"`` uses ``"exact"`` below 4,096 samples with
+            ``metric="euclidean"``, as umap-learn does, and ``"nndescent"`` otherwise.
         n_components:
             Dimensionality of the learned embedding.
         negative_sample_rate:
@@ -81,11 +81,14 @@ class ParametricUMAP:
             a full pass would be prohibitively long. If ``None``, trains on
             all batches.
         num_workers:
-            Number of data loading workers. Used by the Lightning trainer only.
+            Number of data loading worker processes for the Lightning trainer. The
+            torch trainer starts none, but gives the same map as the Lightning trainer
+            with the same ``num_workers``.
         checkpoint_dir:
             Directory for the Lightning trainer's checkpoints and TensorBoard logs.
-            Setting it selects the Lightning trainer (see ``trainer``). If ``None``, a
-            temporary directory is used.
+            Setting it selects the Lightning trainer (see ``trainer``). If it's
+            ``None`` and the Lightning trainer runs anyway, they go to a temporary
+            directory that is deleted when ``fit`` returns.
         restore_best_weights:
             If ``True``, restore the model weights from the epoch with the
             lowest loss after training. If ``False``, keep the weights from
@@ -237,10 +240,11 @@ class ParametricUMAP:
                 dataset,
                 epochs=self.epochs,
                 batch_size=self.batch_size,
-                device=self._device,
+                device=lightning_training_device(self._device),
                 num_batches=self.num_batches,
                 restore_best_weights=self.restore_best_weights,
                 progress=not self.quiet,
+                num_workers=self.num_workers,
             )
 
         self._model.to(self._device)
