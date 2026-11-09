@@ -3,25 +3,29 @@ import tempfile
 from contextlib import ExitStack
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy as np
-import pytorch_lightning as pl
 import torch
 from numpy.typing import NDArray
-from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.loggers import TensorBoardLogger
-from sklearn.decomposition import PCA
 from torch import Tensor
 from typing_extensions import Self
 
-from ..utils import device_to_lightning_acceleration_config, get_default_device
+from ..utils import get_default_device, lightning_training_device
 from ._equality import parametric_umap_equal
 from .data import UMAPDataset
-from .graph import get_umap_graph
-from .lightning import MemoryLoggerCallback, UMAPDataModule, UMAPLightningModule
-from .logging_config import get_progress_bar, suppress_lightning_logs
+from .graph import NeighborSearch, get_umap_graph
+from .module import UMAPModule
 from .registry import DEFAULT_ENCODER, create_encoder
+from .training import seed_everything, train_umap
+
+if TYPE_CHECKING:
+    # Imported only where they're used: importing Lightning and scikit-learn takes seconds.
+    import pytorch_lightning as pl
+    from scipy.sparse import csr_matrix
+    from sklearn.decomposition import PCA
+
+Trainer = Literal["auto", "torch", "lightning"]
 
 
 def _to_numpy_float32(X: NDArray[np.floating] | Tensor) -> NDArray[np.float32]:
@@ -41,6 +45,16 @@ class ParametricUMAP:
             Minimum distance between points in the low-dimensional embedding.
         metric:
             Distance metric used for computing nearest neighbors.
+        neighbor_search:
+            How to find each sample's nearest neighbors. ``"nndescent"`` (the default)
+            uses pynndescent's approximate search and umap-learn's fuzzy graph.
+            ``"exact"`` computes exact neighbors with PyTorch and builds the same fuzzy
+            graph in NumPy, so nothing is compiled with numba: the first fit in a new
+            process is about 20 seconds faster, but maps differ slightly from
+            ``"nndescent"``'s because approximate and exact neighbors differ. It supports
+            ``metric="euclidean"`` only, and its time grows with the square of the
+            number of samples. ``"auto"`` uses ``"exact"`` below 4,096 samples with
+            ``metric="euclidean"``, as umap-learn does, and ``"nndescent"`` otherwise.
         n_components:
             Dimensionality of the learned embedding.
         negative_sample_rate:
@@ -67,10 +81,14 @@ class ParametricUMAP:
             a full pass would be prohibitively long. If ``None``, trains on
             all batches.
         num_workers:
-            Number of data loading workers.
+            Number of data loading worker processes for the Lightning trainer. The
+            torch trainer starts none, but gives the same map as the Lightning trainer
+            with the same ``num_workers``.
         checkpoint_dir:
-            Directory for saving training checkpoints. If ``None``, a temporary
-            directory is used.
+            Directory for the Lightning trainer's checkpoints and TensorBoard logs.
+            Setting it selects the Lightning trainer (see ``trainer``). If it's
+            ``None`` and the Lightning trainer runs anyway, they go to a temporary
+            directory that is deleted when ``fit`` returns.
         restore_best_weights:
             If ``True``, restore the model weights from the epoch with the
             lowest loss after training. If ``False``, keep the weights from
@@ -80,7 +98,15 @@ class ParametricUMAP:
         quiet:
             If ``True``, suppress Lightning logs and progress output.
         extra_callbacks:
-            Additional Lightning callbacks to attach to the trainer.
+            Additional Lightning callbacks to attach to the trainer. Adding any selects
+            the Lightning trainer (see ``trainer``).
+        trainer:
+            Which training loop to use. ``"torch"`` is a plain PyTorch loop: it gives
+            the same weights as ``"lightning"``, bit for bit, two to three and a half
+            times faster on 8 CPU threads, with no logging and no files written.
+            ``"lightning"`` trains with PyTorch Lightning and writes checkpoints and
+            TensorBoard logs. ``"auto"`` (the default) uses ``"lightning"`` when
+            ``extra_callbacks`` or ``checkpoint_dir`` is set, and ``"torch"`` otherwise.
     """
 
     # UMAP algorithm
@@ -88,6 +114,7 @@ class ParametricUMAP:
     min_dist: float = 0.1
     metric: str = "euclidean"
     n_components: int = 2
+    neighbor_search: NeighborSearch = "nndescent"
     negative_sample_rate: int = 5
     repulsion_strength: float = 1.0
 
@@ -111,9 +138,10 @@ class ParametricUMAP:
     random_state: int | None = None
     quiet: bool = False
     extra_callbacks: list[pl.Callback] = field(default_factory=list)
+    trainer: Trainer = "auto"
 
     # Internal state
-    _model: UMAPLightningModule | None = field(init=False, default=None)
+    _model: UMAPModule | None = field(init=False, default=None)
     _pca: PCA | None = field(init=False, default=None)
     _mean: NDArray[np.floating] | None = field(init=False, default=None)
     _device: torch.device = field(init=False, default_factory=get_default_device)
@@ -130,13 +158,13 @@ class ParametricUMAP:
         return parametric_umap_equal(self, other)
 
     @property
-    def _fitted_model(self) -> UMAPLightningModule:
+    def _fitted_model(self) -> UMAPModule:
         if self._model is None:
             raise RuntimeError("Model has not been trained. Call `fit` first.")
         return self._model
 
-    def _build_model(self, input_dims: tuple[int, ...]) -> UMAPLightningModule:
-        """Lazy builder for the underlying Lightning Module."""
+    def _build_model(self, input_dims: tuple[int, ...]) -> UMAPModule:
+        """Lazy builder for the underlying model."""
         encoder = create_encoder(
             name=self.encoder_name,
             input_dims=input_dims,
@@ -144,7 +172,7 @@ class ParametricUMAP:
             encoder_kwargs=self.encoder_kwargs,
         )
 
-        model = UMAPLightningModule(
+        model = UMAPModule(
             lr=self.lr,
             encoder=encoder,
             input_dims=input_dims,
@@ -162,9 +190,31 @@ class ParametricUMAP:
             self._model.to(self._device)
         return self
 
+    def _resolve_trainer(self) -> Literal["torch", "lightning"]:
+        lightning_only = bool(self.extra_callbacks) or self.checkpoint_dir is not None
+        if self.trainer == "auto":
+            return "lightning" if lightning_only else "torch"
+        if self.trainer == "torch":
+            if lightning_only:
+                raise ValueError(
+                    "extra_callbacks and checkpoint_dir need the Lightning trainer. "
+                    "Use trainer='lightning' or trainer='auto'."
+                )
+            return "torch"
+        if self.trainer == "lightning":
+            return "lightning"
+        raise ValueError(f"trainer must be 'auto', 'torch' or 'lightning', not {self.trainer!r}.")
+
     def fit(self, X: NDArray[np.floating] | Tensor) -> Self:
+        trainer = self._resolve_trainer()
+
         if self.random_state is not None:
-            pl.seed_everything(self.random_state, workers=True, verbose=not self.quiet)
+            if trainer == "lightning":
+                import pytorch_lightning as pl
+
+                pl.seed_everything(self.random_state, workers=True, verbose=not self.quiet)
+            else:
+                seed_everything(self.random_state)
 
         X = _to_numpy_float32(X)
         self._mean = X.mean(axis=0)
@@ -172,12 +222,68 @@ class ParametricUMAP:
         X = X - self._mean
 
         if self.pca_components is not None:
+            from sklearn.decomposition import PCA
+
             self._pca = PCA(n_components=self.pca_components, random_state=self.random_state)
             X = self._pca.fit_transform(X).astype(np.float32)
 
         X = cast(NDArray[np.float32], X)
         input_dims = tuple(X.shape[1:])
         self._model = self._build_model(input_dims)
+
+        if trainer == "lightning":
+            self._fit_lightning(X)
+        else:
+            dataset = UMAPDataset(X, self._umap_graph(X), random_state=self.random_state)
+            train_umap(
+                self._model,
+                dataset,
+                epochs=self.epochs,
+                batch_size=self.batch_size,
+                device=lightning_training_device(self._device),
+                num_batches=self.num_batches,
+                restore_best_weights=self.restore_best_weights,
+                progress=not self.quiet,
+                num_workers=self.num_workers,
+            )
+
+        self._model.to(self._device)
+
+        return self
+
+    def _umap_graph(self, X: NDArray[np.float32]) -> csr_matrix:
+        # NNDescent requires 2D (n_samples, n_features). Flatten any
+        # higher-dim input (e.g. images for ConvEncoder) for graph
+        # construction only; UMAPDataset still receives the original X.
+        return get_umap_graph(
+            X.reshape(X.shape[0], -1) if X.ndim > 2 else X,
+            n_neighbors=self.n_neighbors,
+            metric=self.metric,
+            random_state=self.random_state,
+            quiet=self.quiet,
+            neighbor_search=self.neighbor_search,
+        )
+
+    def _fit_lightning(self, X: NDArray[np.float32]) -> None:
+        """Train with PyTorch Lightning, writing checkpoints and TensorBoard logs."""
+        import pytorch_lightning as pl
+        from pytorch_lightning.callbacks import ModelCheckpoint
+        from pytorch_lightning.loggers import TensorBoardLogger
+
+        from ..utils import device_to_lightning_acceleration_config
+        from .lightning import MemoryLoggerCallback, UMAPDataModule, UMAPLightningModule
+        from .logging_config import get_progress_bar, suppress_lightning_logs
+
+        assert self._model is not None
+        # Shares the encoder, so training updates self._model in place.
+        lightning_module = UMAPLightningModule(
+            lr=self.lr,
+            encoder=self._model.encoder,
+            input_dims=self._model.input_dims,
+            min_dist=self.min_dist,
+            negative_sample_rate=self.negative_sample_rate,
+            repulsion_strength=self.repulsion_strength,
+        ).to(self._device)
 
         with ExitStack() as stack:
             if self.quiet:
@@ -221,19 +327,8 @@ class ParametricUMAP:
                 enable_model_summary=not self.quiet,
             )
 
-            # NNDescent requires 2D (n_samples, n_features). Flatten any
-            # higher-dim input (e.g. images for ConvEncoder) for graph
-            # construction only; UMAPDataset still receives the original X.
-            graph = get_umap_graph(
-                X.reshape(X.shape[0], -1) if X.ndim > 2 else X,
-                n_neighbors=self.n_neighbors,
-                metric=self.metric,
-                random_state=self.random_state,
-                quiet=self.quiet,
-            )
-
             datamodule = UMAPDataModule(
-                UMAPDataset(X, graph, random_state=self.random_state),
+                UMAPDataset(X, self._umap_graph(X), random_state=self.random_state),
                 self.batch_size,
                 self.num_workers,
             )
@@ -241,15 +336,11 @@ class ParametricUMAP:
             if not self.quiet:
                 print(f"View progress with `tensorboard --logdir {logger.log_dir}`")
 
-            trainer.fit(model=self._model, datamodule=datamodule)
+            trainer.fit(model=lightning_module, datamodule=datamodule)
 
             if self.restore_best_weights:
                 best_ckpt = torch.load(best_checkpoint.best_model_path, map_location="cpu")
-                self._model.load_state_dict(best_ckpt["state_dict"])
-
-        self._model.to(self._device)
-
-        return self
+                lightning_module.load_state_dict(best_ckpt["state_dict"])
 
     @torch.no_grad()
     def transform(

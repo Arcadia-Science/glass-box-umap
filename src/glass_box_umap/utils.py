@@ -1,7 +1,12 @@
-from typing import cast
+from __future__ import annotations
+import os
+import platform
+from typing import TYPE_CHECKING, cast
 
 import torch
-from pytorch_lightning.accelerators import Accelerator, AcceleratorRegistry
+
+if TYPE_CHECKING:
+    from pytorch_lightning.accelerators import Accelerator
 
 
 def get_default_device() -> torch.device:
@@ -11,6 +16,28 @@ def get_default_device() -> torch.device:
     if torch.backends.mps.is_available():
         return torch.device("mps")
     return torch.device("cpu")
+
+
+def lightning_training_device(device: torch.device) -> torch.device:
+    """The device the Lightning trainer trains on when the model is on ``device``.
+
+    Lightning trains on the CPU when it considers MPS unavailable: when ``DISABLE_MPS=1``
+    is set, or when the processor isn't Apple silicon (an Intel Mac with an AMD GPU, for
+    example). The torch trainer trains on the same device, so both give the same map. This
+    repeats Lightning's ``MPSAccelerator.is_available`` check so that Lightning isn't
+    imported.
+    """
+    if device.type == "mps" and not _lightning_considers_mps_available():
+        return torch.device("cpu")
+    return device
+
+
+def _lightning_considers_mps_available() -> bool:
+    return (
+        os.getenv("DISABLE_MPS", "0") != "1"
+        and torch.backends.mps.is_available()
+        and platform.processor() in ("arm", "arm64")
+    )
 
 
 def current_device_memory_bytes(device: torch.device) -> int | None:
@@ -44,6 +71,8 @@ def device_to_lightning_acceleration_config(
     Returns:
         A tuple of (accelerator, devices) ready to be unpacked into pl.Trainer.
     """
+    from pytorch_lightning.accelerators import AcceleratorRegistry
+
     accelerator = device.type
     index = cast(int | None, device.index)
 

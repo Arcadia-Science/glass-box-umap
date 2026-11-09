@@ -1,7 +1,7 @@
 import pytest
 import torch
-from glass_box_umap.parametric_umap.lightning import data as data_module
-from glass_box_umap.parametric_umap.lightning.data import SplitAndMergeWeightedSampler
+from glass_box_umap.parametric_umap import sampler as data_module
+from glass_box_umap.parametric_umap.sampler import SplitAndMergeWeightedSampler
 
 
 def test_multiple_chunks_when_over_limit(monkeypatch: pytest.MonkeyPatch):
@@ -49,3 +49,21 @@ def test_uneven_division_distributes_remainder_to_first_chunks(
     assert sampler._samples_per_chunk == [81, 81, 80]
     assert sum(sampler._samples_per_chunk) == 242
     assert len(list(sampler)) == 242
+
+
+def test_sample_matches_iteration(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(data_module, "MULTINOMIAL_CATEGORY_LIMIT", 100)
+    weights = torch.rand(250, dtype=torch.double)
+    sampler = SplitAndMergeWeightedSampler(weights, num_samples=240)
+    torch.manual_seed(3)
+    as_tensor = sampler.sample()
+    torch.manual_seed(3)
+    as_list = list(sampler)
+    assert as_tensor.dtype == torch.int64
+    assert as_tensor.tolist() == as_list
+
+
+def test_lightning_module_reexports_sampler():
+    from glass_box_umap.parametric_umap.lightning import data as lightning_data
+
+    assert lightning_data.SplitAndMergeWeightedSampler is SplitAndMergeWeightedSampler

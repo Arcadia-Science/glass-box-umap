@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10, <3.14"
 resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'linux'",
@@ -988,6 +988,7 @@ dependencies = [
     { name = "torch", version = "2.5.1+cu121", source = { registry = "https://download.pytorch.org/whl/cu121" }, marker = "sys_platform == 'linux'" },
     { name = "torch", version = "2.12.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
     { name = "torch", version = "2.12.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin' and sys_platform != 'linux'" },
+    { name = "tqdm" },
     { name = "umap-learn" },
 ]
 
@@ -1048,6 +1049,7 @@ requires-dist = [
     { name = "tensorboard", specifier = ">=2.18" },
     { name = "torch", marker = "sys_platform != 'linux'", specifier = ">=2.1.0", index = "https://download.pytorch.org/whl/cpu" },
     { name = "torch", marker = "sys_platform == 'linux'", specifier = ">=2.1.0", index = "https://download.pytorch.org/whl/cu121" },
+    { name = "tqdm", specifier = ">=4.0" },
     { name = "umap-learn", specifier = ">=0.5.10" },
 ]
 provides-extras = ["plotting"]

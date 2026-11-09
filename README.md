@@ -27,6 +27,16 @@ All resources are hosted at [https://glass-box-umap.readthedocs.io](https://glas
 1. [Basic usage](https://glass-box-umap.readthedocs.io/en/latest/user_guide/basic_usage.html)
 1. [Citation](https://glass-box-umap.readthedocs.io/en/latest/meta/citation.html)
 
+# Fitting many embeddings
+
+If you fit many datasets, these choices matter more than anything else for speed:
+
+- **Reuse one process for many fits.** The first fit in a new Python process compiles pynndescent's and umap-learn's numba code, which takes about 20 seconds even for a five-sample input. Later fits in the same process skip it.
+- **For inputs under a few thousand samples, run several single-thread processes.** Call `torch.set_num_threads(1)` in each worker and run one worker per CPU. Small fits can't use many threads, so this gets about 1.6 times as many fits per machine as running one multi-threaded fit at a time. Larger inputs use threads well: give each fit all of them when you need it to finish quickly.
+- **If each fit has to run in a new process,** pass `neighbor_search="auto"`. Below 4,096 samples with the default Euclidean metric, it finds exact nearest neighbors with PyTorch instead of pynndescent, so nothing is compiled. Other metrics still use pynndescent. Embeddings differ slightly from the default's, because pynndescent's neighbors are approximate.
+
+By default, `fit` trains with a plain PyTorch loop and writes no files. To keep TensorBoard logs and the best checkpoint, set `checkpoint_dir`, which switches training to PyTorch Lightning. Both trainers give the same embedding for the same `random_state`.
+
 # Acknowledgements
 
 * Thank you to Leland McInnes, Tim Sainburg, Timothy Gentner, and Francois Chollet for their work on [parametric UMAP](https://arxiv.org/abs/2009.12981). Special thanks to Leland McInnes for maintaining [umap-learn](https://umap-learn.readthedocs.io/en/latest/), and all other contributors, whose work has made this project possible.

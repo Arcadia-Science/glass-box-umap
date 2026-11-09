@@ -1,10 +1,13 @@
+from __future__ import annotations
 from dataclasses import fields
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
-from sklearn.decomposition import PCA
+from torch import nn
 
-from .lightning import UMAPLightningModule
+if TYPE_CHECKING:
+    from sklearn.decomposition import PCA
 
 FIELDS_WITH_CUSTOM_EQ = frozenset(
     {
@@ -20,6 +23,7 @@ FIELDS_IGNORED_FOR_EQ = frozenset(
         "extra_callbacks",
         "num_workers",
         "checkpoint_dir",
+        "trainer",
     }
 )
 
@@ -51,7 +55,7 @@ def parametric_umap_equal(a, b) -> bool:  # type: ignore
     return True
 
 
-def state_dicts_equal(a: UMAPLightningModule, b: UMAPLightningModule) -> bool:
+def state_dicts_equal(a: nn.Module, b: nn.Module) -> bool:
     sa = a.state_dict()
     sb = b.state_dict()
     if sa.keys() != sb.keys():
@@ -65,7 +69,7 @@ def state_dicts_equal(a: UMAPLightningModule, b: UMAPLightningModule) -> bool:
     return True
 
 
-def models_equal(a: UMAPLightningModule | None, b: UMAPLightningModule | None) -> bool:
+def models_equal(a: nn.Module | None, b: nn.Module | None) -> bool:
     if a is None and b is None:
         return True
     if a is None or b is None:

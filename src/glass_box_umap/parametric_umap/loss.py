@@ -1,6 +1,36 @@
+from functools import lru_cache
+
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import Tensor
+
+
+@lru_cache(maxsize=64)
+def find_ab_params(spread: float, min_dist: float) -> tuple[float, float]:
+    """Fit the ``a`` and ``b`` parameters of UMAP's low-dimensional similarity curve.
+
+    The same fit as ``umap.umap_.find_ab_params``, so it gives the same values, but
+    without importing umap-learn (and compiling its numba code).
+
+    Args:
+        spread: The effective scale of embedded points.
+        min_dist: The effective minimum distance between embedded points.
+
+    Returns:
+        The fitted ``(a, b)``.
+    """
+    from scipy.optimize import curve_fit
+
+    def curve(x, a, b):
+        return 1.0 / (1.0 + a * x ** (2 * b))
+
+    xv = np.linspace(0, spread * 3, 300)
+    yv = np.zeros(xv.shape)
+    yv[xv < min_dist] = 1.0
+    yv[xv >= min_dist] = np.exp(-(xv[xv >= min_dist] - min_dist) / spread)
+    params, _ = curve_fit(curve, xv, yv)
+    return params[0], params[1]
 
 
 def convert_distance_to_probability(distances: Tensor, a: float = 1.0, b: float = 1.0) -> Tensor:
