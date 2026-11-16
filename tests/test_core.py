@@ -1,8 +1,11 @@
 import numpy as np
 import pytest
+import torch
 from glass_box_umap.components import LayerNormDetached, VmapPReLU
 from glass_box_umap.core import GlassBoxUMAP
 from glass_box_umap.parametric_umap.models import DeepPReLUNet
+from sklearn.datasets import load_wine
+from sklearn.preprocessing import StandardScaler
 from torch import Tensor, nn
 
 
@@ -92,3 +95,18 @@ def test_compute_contributions_embeddings_pca(gb_umap_pca: GlassBoxUMAP, mnist_i
     Z_reconstructed = contributions.astype(np.float32).sum(axis=-1)
     rel_err = np.abs(Z - Z_reconstructed).max() / (np.abs(Z).max() + 1e-8)
     assert rel_err < 1e-3
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_tensor_contributions_match_numpy(dtype):
+    """Contributions accept the same floating tensors as fit and transform."""
+    wine, _ = load_wine(return_X_y=True)
+    X = StandardScaler().fit_transform(wine)
+    X_tensor = torch.from_numpy(X).to(dtype)
+    model = GlassBoxUMAP(epochs=1, random_state=7, quiet=True).to("cpu")
+    model.fit(X_tensor)
+
+    expected = model.compute_contributions(X_tensor.numpy())
+    actual = model.compute_contributions(X_tensor)
+    assert actual.dtype == np.float32
+    np.testing.assert_array_equal(actual, expected)
