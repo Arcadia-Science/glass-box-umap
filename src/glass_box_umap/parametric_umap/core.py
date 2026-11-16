@@ -26,7 +26,7 @@ from .registry import DEFAULT_ENCODER, create_encoder
 
 def _to_numpy_float32(X: NDArray[np.floating] | Tensor) -> NDArray[np.float32]:
     if isinstance(X, Tensor):
-        return X.detach().cpu().numpy()
+        return X.detach().to(device="cpu", dtype=torch.float32).numpy()
     return cast(NDArray[np.float32], X.astype(np.float32))
 
 

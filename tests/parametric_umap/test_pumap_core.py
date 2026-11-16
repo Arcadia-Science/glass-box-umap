@@ -4,6 +4,8 @@ import numpy as np
 import pytest
 import torch
 from glass_box_umap.parametric_umap import ParametricUMAP
+from sklearn.datasets import load_wine
+from sklearn.preprocessing import StandardScaler
 from torch import Tensor
 
 
@@ -211,3 +213,18 @@ def test_quiet_suppresses_output(mnist_images: Tensor, capfd):
     model.fit(mnist_images)
     captured = capfd.readouterr()
     assert captured.out != ""
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test_tensor_inference_matches_numpy(dtype):
+    """Tensor input follows the same float32 conversion as NumPy input."""
+    wine, _ = load_wine(return_X_y=True)
+    X = StandardScaler().fit_transform(wine)
+    X_tensor = torch.from_numpy(X).to(dtype)
+    model = ParametricUMAP(epochs=1, random_state=7, quiet=True).to("cpu")
+    model.fit(X_tensor)
+
+    expected = model.transform(X_tensor.numpy())
+    actual = model.transform(X_tensor)
+    assert actual.dtype == np.float32
+    np.testing.assert_array_equal(actual, expected)
